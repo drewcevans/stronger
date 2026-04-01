@@ -24,9 +24,10 @@ type Phase =
 
 interface Props {
 	onConnected: () => void
+	onDisconnected: () => void
 }
 
-export function GoogleAuth({ onConnected }: Props) {
+export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
@@ -129,7 +130,7 @@ export function GoogleAuth({ onConnected }: Props) {
 			e.preventDefault()
 			const id = extractSheetId(sheetUrl)
 			if (!id) {
-				setError('That doesn\u2019t look like a Google Sheets URL.')
+				setError('That doesn\'t look like a Google Sheets URL.')
 				return
 			}
 			setError(null)
@@ -146,7 +147,8 @@ export function GoogleAuth({ onConnected }: Props) {
 		setSheetUrl('')
 		setError(null)
 		setPhase('sign-in')
-	}, [])
+		onDisconnected()
+	}, [onDisconnected])
 
 	const handleDisconnect = useCallback(() => {
 		clearSheetId()
@@ -155,7 +157,8 @@ export function GoogleAuth({ onConnected }: Props) {
 		setSheetUrl('')
 		setError(null)
 		setPhase('sheet-input')
-	}, [])
+		onDisconnected()
+	}, [onDisconnected])
 
 	/* ---------------------------------------------------------------- */
 	/*  Render                                                           */

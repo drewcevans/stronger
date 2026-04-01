@@ -14,9 +14,14 @@ function App() {
     setSheetConnected(true);
   }, []);
 
+  const handleDisconnected = useCallback(() => {
+    setSheetConnected(false);
+    setActiveWorkout(null);
+  }, []);
+
   // Gate: require auth + sheet connection before showing workouts
   if (!sheetConnected) {
-    return <GoogleAuth onConnected={handleConnected} />;
+    return <GoogleAuth onConnected={handleConnected} onDisconnected={handleDisconnected} />;
   }
 
   if (activeWorkout) {
@@ -30,7 +35,7 @@ function App() {
 
   return (
     <>
-      <GoogleAuth onConnected={handleConnected} />
+      <GoogleAuth onConnected={handleConnected} onDisconnected={handleDisconnected} />
       <WorkoutSelect
         workouts={sampleWorkouts}
         onSelect={setActiveWorkout}
