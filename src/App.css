@@ -1,0 +1,371 @@
+/* =========================================================================
+   Stronger – phone-first workout UI styles
+   ========================================================================= */
+
+:root {
+	--color-bg: #121212;
+	--color-surface: #1e1e1e;
+	--color-surface-hover: #2a2a2a;
+	--color-text: #e0e0e0;
+	--color-text-muted: #888;
+	--color-primary: #4fc3f7;
+	--color-warmup: #ffa726;
+	--color-work: #66bb6a;
+	--color-backoff: #ab47bc;
+	--color-completed: #2e7d32;
+	--color-border: #333;
+	--radius: 12px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	font-size: 16px;
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	background: var(--color-bg);
+	color: var(--color-text);
+	line-height: 1.5;
+	min-height: 100dvh;
+}
+
+#root {
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 0 1rem;
+}
+
+/* -----------------------------------------------------------------------
+   Workout selection screen
+   ----------------------------------------------------------------------- */
+
+.workout-select {
+	padding: 2rem 0;
+	text-align: center;
+}
+
+.app-title {
+	font-size: 2rem;
+	font-weight: 700;
+	margin-bottom: 0.25rem;
+}
+
+.subtitle {
+	color: var(--color-text-muted);
+	margin-bottom: 1.5rem;
+}
+
+.workout-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.workout-card {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 1.25rem 1rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	color: var(--color-text);
+	text-align: left;
+	cursor: pointer;
+	font-size: 1rem;
+	transition: background 0.15s;
+	min-height: 64px;
+}
+
+.workout-card:active {
+	background: var(--color-surface-hover);
+}
+
+.workout-id {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--color-primary);
+	color: #000;
+	font-weight: 700;
+	font-size: 1.25rem;
+	flex-shrink: 0;
+}
+
+.workout-name {
+	font-weight: 500;
+}
+
+/* -----------------------------------------------------------------------
+   Workout view (execution screen)
+   ----------------------------------------------------------------------- */
+
+.workout-view {
+	padding-bottom: 5rem; /* space for sticky finish bar */
+}
+
+.workout-header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem 0;
+	position: sticky;
+	top: 0;
+	background: var(--color-bg);
+	z-index: 10;
+}
+
+.btn-back {
+	background: none;
+	border: none;
+	color: var(--color-primary);
+	font-size: 1rem;
+	cursor: pointer;
+	padding: 0.5rem;
+	min-width: 44px;
+	min-height: 44px;
+}
+
+.workout-title {
+	flex: 1;
+	font-size: 1.125rem;
+	font-weight: 600;
+}
+
+.progress-badge {
+	background: var(--color-surface);
+	padding: 0.25rem 0.625rem;
+	border-radius: 999px;
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
+/* Exercise card */
+.exercise-card {
+	margin-bottom: 1.5rem;
+}
+
+.exercise-name {
+	font-size: 1rem;
+	font-weight: 600;
+	padding: 0.5rem 0;
+	border-bottom: 1px solid var(--color-border);
+	margin-bottom: 0.5rem;
+}
+
+/* Set rows */
+.sets-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.set-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 0.5rem;
+	background: var(--color-surface);
+	border-radius: 8px;
+	border: 1px solid transparent;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.set-row.set-completed {
+	background: rgba(46, 125, 50, 0.15);
+	border-color: var(--color-completed);
+}
+
+/* Checkbox */
+.set-checkbox {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.set-checkbox input[type='checkbox'] {
+	width: 1.5rem;
+	height: 1.5rem;
+	accent-color: var(--color-completed);
+	cursor: pointer;
+}
+
+/* Set type pill */
+.set-type {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.set-type-warmup {
+	background: rgba(255, 167, 38, 0.2);
+	color: var(--color-warmup);
+}
+
+.set-type-work {
+	background: rgba(102, 187, 106, 0.2);
+	color: var(--color-work);
+}
+
+.set-type-backoff {
+	background: rgba(171, 71, 188, 0.2);
+	color: var(--color-backoff);
+}
+
+/* Editable weight/rep fields */
+.set-fields {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	margin-left: auto;
+}
+
+.field-group {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.field-label {
+	font-size: 0.625rem;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	line-height: 1;
+}
+
+.field-input {
+	width: 3.5rem;
+	padding: 0.25rem 0.25rem;
+	text-align: center;
+	font-size: 1rem;
+	font-weight: 600;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-bg);
+	color: var(--color-text);
+	-moz-appearance: textfield;
+}
+
+.field-input::-webkit-outer-spin-button,
+.field-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.field-separator {
+	color: var(--color-text-muted);
+	font-size: 0.875rem;
+	padding: 0 0.125rem;
+	padding-top: 0.75rem; /* align with input, not label */
+}
+
+/* Target reps / AMRAP */
+.set-target {
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+}
+
+.amrap-badge {
+	font-size: 0.625rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--color-primary);
+	background: rgba(79, 195, 247, 0.15);
+	padding: 0.125rem 0.375rem;
+	border-radius: 4px;
+}
+
+/* Set comment */
+.set-comment {
+	width: 100%;
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+	font-style: italic;
+	padding-left: 2.5rem; /* indent past checkbox */
+}
+
+/* Finish bar */
+.finish-bar {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 0.75rem 1rem;
+	padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+	background: var(--color-bg);
+	border-top: 1px solid var(--color-border);
+	display: flex;
+	justify-content: center;
+	z-index: 20;
+}
+
+.btn-finish {
+	width: 100%;
+	max-width: 600px;
+	padding: 1rem;
+	font-size: 1.125rem;
+	font-weight: 700;
+	border: none;
+	border-radius: var(--radius);
+	background: var(--color-primary);
+	color: #000;
+	cursor: pointer;
+	min-height: 56px;
+}
+
+.btn-finish:active {
+	opacity: 0.85;
+}
+
+/* Finish summary */
+.finish-summary {
+	text-align: center;
+	padding: 3rem 1rem;
+}
+
+.finish-summary h2 {
+	font-size: 1.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.finish-summary p {
+	color: var(--color-text-muted);
+	margin-bottom: 1rem;
+}
+
+.finish-note {
+	font-size: 0.875rem;
+	font-style: italic;
+}
+
+.btn-primary {
+	padding: 0.875rem 2rem;
+	font-size: 1rem;
+	font-weight: 600;
+	border: none;
+	border-radius: var(--radius);
+	background: var(--color-primary);
+	color: #000;
+	cursor: pointer;
+	min-height: 48px;
+}
+
+.btn-primary:active {
+	opacity: 0.85;
+}

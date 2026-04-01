@@ -115,3 +115,31 @@ export interface ComputedExercise {
 	/** Ordered computed sets. */
 	sets: ComputedSet[];
 }
+
+// ---------------------------------------------------------------------------
+// Layer 4 – Workout (named collection of exercises)
+// ---------------------------------------------------------------------------
+
+/** A named workout containing an ordered list of computed exercises. */
+export interface Workout {
+	/** Short identifier (e.g. "A", "B", "C", "D"). */
+	id: string;
+	/** Display name (e.g. "Workout A – Bench / Squat"). */
+	name: string;
+	/** Ordered list of exercises for this workout. */
+	exercises: ComputedExercise[];
+}
+
+// ---------------------------------------------------------------------------
+// Layer 5 – Execution state (tracking what the user actually does)
+// ---------------------------------------------------------------------------
+
+/** Tracks the user's actual performance for a single set during workout execution. */
+export interface SetResult {
+	/** The weight actually used (pre-filled with planned weight). */
+	actualWeight: number;
+	/** The reps actually performed (pre-filled with planned minReps). */
+	actualReps: number;
+	/** Whether the user has marked this set as complete. */
+	completed: boolean;
+}

@@ -3,9 +3,11 @@ export type {
 	ComputedSet,
 	ExerciseTemplate,
 	LiftConfig,
+	SetResult,
 	SetTemplate,
 	SetType,
 	WeightBasis,
+	Workout,
 } from './types.js';
 
 export {
