@@ -26,8 +26,6 @@ jobs:
           # A spec is archived when its corresponding "Spec NNN: …" issue
           # (with the "spec" label) is closed.
 
-          archived_any=false
-
           for spec_file in specs/*.spec.md; do
             [ -f "$spec_file" ] || continue
 
@@ -61,11 +59,10 @@ jobs:
             mkdir -p "$(dirname "$archive_path")"
             git mv "$spec_file" "$archive_path"
             echo "  Archived: ${spec_file} -> ${archive_path}"
-            archived_any=true
           done
 
           # Commit and push if there are changes
-          if [ "$archived_any" = false ]; then
+          if git diff --cached --quiet; then
             echo "No specs to archive"
           else
             git config user.name "github-actions[bot]"
