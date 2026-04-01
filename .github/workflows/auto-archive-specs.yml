@@ -4,6 +4,7 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,7 +13,7 @@ permissions:
 
 jobs:
   archive-specs:
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,54 +22,43 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          OWNER="${{ github.repository_owner }}"
-          REPO_NAME="${{ github.event.repository.name }}"
+          # Comprehensive scan: check every spec file against its GitHub issue.
+          # A spec is archived when its corresponding "Spec NNN: …" issue
+          # (with the "spec" label) is closed.
 
-          # Use GraphQL to get issues closed by this PR that have the "spec" label
-          SPEC_TITLES=$(gh api graphql -f query="
-            query {
-              repository(owner: \"${OWNER}\", name: \"${REPO_NAME}\") {
-                pullRequest(number: ${PR_NUMBER}) {
-                  closingIssuesReferences(first: 50) {
-                    nodes {
-                      title
-                      labels(first: 10) {
-                        nodes {
-                          name
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          " --jq '
-            .data.repository.pullRequest.closingIssuesReferences.nodes[]
-            | select(.labels.nodes | map(.name) | index("spec"))
-            | .title
-          ')
+          for spec_file in specs/*.spec.md; do
+            [ -f "$spec_file" ] || continue
 
-          if [ -z "$SPEC_TITLES" ]; then
-            echo "No spec issues closed by this PR"
-            exit 0
-          fi
-
-          echo "$SPEC_TITLES" | while IFS= read -r title; do
-            # Extract spec number from issue title like "Spec 001: ..."
-            num=$(echo "$title" | sed -n 's/^Spec \([0-9]\+\):.*/\1/p')
+            # Extract the spec number from the filename (e.g., 001)
+            num=$(basename "$spec_file" | grep -oE '^[0-9]+')
             [ -z "$num" ] && continue
 
-            # Find matching spec file(s)
-            for spec_file in specs/${num}-*.spec.md; do
-              [ -f "$spec_file" ] || continue
+            echo "Checking spec ${num} (${spec_file})..."
 
-              # Mirror the repo path under .archive/
-              archive_path=".archive/${spec_file}"
-              mkdir -p "$(dirname "$archive_path")"
-              git mv "$spec_file" "$archive_path"
-              echo "Archived: ${spec_file} -> ${archive_path}"
-            done
+            # Find the matching issue by title prefix "Spec NNN:"
+            # Search for issues with the "spec" label whose title starts with "Spec NNN:"
+            issue_state=$(gh issue list \
+              --state all \
+              --label spec \
+              --search "\"Spec ${num}:\" in:title" \
+              --json title,state \
+              --jq "[.[] | select(.title | startswith(\"Spec ${num}:\"))] | first | .state // empty")
+
+            if [ -z "$issue_state" ]; then
+              echo "  No matching issue found — skipping"
+              continue
+            fi
+
+            if [ "$issue_state" != "closed" ]; then
+              echo "  Issue is ${issue_state} — skipping"
+              continue
+            fi
+
+            echo "  Issue is closed — archiving"
+            archive_path=".archive/${spec_file}"
+            mkdir -p "$(dirname "$archive_path")"
+            git mv "$spec_file" "$archive_path"
+            echo "  Archived: ${spec_file} -> ${archive_path}"
           done
 
           # Commit and push if there are changes
