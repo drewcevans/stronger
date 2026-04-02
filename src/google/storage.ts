@@ -37,15 +37,17 @@ function deleteCookie(name: string): void {
 /*  Token persistence (cookie-based)                                   */
 /* ------------------------------------------------------------------ */
 
+/** Cookie lifetime: 7 days in seconds. */
+const TOKEN_MAX_AGE = 7 * 24 * 60 * 60
+
 /**
  * Persist the OAuth access token as a Secure, SameSite=Strict cookie.
- * `expiresIn` is the lifetime in seconds (from the token response).
- * We subtract a 5-minute buffer to avoid using a token right as it expires.
+ * The cookie lives for 7 days so the user isn't prompted to sign in
+ * on every visit. If the token expires at Google's end before then,
+ * the next API call will fail and the sign-in flow will re-trigger.
  */
-export function saveToken(accessToken: string, expiresIn: number): void {
-	const bufferSecs = 5 * 60
-	const maxAge = Math.max(0, expiresIn - bufferSecs)
-	setCookie(TOKEN_COOKIE, accessToken, maxAge)
+export function saveToken(accessToken: string, _expiresIn?: number): void {
+	setCookie(TOKEN_COOKIE, accessToken, TOKEN_MAX_AGE)
 }
 
 /**

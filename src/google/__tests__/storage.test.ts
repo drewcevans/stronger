@@ -89,12 +89,18 @@ describe('token storage (cookie)', () => {
 		expect(loadToken()).toBeNull()
 	})
 
-	it('applies a 5-minute buffer to max-age and sets security flags', () => {
+	it('sets a 7-day max-age with security flags', () => {
 		saveToken('tok_buf', 3600)
 		const raw = setCalls[setCalls.length - 1]
-		// 3600 - 300 = 3300
-		expect(raw).toContain('max-age=3300')
+		// 7 days = 604800 seconds
+		expect(raw).toContain('max-age=604800')
 		expect(raw).toContain('SameSite=Strict')
 		expect(raw).toContain('Secure')
+	})
+
+	it('uses the same 7-day max-age regardless of expiresIn', () => {
+		saveToken('tok_no_exp')
+		const raw = setCalls[setCalls.length - 1]
+		expect(raw).toContain('max-age=604800')
 	})
 })
