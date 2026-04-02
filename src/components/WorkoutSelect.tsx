@@ -1,4 +1,5 @@
 import type { Workout } from '../model/index.js';
+import { Banner } from './Banner.js';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -8,7 +9,7 @@ interface WorkoutSelectProps {
 export function WorkoutSelect({ workouts, onSelect }: WorkoutSelectProps) {
 	return (
 		<div className="workout-select">
-			<h1 className="app-title">Stronger</h1>
+			<Banner />
 			<p className="subtitle">Choose a workout</p>
 			{workouts.length === 0 ? (
 				<p className="auth-error">
