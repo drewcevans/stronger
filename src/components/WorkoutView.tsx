@@ -115,6 +115,7 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 					<div className="sets-list">
 						{exercise.sets.map((set, setIdx) => {
 							const result = results[exerciseIdx][setIdx];
+							const comment = buildComment(set);
 							return (
 								<div
 									key={setIdx}
@@ -192,14 +193,11 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 											/>
 										</label>
 									</div>
-									{(() => {
-										const comment = buildComment(set);
-										return comment ? (
-											<p className="set-comment">
-												{comment}
-											</p>
-										) : null;
-									})()}
+									{comment && (
+										<p className="set-comment">
+											{comment}
+										</p>
+									)}
 								</div>
 							);
 						})}
