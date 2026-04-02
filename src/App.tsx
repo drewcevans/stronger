@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { Workout, LiftConfig, SetResult, ComputedSet } from './model/index.js';
-import { appendLogRows, buildLogRow } from './google/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData } from './model/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets } from './google/index.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
@@ -8,6 +8,7 @@ import './App.css';
 
 function App() {
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
+  const [previousSets, setPreviousSets] = useState<PreviousSetData[][] | null>(null);
   const [sheetConnected, setSheetConnected] = useState(false);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [startTime, setStartTime] = useState<string | null>(null);
@@ -25,15 +26,34 @@ function App() {
   const handleDisconnected = useCallback(() => {
     setSheetConnected(false);
     setActiveWorkout(null);
+    setPreviousSets(null);
     setWorkouts([]);
     setSpreadsheetId(null);
     setStartTime(null);
   }, []);
 
+  const loadPreviousSets = useCallback(
+    async (sheetId: string, workoutId: string) => {
+      try {
+        const logRows = await readLogZone(sheetId);
+        const prev = findPreviousWorkoutSets(logRows, workoutId);
+        setPreviousSets(prev);
+      } catch {
+        // Silently ignore — previous data is optional context
+      }
+    },
+    [],
+  );
+
   const handleSelectWorkout = useCallback((workout: Workout) => {
     setStartTime(new Date().toISOString());
     setActiveWorkout(workout);
-  }, []);
+    setPreviousSets(null);
+    // Fire-and-forget: load previous workout data for context
+    if (spreadsheetId) {
+      void loadPreviousSets(spreadsheetId, workout.id);
+    }
+  }, [spreadsheetId, loadPreviousSets]);
 
   const handleFinish = useCallback(
     (workout: Workout, results: SetResult[][]) => {
@@ -50,6 +70,7 @@ function App() {
       }
       setActiveWorkout(null);
       setStartTime(null);
+      setPreviousSets(null);
     },
     [spreadsheetId, startTime],
   );
@@ -68,9 +89,11 @@ function App() {
     return (
       <WorkoutView
         workout={activeWorkout}
+        previousSets={previousSets}
         onBack={() => {
           setActiveWorkout(null);
           setStartTime(null);
+          setPreviousSets(null);
         }}
         onFinish={handleFinish}
       />

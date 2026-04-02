@@ -28,7 +28,10 @@ export {
 	createWorkoutDefsTab,
 	readWorkoutDefs,
 	writeDefaultWorkoutDefs,
+	parseLogRow,
+	findPreviousWorkoutSets,
+	readLogZone,
 } from './sheets.ts'
-export type { SheetInfo, LogContext } from './sheets.ts'
+export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
 export { WORKOUT_DEFS_TAB_NAME } from './config.ts'

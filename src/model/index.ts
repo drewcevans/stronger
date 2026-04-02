@@ -3,6 +3,7 @@ export type {
 	ComputedSet,
 	ExerciseTemplate,
 	LiftConfig,
+	PreviousSetData,
 	SetResult,
 	SetTemplate,
 	SetType,

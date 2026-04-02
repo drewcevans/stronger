@@ -6,7 +6,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis } from '../model/types.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -21,6 +21,9 @@ const LOG_HEADER_RANGE = `${TARGET_TAB_NAME}!A10:M10`
 
 /** A1 range used for appending log data (row 11 onward). */
 const LOG_APPEND_RANGE = `${TARGET_TAB_NAME}!A11:M11`
+
+/** A1 range for reading all log data (row 11 onward, generous upper bound). */
+const LOG_READ_RANGE = `${TARGET_TAB_NAME}!A11:M10000`
 
 const CONFIG_HEADER: string[] = [
 	'id',
@@ -657,4 +660,151 @@ export async function writeDefaultWorkoutDefs(
 		valueInputOption: 'RAW',
 		resource: { values: allRows },
 	})
+}
+
+/* ------------------------------------------------------------------ */
+/*  Log zone – read & parse                                            */
+/* ------------------------------------------------------------------ */
+
+/** A parsed log row representing one completed set. */
+export interface ParsedLogRow {
+	date: string
+	startTime: string
+	endTime: string
+	workoutId: string
+	exerciseName: string
+	liftId: string
+	setNumber: number
+	setType: string
+	plannedWeight: number
+	plannedReps: number
+	actualWeight: number
+	actualReps: number
+	completed: boolean
+}
+
+/**
+ * Parse a single raw log row (string array) into a {@link ParsedLogRow}.
+ * Returns `null` for incomplete or invalid rows.
+ */
+export function parseLogRow(row: string[]): ParsedLogRow | null {
+	if (!row || row.length < 13) return null
+
+	const date = (row[0] ?? '').trim()
+	const startTime = (row[1] ?? '').trim()
+	const endTime = (row[2] ?? '').trim()
+	const workoutId = (row[3] ?? '').trim()
+	const exerciseName = (row[4] ?? '').trim()
+	const liftId = (row[5] ?? '').trim()
+	const rawSetNumber = (row[6] ?? '').trim()
+	const setType = (row[7] ?? '').trim()
+	const rawPlannedWeight = (row[8] ?? '').trim()
+	const rawPlannedReps = (row[9] ?? '').trim()
+	const rawActualWeight = (row[10] ?? '').trim()
+	const rawActualReps = (row[11] ?? '').trim()
+	const rawCompleted = (row[12] ?? '').trim().toUpperCase()
+
+	if (!date || !startTime || !workoutId || !exerciseName) return null
+
+	const setNumber = Number(rawSetNumber)
+	const plannedWeight = Number(rawPlannedWeight)
+	const plannedReps = Number(rawPlannedReps)
+	const actualWeight = Number(rawActualWeight)
+	const actualReps = Number(rawActualReps)
+
+	if (!Number.isFinite(setNumber) || setNumber < 1) return null
+	if (!Number.isFinite(actualWeight) || !Number.isFinite(actualReps)) return null
+
+	return {
+		date,
+		startTime,
+		endTime,
+		workoutId,
+		exerciseName,
+		liftId,
+		setNumber,
+		setType,
+		plannedWeight: Number.isFinite(plannedWeight) ? plannedWeight : 0,
+		plannedReps: Number.isFinite(plannedReps) ? plannedReps : 0,
+		actualWeight,
+		actualReps,
+		completed: rawCompleted === 'TRUE',
+	}
+}
+
+/**
+ * Find the previous workout's set data for each exercise/set position.
+ *
+ * Scans the parsed log rows to find the most recent session matching
+ * `workoutId`, then returns a 2D array indexed by exercise position and
+ * set position within that exercise. Returns `null` when no previous
+ * session exists.
+ *
+ * "Most recent session" is identified by the latest `startTime` value
+ * among rows with the target `workoutId`.
+ */
+export function findPreviousWorkoutSets(
+	logRows: ParsedLogRow[],
+	workoutId: string,
+): PreviousSetData[][] | null {
+	// Filter to rows matching this workout ID
+	const matching = logRows.filter((r) => r.workoutId === workoutId)
+	if (matching.length === 0) return null
+
+	// Find the most recent session by startTime (lexicographic sort on ISO strings)
+	let latestStart = ''
+	for (const row of matching) {
+		if (row.startTime > latestStart) {
+			latestStart = row.startTime
+		}
+	}
+
+	const sessionRows = matching.filter((r) => r.startTime === latestStart)
+	if (sessionRows.length === 0) return null
+
+	// Group by exercise name, preserving first-seen order
+	const exerciseOrder: string[] = []
+	const exerciseMap = new Map<string, ParsedLogRow[]>()
+	for (const row of sessionRows) {
+		if (!exerciseMap.has(row.exerciseName)) {
+			exerciseOrder.push(row.exerciseName)
+			exerciseMap.set(row.exerciseName, [])
+		}
+		exerciseMap.get(row.exerciseName)!.push(row)
+	}
+
+	// Build 2D array: exercises × sets (sorted by setNumber within each exercise)
+	const result: PreviousSetData[][] = []
+	for (const name of exerciseOrder) {
+		const rows = exerciseMap.get(name)!
+		rows.sort((a, b) => a.setNumber - b.setNumber)
+		result.push(
+			rows.map((r) => ({ weight: r.actualWeight, reps: r.actualReps })),
+		)
+	}
+
+	return result
+}
+
+/**
+ * Read the log zone (row 11+) and return parsed log rows.
+ * Returns an empty array if there are no log entries yet.
+ */
+export async function readLogZone(
+	spreadsheetId: string,
+): Promise<ParsedLogRow[]> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: LOG_READ_RANGE,
+	})
+
+	const rawRows = response.result.values
+	if (!rawRows || rawRows.length === 0) return []
+
+	return rawRows
+		.map(parseLogRow)
+		.filter((r): r is ParsedLogRow => r !== null)
 }
