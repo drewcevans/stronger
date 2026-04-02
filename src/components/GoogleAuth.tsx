@@ -178,15 +178,6 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 		onDisconnected()
 	}, [onDisconnected])
 
-	const handleDisconnect = useCallback(() => {
-		clearSheetId()
-		setSheetTitle(null)
-		setSheetUrl('')
-		setError(null)
-		setPhase('sheet-input')
-		onDisconnected()
-	}, [onDisconnected])
-
 	/* ---------------------------------------------------------------- */
 	/*  Render                                                           */
 	/* ---------------------------------------------------------------- */
@@ -250,11 +241,8 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 	return (
 		<div className="auth-connected">
 			<span className="sheet-name" title={sheetTitle ?? undefined}>
-				📗 {sheetTitle}
+				{sheetTitle}
 			</span>
-			<button className="btn-link" onClick={handleDisconnect}>
-				Change sheet
-			</button>
 			<button className="btn-link" onClick={handleSignOut}>
 				Sign out
 			</button>
