@@ -272,12 +272,14 @@ body {
 	font-weight: 600;
 	text-transform: uppercase;
 	text-align: center;
+	text-align-last: center;
 	padding: 0.25rem 0.5rem;
 	border-radius: 6px;
 	white-space: nowrap;
 	border: none;
 	cursor: pointer;
 	min-height: 36px;
+	min-width: 5rem;
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	appearance: none;
