@@ -2,7 +2,9 @@
  * Post-workout weight progression logic.
  *
  * Evaluates completed set results against the programmed rep ranges and
- * proposes weight updates for each non-secondary lift in the workout.
+ * proposes weight updates for each eligible lift in the workout.
+ * Exercises whose work/backoff sets all use crossReference weight basis
+ * are excluded — their weights are derived from another lift's config.
  */
 
 import type {
@@ -15,10 +17,11 @@ import type {
 } from './types.js';
 
 /**
- * Returns true if the exercise is "secondary" — i.e. all of its work/backoff
- * sets derive from another lift via crossReference weight basis.
+ * Returns true if all work/backoff sets in the exercise use crossReference
+ * weight basis. These exercises derive their weights from another lift's
+ * config and should not be independently progressed.
  */
-export function isSecondaryExercise(template: ExerciseTemplate): boolean {
+export function isCrossReferenceOnly(template: ExerciseTemplate): boolean {
 	const relevantSets = template.sets.filter(
 		(s) => s.setType === 'work' || s.setType === 'backoff',
 	);
@@ -59,8 +62,9 @@ export function computeProgression(
 		const template = templates[ei];
 		if (!template || !exercise) continue;
 
-		// Skip secondary exercises (crossReference-based)
-		if (isSecondaryExercise(template)) continue;
+		// Skip exercises where all work/backoff sets use crossReference —
+		// their weights are derived from another lift's config.
+		if (isCrossReferenceOnly(template)) continue;
 
 		const liftId = exercise.liftId;
 		if (!liftSignals.has(liftId)) {

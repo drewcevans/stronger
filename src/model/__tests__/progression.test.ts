@@ -6,7 +6,7 @@ import type {
 	LiftConfig,
 	SetResult,
 } from '../types.js';
-import { computeProgression, isSecondaryExercise } from '../progression.js';
+import { computeProgression, isCrossReferenceOnly } from '../progression.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,10 +43,10 @@ const skullCrusherConfig: LiftConfig = {
 };
 
 // ---------------------------------------------------------------------------
-// isSecondaryExercise
+// isCrossReferenceOnly
 // ---------------------------------------------------------------------------
 
-describe('isSecondaryExercise', () => {
+describe('isCrossReferenceOnly', () => {
 	it('returns true when all work/backoff sets use crossReference', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'press',
@@ -78,7 +78,7 @@ describe('isSecondaryExercise', () => {
 				},
 			],
 		};
-		expect(isSecondaryExercise(template)).toBe(true);
+		expect(isCrossReferenceOnly(template)).toBe(true);
 	});
 
 	it('returns false when work sets use topSet basis', () => {
@@ -104,7 +104,7 @@ describe('isSecondaryExercise', () => {
 				},
 			],
 		};
-		expect(isSecondaryExercise(template)).toBe(false);
+		expect(isCrossReferenceOnly(template)).toBe(false);
 	});
 
 	it('returns false when exercise has no work/backoff sets', () => {
@@ -122,7 +122,7 @@ describe('isSecondaryExercise', () => {
 				},
 			],
 		};
-		expect(isSecondaryExercise(template)).toBe(false);
+		expect(isCrossReferenceOnly(template)).toBe(false);
 	});
 
 	it('returns false when some work sets use topSet and some crossReference', () => {
@@ -148,7 +148,7 @@ describe('isSecondaryExercise', () => {
 				},
 			],
 		};
-		expect(isSecondaryExercise(template)).toBe(false);
+		expect(isCrossReferenceOnly(template)).toBe(false);
 	});
 });
 
@@ -268,7 +268,7 @@ describe('computeProgression', () => {
 		expect(proposals[0].proposedBackoffWeight).toBe(172.5);
 	});
 
-	it('excludes secondary exercises (crossReference)', () => {
+	it('excludes exercises using only crossReference weight basis', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
@@ -309,7 +309,7 @@ describe('computeProgression', () => {
 		const proposals = computeProgression(exercises, results, configs, templates);
 		expect(proposals).toHaveLength(1);
 		expect(proposals[0].liftId).toBe('bench');
-		// No proposal for press (secondary)
+		// No proposal for press (all sets use crossReference)
 	});
 
 	it('groups exercises with the same liftId', () => {
@@ -447,7 +447,7 @@ describe('computeProgression', () => {
 		expect(proposals[0].proposedTopSetWeight).toBe(202.5);
 	});
 
-	it('returns empty array when no non-secondary exercises exist', () => {
+	it('returns empty array when all exercises use crossReference only', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'press',
@@ -559,7 +559,7 @@ describe('computeProgression', () => {
 
 		const proposals = computeProgression(exercises, results, configs, templates);
 
-		// Should produce proposals for bench and skull-crusher only (press is secondary)
+		// Should produce proposals for bench and skull-crusher only (press uses crossReference only)
 		expect(proposals).toHaveLength(2);
 
 		const benchProposal = proposals.find((p) => p.liftId === 'bench');
@@ -576,7 +576,7 @@ describe('computeProgression', () => {
 		expect(skullProposal!.proposedTopSetWeight).toBe(62.5);
 		expect(skullProposal!.proposedBackoffWeight).toBe(53.5);
 
-		// No proposal for press (it's a secondary exercise)
+		// No proposal for press (all sets use crossReference)
 		expect(proposals.find((p) => p.liftId === 'press')).toBeUndefined();
 	});
 });

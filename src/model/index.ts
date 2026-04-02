@@ -22,5 +22,5 @@ export {
 
 export {
 	computeProgression,
-	isSecondaryExercise,
+	isCrossReferenceOnly,
 } from './progression.js';
