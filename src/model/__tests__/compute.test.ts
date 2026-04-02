@@ -203,7 +203,7 @@ describe('computeSetWeight', () => {
 		expect(computeSetWeight(set, benchConfig, configs)).toBe(120);
 	});
 
-	it('throws on unknown cross-reference', () => {
+	it('returns null on unknown cross-reference', () => {
 		const set: SetTemplate = {
 			setType: 'work',
 			percentage: 1.0,
@@ -212,9 +212,7 @@ describe('computeSetWeight', () => {
 			maxReps: 5,
 			amrap: false,
 		};
-		expect(() => computeSetWeight(set, benchConfig, configs)).toThrow(
-			'Cross-reference lift "unknown-lift" not found',
-		);
+		expect(computeSetWeight(set, benchConfig, configs)).toBeNull();
 	});
 });
 
@@ -267,15 +265,13 @@ describe('computeSet', () => {
 describe('computeExercise', () => {
 	const configs = configMap(benchConfig, pressConfig);
 
-	it('throws when liftId is missing from configs', () => {
+	it('returns null when liftId is missing from configs', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'missing',
 			name: 'Ghost Lift',
 			sets: [],
 		};
-		expect(() => computeExercise(template, configs)).toThrow(
-			'Lift "missing" not found in configs',
-		);
+		expect(computeExercise(template, configs)).toBeNull();
 	});
 
 	it('computes a full primary bench press exercise', () => {
@@ -337,12 +333,13 @@ describe('computeExercise', () => {
 		};
 
 		const result = computeExercise(template, configs);
-		expect(result.liftId).toBe('bench');
-		expect(result.name).toBe('Primary: Bench Press');
-		expect(result.sets).toHaveLength(6);
+		expect(result).not.toBeNull();
+		expect(result!.liftId).toBe('bench');
+		expect(result!.name).toBe('Primary: Bench Press');
+		expect(result!.sets).toHaveLength(6);
 
 		// Bar warmup — fixed 45
-		expect(result.sets[0]).toEqual({
+		expect(result!.sets[0]).toEqual({
 			setType: 'warmup',
 			weight: 45,
 			minReps: 10,
@@ -351,25 +348,25 @@ describe('computeExercise', () => {
 		});
 
 		// 45% warmup: 45% of 200 = 90 → clamped to 95
-		expect(result.sets[1].weight).toBe(95);
+		expect(result!.sets[1].weight).toBe(95);
 
 		// 65% warmup: 65% of 200 = 130
-		expect(result.sets[2].weight).toBe(130);
+		expect(result!.sets[2].weight).toBe(130);
 
 		// 85% warmup: 85% of 200 = 170
-		expect(result.sets[3].weight).toBe(170);
+		expect(result!.sets[3].weight).toBe(170);
 
 		// Top set: 100% of 200 = 200
-		expect(result.sets[4].weight).toBe(200);
-		expect(result.sets[4].setType).toBe('work');
-		expect(result.sets[4].minReps).toBe(3);
-		expect(result.sets[4].maxReps).toBe(5);
-		expect(result.sets[4].amrap).toBe(false);
+		expect(result!.sets[4].weight).toBe(200);
+		expect(result!.sets[4].setType).toBe('work');
+		expect(result!.sets[4].minReps).toBe(3);
+		expect(result!.sets[4].maxReps).toBe(5);
+		expect(result!.sets[4].amrap).toBe(false);
 
 		// Backoff: 100% of backoff 170 = 170
-		expect(result.sets[5].weight).toBe(170);
-		expect(result.sets[5].setType).toBe('backoff');
-		expect(result.sets[5].amrap).toBe(true);
+		expect(result!.sets[5].weight).toBe(170);
+		expect(result!.sets[5].setType).toBe('backoff');
+		expect(result!.sets[5].amrap).toBe(true);
 	});
 });
 
@@ -412,8 +409,9 @@ describe('RSS Intermediate B scenarios', () => {
 		};
 
 		const result = computeExercise(secondaryPressTemplate, configs);
-		expect(result.sets[0].weight).toBe(45); // bar warmup
-		expect(result.sets[1].weight).toBe(120); // 85% of 140 = 119 → 120
+		expect(result).not.toBeNull();
+		expect(result!.sets[0].weight).toBe(45); // bar warmup
+		expect(result!.sets[1].weight).toBe(120); // 85% of 140 = 119 → 120
 	});
 
 	it('secondary deadlift derives from primary deadlift top set', () => {
@@ -468,8 +466,9 @@ describe('RSS Intermediate B scenarios', () => {
 		};
 
 		const result = computeExercise(template, configs);
-		expect(result.sets[0].weight).toBe(60);   // 100% of topSetWeight 60
-		expect(result.sets[1].weight).toBe(50);   // 100% of backoffWeight 51 → rounded to nearest 2.5 = 50
+		expect(result).not.toBeNull();
+		expect(result!.sets[0].weight).toBe(60);   // 100% of topSetWeight 60
+		expect(result!.sets[1].weight).toBe(50);   // 100% of backoffWeight 51 → rounded to nearest 2.5 = 50
 	});
 
 	it('lateral raise with rep ranges (no AMRAP)', () => {
@@ -517,8 +516,9 @@ describe('RSS Intermediate B scenarios', () => {
 		};
 
 		const result = computeExercise(template, allConfigs);
-		expect(result.sets).toHaveLength(3);
-		for (const set of result.sets) {
+		expect(result).not.toBeNull();
+		expect(result!.sets).toHaveLength(3);
+		for (const set of result!.sets) {
 			expect(set.weight).toBe(15);
 			expect(set.minReps).toBe(10);
 			expect(set.maxReps).toBe(15);
@@ -577,15 +577,16 @@ describe('RSS Intermediate B scenarios', () => {
 		};
 
 		const result = computeExercise(template, configs);
+		expect(result).not.toBeNull();
 		// 45% of 350 = 157.5 → 160 (rounded to 5)
-		expect(result.sets[0].weight).toBe(160);
+		expect(result!.sets[0].weight).toBe(160);
 		// 65% of 350 = 227.5 → 230
-		expect(result.sets[1].weight).toBe(230);
+		expect(result!.sets[1].weight).toBe(230);
 		// 85% of 350 = 297.5 → 300
-		expect(result.sets[2].weight).toBe(300);
+		expect(result!.sets[2].weight).toBe(300);
 		// 100% of 350 = 350
-		expect(result.sets[3].weight).toBe(350);
+		expect(result!.sets[3].weight).toBe(350);
 		// 100% of backoff 300 = 300
-		expect(result.sets[4].weight).toBe(300);
+		expect(result!.sets[4].weight).toBe(300);
 	});
 });

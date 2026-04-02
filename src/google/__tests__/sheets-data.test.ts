@@ -58,8 +58,9 @@ describe('rowToLiftConfig', () => {
 	it('handles decimal values', () => {
 		const row = ['press', 'Press', '140', '120', '2.5', '65', '2.5'];
 		const config = rowToLiftConfig(row);
-		expect(config.increment).toBe(2.5);
-		expect(config.roundingFactor).toBe(2.5);
+		expect(config).not.toBeNull();
+		expect(config!.increment).toBe(2.5);
+		expect(config!.roundingFactor).toBe(2.5);
 	});
 
 	it('round-trips through liftConfigToRow', () => {
@@ -75,6 +76,34 @@ describe('rowToLiftConfig', () => {
 		const row = liftConfigToRow(original);
 		const parsed = rowToLiftConfig(row.map(String));
 		expect(parsed).toEqual(original);
+	});
+
+	it('returns null for rows with fewer than 7 columns', () => {
+		expect(rowToLiftConfig(['bench', 'Bench'])).toBeNull();
+		expect(rowToLiftConfig([])).toBeNull();
+	});
+
+	it('returns null when id is empty', () => {
+		expect(rowToLiftConfig(['', 'Bench', '200', '170', '2.5', '95', '5'])).toBeNull();
+	});
+
+	it('returns null when name is empty', () => {
+		expect(rowToLiftConfig(['bench', '', '200', '170', '2.5', '95', '5'])).toBeNull();
+	});
+
+	it('returns null when numeric fields are non-numeric', () => {
+		expect(rowToLiftConfig(['bench', 'Bench', 'abc', '170', '2.5', '95', '5'])).toBeNull();
+		expect(rowToLiftConfig(['bench', 'Bench', '200', '', '2.5', '95', '5'])).toBeNull();
+	});
+
+	it('returns null when numeric fields are negative', () => {
+		expect(rowToLiftConfig(['bench', 'Bench', '-10', '170', '2.5', '95', '5'])).toBeNull();
+	});
+
+	it('accepts zero as a valid numeric value', () => {
+		const config = rowToLiftConfig(['bench', 'Bench', '200', '170', '0', '0', '0']);
+		expect(config).not.toBeNull();
+		expect(config!.increment).toBe(0);
 	});
 });
 

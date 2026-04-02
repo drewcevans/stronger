@@ -47,4 +47,37 @@ describe('buildWorkoutsFromConfigs', () => {
 			}
 		}
 	});
+
+	it('returns empty array when given empty configs', () => {
+		const workouts = buildWorkoutsFromConfigs([]);
+		expect(workouts).toHaveLength(0);
+	});
+
+	it('gracefully handles partial configs (only bench + squat)', () => {
+		const partial = defaultLiftConfigs.filter(
+			(c) => c.id === 'bench' || c.id === 'squat',
+		);
+		const workouts = buildWorkoutsFromConfigs(partial);
+
+		// Should still produce some workouts, but only for exercises with matching configs
+		expect(workouts.length).toBeGreaterThan(0);
+		for (const w of workouts) {
+			for (const ex of w.exercises) {
+				expect(['bench', 'squat']).toContain(ex.liftId);
+				expect(ex.sets.length).toBeGreaterThan(0);
+			}
+		}
+	});
+
+	it('skips exercises whose liftId has no config', () => {
+		// Only provide bench config — exercises referencing squat, press, etc. should be skipped
+		const benchOnly = defaultLiftConfigs.filter((c) => c.id === 'bench');
+		const workouts = buildWorkoutsFromConfigs(benchOnly);
+
+		for (const w of workouts) {
+			for (const ex of w.exercises) {
+				expect(ex.liftId).toBe('bench');
+			}
+		}
+	});
 });
