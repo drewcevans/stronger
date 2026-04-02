@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import type { Workout, LiftConfig } from '../model/index.ts'
+import { defaultLiftConfigs, buildWorkoutsFromConfigs } from '../data/sample-workouts.ts'
 import {
 	loadGis,
 	loadGapi,
@@ -11,6 +13,8 @@ import {
 	loadSheetId,
 	clearSheetId,
 	connectToSheet,
+	readConfigZone,
+	writeDefaultConfig,
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
 
@@ -23,7 +27,7 @@ type Phase =
 	| 'error' // something went wrong
 
 interface Props {
-	onConnected: () => void
+	onConnected: (workouts: Workout[], configs: LiftConfig[], spreadsheetId: string) => void
 	onDisconnected: () => void
 }
 
@@ -32,15 +36,6 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
 	const [sheetTitle, setSheetTitle] = useState<string | null>(null)
-	const notifiedRef = useRef(false)
-
-	// Notify parent once when connected
-	useEffect(() => {
-		if (phase === 'connected' && !notifiedRef.current) {
-			notifiedRef.current = true
-			onConnected()
-		}
-	}, [phase, onConnected])
 
 	/* ---------------------------------------------------------------- */
 	/*  Load Google scripts on mount                                     */
@@ -99,14 +94,24 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 			const title = await connectToSheet(spreadsheetId)
 			saveSheetId(spreadsheetId)
 			setSheetTitle(title)
+
+			// Read config zone — if empty, write defaults first
+			let configs = await readConfigZone(spreadsheetId)
+			if (!configs) {
+				await writeDefaultConfig(spreadsheetId, defaultLiftConfigs)
+				configs = defaultLiftConfigs
+			}
+
+			const workouts = buildWorkoutsFromConfigs(configs)
 			setPhase('connected')
+			onConnected(workouts, configs, spreadsheetId)
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Unable to access the sheet.',
 			)
 			setPhase('error')
 		}
-	}, [])
+	}, [onConnected])
 
 	const handleSignIn = useCallback(async () => {
 		try {
@@ -142,7 +147,6 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 	const handleSignOut = useCallback(async () => {
 		await signOut()
 		clearSheetId()
-		notifiedRef.current = false
 		setSheetTitle(null)
 		setSheetUrl('')
 		setError(null)
@@ -152,7 +156,6 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 
 	const handleDisconnect = useCallback(() => {
 		clearSheetId()
-		notifiedRef.current = false
 		setSheetTitle(null)
 		setSheetUrl('')
 		setError(null)

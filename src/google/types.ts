@@ -39,6 +39,36 @@ export interface GoogleAccountsOAuth2 {
 /*  gapi client (loaded from apis.google.com/js/api.js)               */
 /* ------------------------------------------------------------------ */
 
+export interface ValuesGetResponse {
+	result: {
+		range: string
+		majorDimension: string
+		values?: string[][]
+	}
+}
+
+export interface ValuesUpdateResponse {
+	result: {
+		spreadsheetId: string
+		updatedRange: string
+		updatedRows: number
+		updatedColumns: number
+		updatedCells: number
+	}
+}
+
+export interface ValuesAppendResponse {
+	result: {
+		spreadsheetId: string
+		updates: {
+			updatedRange: string
+			updatedRows: number
+			updatedColumns: number
+			updatedCells: number
+		}
+	}
+}
+
 export interface GapiClient {
 	init: (config: { discoveryDocs: string[] }) => Promise<void>
 	getToken: () => { access_token: string } | null
@@ -52,6 +82,25 @@ export interface GapiClient {
 				spreadsheetId: string
 				resource: { requests: SheetRequest[] }
 			}) => Promise<unknown>
+			values: {
+				get: (params: {
+					spreadsheetId: string
+					range: string
+				}) => Promise<ValuesGetResponse>
+				update: (params: {
+					spreadsheetId: string
+					range: string
+					valueInputOption: string
+					resource: { values: (string | number)[][] }
+				}) => Promise<ValuesUpdateResponse>
+				append: (params: {
+					spreadsheetId: string
+					range: string
+					valueInputOption: string
+					insertDataOption?: string
+					resource: { values: (string | number | boolean)[][] }
+				}) => Promise<ValuesAppendResponse>
+			}
 		}
 	}
 }
