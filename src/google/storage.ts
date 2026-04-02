@@ -1,19 +1,22 @@
-const SHEET_ID_KEY = 'stronger_sheet_id'
+const SHEET_ID_COOKIE = 'stronger_sheet_id'
 const TOKEN_COOKIE = 'stronger_token'
 
-/** Persist the spreadsheet ID in local storage. */
+/** Cookie lifetime for the sheet ID: 1 year in seconds. */
+const SHEET_ID_MAX_AGE = 365 * 24 * 60 * 60
+
+/** Persist the spreadsheet ID in a long-lived cookie. */
 export function saveSheetId(id: string): void {
-	localStorage.setItem(SHEET_ID_KEY, id)
+	setCookie(SHEET_ID_COOKIE, id, SHEET_ID_MAX_AGE)
 }
 
 /** Read the stored spreadsheet ID, or `null` if not set. */
 export function loadSheetId(): string | null {
-	return localStorage.getItem(SHEET_ID_KEY)
+	return getCookie(SHEET_ID_COOKIE)
 }
 
 /** Remove the stored spreadsheet ID. */
 export function clearSheetId(): void {
-	localStorage.removeItem(SHEET_ID_KEY)
+	deleteCookie(SHEET_ID_COOKIE)
 }
 
 /* ------------------------------------------------------------------ */
