@@ -50,7 +50,6 @@ body {
    ----------------------------------------------------------------------- */
 
 .workout-select {
-	padding: 1rem 0;
 	text-align: center;
 }
 
@@ -60,7 +59,7 @@ body {
 	flex-direction: column;
 	align-items: center;
 	gap: 0;
-	margin-bottom: -0.5rem;
+	margin-bottom: 1.5rem;
 }
 
 .banner-logo {
