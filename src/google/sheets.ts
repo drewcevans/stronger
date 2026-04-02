@@ -138,6 +138,11 @@ export function liftConfigToRow(
 	]
 }
 
+/** Check that a number is finite and non-negative. */
+function isValidWeight(n: number): boolean {
+	return Number.isFinite(n) && n >= 0;
+}
+
 /**
  * Parse a spreadsheet row back into a LiftConfig.
  * Returns `null` if the row is missing required fields or contains
@@ -168,13 +173,13 @@ export function rowToLiftConfig(row: string[]): LiftConfig | null {
 	const minimumWeight = Number(rawMinWeight);
 	const roundingFactor = Number(rawRounding);
 
-	// Reject rows where any numeric field is NaN or negative
+	// Reject rows where any numeric field is NaN, Infinity, or negative
 	if (
-		!Number.isFinite(topSetWeight) || topSetWeight < 0 ||
-		!Number.isFinite(backoffWeight) || backoffWeight < 0 ||
-		!Number.isFinite(increment) || increment < 0 ||
-		!Number.isFinite(minimumWeight) || minimumWeight < 0 ||
-		!Number.isFinite(roundingFactor) || roundingFactor < 0
+		!isValidWeight(topSetWeight) ||
+		!isValidWeight(backoffWeight) ||
+		!isValidWeight(increment) ||
+		!isValidWeight(minimumWeight) ||
+		!isValidWeight(roundingFactor)
 	) {
 		return null;
 	}
@@ -187,8 +192,9 @@ export function rowToLiftConfig(row: string[]): LiftConfig | null {
 /* ------------------------------------------------------------------ */
 
 /**
- * Read the config zone (rows 1–8) and return LiftConfig values.
- * Returns `null` if the config zone is empty (first connection).
+ * Read the config zone and return LiftConfig values.
+ * Returns `null` if the config zone is empty or contains no valid rows
+ * (first connection, or all rows are invalid).
  */
 export async function readConfigZone(
 	spreadsheetId: string,
@@ -210,7 +216,7 @@ export async function readConfigZone(
 	// Skip header row, parse data rows, filter out invalid entries
 	const configs = rows.slice(1)
 		.map(rowToLiftConfig)
-		.filter((c): c is LiftConfig => c !== null);
+		.filter((config): config is LiftConfig => config !== null);
 	return configs.length > 0 ? configs : null;
 }
 
