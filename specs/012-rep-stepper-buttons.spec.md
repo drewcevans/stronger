@@ -33,3 +33,9 @@ The buttons should be compact — stacked vertically with + on top and − on bo
 
 - Only the reps field gets steppers — weight changes are less frequent and benefit from direct numeric entry.
 - Keep the buttons visually subtle (muted color, small text) so they don't dominate the row.
+
+## Post-merge iterations
+
+- **Horizontal layout**: The vertically-stacked +/− buttons added too much row height. Changed to horizontal: − on the left of the reps input, + on the right, all inside the "reps" field group. This keeps row height compact.
+- **Button sizing**: Square buttons (`1.75rem × 1.75rem`) matching the input height. Fits comfortably on phone width alongside the weight field.
+- **Minus on the left**: The − button is placed to the left of the reps box (away from the + button) to reduce accidental wrong-direction taps.

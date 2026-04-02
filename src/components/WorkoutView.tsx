@@ -243,65 +243,65 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 											<span className="field-label">
 												reps
 											</span>
-											<input
-												type="number"
-												className="field-input"
-												value={result.actualReps}
-												onChange={(e) =>
-													updateSet(
-														exerciseIdx,
-														setIdx,
-														{
-															actualReps:
-																Number(
-																	e.target
-																		.value,
-																) || 0,
-														},
-													)
-												}
-											/>
+											<div className="rep-stepper">
+												<button
+													type="button"
+													className="rep-stepper-btn"
+													aria-label="Decrease reps"
+													onClick={() =>
+														updateSet(
+															exerciseIdx,
+															setIdx,
+															{
+																actualReps: Math.max(
+																	0,
+																	result.actualReps -
+																		1,
+																),
+															},
+														)
+													}
+												>
+													−
+												</button>
+												<input
+													type="number"
+													className="field-input"
+													value={result.actualReps}
+													onChange={(e) =>
+														updateSet(
+															exerciseIdx,
+															setIdx,
+															{
+																actualReps:
+																	Number(
+																		e.target
+																			.value,
+																	) || 0,
+															},
+														)
+													}
+												/>
+												<button
+													type="button"
+													className="rep-stepper-btn"
+													aria-label="Increase reps"
+													onClick={() =>
+														updateSet(
+															exerciseIdx,
+															setIdx,
+															{
+																actualReps:
+																	result.actualReps +
+																	1,
+															},
+														)
+													}
+												>
+													+
+												</button>
+											</div>
 										</label>
-									<div className="rep-stepper">
-										<button
-											type="button"
-											className="rep-stepper-btn"
-											aria-label="Increase reps"
-											onClick={() =>
-												updateSet(
-													exerciseIdx,
-													setIdx,
-													{
-														actualReps:
-															result.actualReps +
-															1,
-													},
-												)
-											}
-										>
-											+
-										</button>
-										<button
-											type="button"
-											className="rep-stepper-btn"
-											aria-label="Decrease reps"
-											onClick={() =>
-												updateSet(
-													exerciseIdx,
-													setIdx,
-													{
-														actualReps: Math.max(
-															0,
-															result.actualReps -
-																1,
-														),
-													},
-												)
-											}
-										>
-											−
-										</button>
-									</div>
 									</div>
 									{comment && (
 										<p className="set-comment">

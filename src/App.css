@@ -353,17 +353,17 @@ body {
 /* Rep stepper +/− buttons */
 .rep-stepper {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
+	align-items: center;
 	gap: 2px;
-	padding-top: 0.625rem; /* align with input, not label */
 }
 
 .rep-stepper-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 28px;
-	height: 28px;
+	width: 1.75rem;
+	height: 1.75rem;
 	padding: 0;
 	font-size: 0.875rem;
 	font-weight: 600;
