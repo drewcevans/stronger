@@ -4,6 +4,7 @@ import type { ComputedSet, SetResult, Workout } from '../model/index.js';
 interface WorkoutViewProps {
 	workout: Workout;
 	onBack: () => void;
+	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
 
 /** Format reps: "5" for fixed, "5–8" for a range, with "+" suffix for AMRAP. */
@@ -37,7 +38,7 @@ function initResults(workout: Workout): SetResult[][] {
 	);
 }
 
-export function WorkoutView({ workout, onBack }: WorkoutViewProps) {
+export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 	const [results, setResults] = useState<SetResult[][]>(() =>
 		initResults(workout),
 	);
@@ -63,9 +64,8 @@ export function WorkoutView({ workout, onBack }: WorkoutViewProps) {
 	const completedSets = results.flat().filter((s) => s.completed).length;
 
 	function handleFinish() {
-		// In a future spec, this will save to Google Sheets.
-		// For now, just mark the workout as finished.
 		setFinished(true);
+		onFinish(workout, results);
 	}
 
 	if (finished) {
@@ -77,8 +77,7 @@ export function WorkoutView({ workout, onBack }: WorkoutViewProps) {
 						{completedSets} of {totalSets} sets completed.
 					</p>
 					<p className="finish-note">
-						Results will be saved to your Google Sheet when the
-						integration is connected.
+						Results have been saved to your Google Sheet.
 					</p>
 					<button className="btn-primary" onClick={onBack}>
 						Back to Workouts

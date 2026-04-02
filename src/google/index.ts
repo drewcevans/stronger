@@ -8,6 +8,16 @@ export {
 	signOut,
 	hasToken,
 } from './auth.ts'
-export { verifySheetAccess, createStrongerTab, connectToSheet } from './sheets.ts'
-export type { SheetInfo } from './sheets.ts'
+export {
+	verifySheetAccess,
+	createStrongerTab,
+	connectToSheet,
+	readConfigZone,
+	writeDefaultConfig,
+	appendLogRows,
+	buildLogRow,
+	liftConfigToRow,
+	rowToLiftConfig,
+} from './sheets.ts'
+export type { SheetInfo, LogContext } from './sheets.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'

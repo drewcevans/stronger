@@ -1,19 +1,19 @@
 /**
  * Hard-coded sample workout data for UI development.
  *
- * Uses the existing model types and compute functions to generate realistic
- * workout data modeled after RSS Intermediate programming. This will be
- * replaced by data fetched from Google Sheets in a future spec.
+ * Exports default lift configs and exercise templates separately so the
+ * sheet integration can write defaults on first connect and recompute
+ * workouts from sheet-sourced configs on subsequent visits.
  */
 
 import type { ExerciseTemplate, LiftConfig, Workout } from '../model/index.js';
 import { computeExercise } from '../model/index.js';
 
 // ---------------------------------------------------------------------------
-// Lift configurations (mirroring what would live in the Google Sheet)
+// Lift configurations — defaults written to the sheet on first connect
 // ---------------------------------------------------------------------------
 
-const liftConfigs: LiftConfig[] = [
+export const defaultLiftConfigs: LiftConfig[] = [
 	{
 		id: 'bench',
 		name: 'Bench Press',
@@ -70,13 +70,12 @@ const liftConfigs: LiftConfig[] = [
 	},
 ];
 
-const configMap = new Map(liftConfigs.map((c) => [c.id, c]));
 
 // ---------------------------------------------------------------------------
-// Workout templates (exercise order + set structure)
+// Workout templates (exercise order + set structure) — exported for reuse
 // ---------------------------------------------------------------------------
 
-const workoutAExercises: ExerciseTemplate[] = [
+export const workoutAExercises: ExerciseTemplate[] = [
 	{
 		liftId: 'bench',
 		name: 'Primary: Bench Press',
@@ -114,7 +113,7 @@ const workoutAExercises: ExerciseTemplate[] = [
 	},
 ];
 
-const workoutBExercises: ExerciseTemplate[] = [
+export const workoutBExercises: ExerciseTemplate[] = [
 	{
 		liftId: 'squat',
 		name: 'Primary: Squat',
@@ -152,7 +151,7 @@ const workoutBExercises: ExerciseTemplate[] = [
 	},
 ];
 
-const workoutCExercises: ExerciseTemplate[] = [
+export const workoutCExercises: ExerciseTemplate[] = [
 	{
 		liftId: 'press',
 		name: 'Primary: Press',
@@ -190,7 +189,7 @@ const workoutCExercises: ExerciseTemplate[] = [
 	},
 ];
 
-const workoutDExercises: ExerciseTemplate[] = [
+export const workoutDExercises: ExerciseTemplate[] = [
 	{
 		liftId: 'deadlift',
 		name: 'Primary: Deadlift',
@@ -229,24 +228,37 @@ const workoutDExercises: ExerciseTemplate[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Workout definitions (id + name + template list)
+// ---------------------------------------------------------------------------
+
+export interface WorkoutDefinition {
+	id: string;
+	name: string;
+	templates: ExerciseTemplate[];
+}
+
+export const workoutDefinitions: WorkoutDefinition[] = [
+	{ id: 'A', name: 'Workout A — Bench / Squat', templates: workoutAExercises },
+	{ id: 'B', name: 'Workout B — Squat / Press', templates: workoutBExercises },
+	{ id: 'C', name: 'Workout C — Press / Deadlift', templates: workoutCExercises },
+	{ id: 'D', name: 'Workout D — Deadlift / Bench', templates: workoutDExercises },
+];
+
+// ---------------------------------------------------------------------------
 // Computed workouts (ready for display)
 // ---------------------------------------------------------------------------
 
-function buildWorkout(
-	id: string,
-	name: string,
-	templates: ExerciseTemplate[],
-): Workout {
-	return {
-		id,
-		name,
-		exercises: templates.map((t) => computeExercise(t, configMap)),
-	};
+/**
+ * Build workouts from a set of LiftConfig values.
+ * Used by the sheet integration to compute workouts from sheet-sourced configs.
+ */
+export function buildWorkoutsFromConfigs(configs: LiftConfig[]): Workout[] {
+	const map = new Map(configs.map((c) => [c.id, c]));
+	return workoutDefinitions.map((def) => ({
+		id: def.id,
+		name: def.name,
+		exercises: def.templates.map((t) => computeExercise(t, map)),
+	}));
 }
 
-export const sampleWorkouts: Workout[] = [
-	buildWorkout('A', 'Workout A — Bench / Squat', workoutAExercises),
-	buildWorkout('B', 'Workout B — Squat / Press', workoutBExercises),
-	buildWorkout('C', 'Workout C — Press / Deadlift', workoutCExercises),
-	buildWorkout('D', 'Workout D — Deadlift / Bench', workoutDExercises),
-];
+export const sampleWorkouts: Workout[] = buildWorkoutsFromConfigs(defaultLiftConfigs);
