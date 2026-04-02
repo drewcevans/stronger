@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest'
+import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { saveSheetId, loadSheetId, clearSheetId, saveToken, loadToken, clearToken } from '../storage.ts'
 
 function mockLocalStorage() {
@@ -38,17 +38,43 @@ describe('sheet ID storage', () => {
 	})
 })
 
-describe('token storage', () => {
+describe('token storage (cookie)', () => {
+	let cookieJar: string
+	let setCalls: string[]
+
+	function createCookieDoc() {
+		const doc = { cookie: '' }
+		Object.defineProperty(doc, 'cookie', {
+			configurable: true,
+			get: () => cookieJar,
+			set: (v: string) => {
+				setCalls.push(v)
+				const [pair] = v.split(';')
+				const [name] = pair.split('=')
+				if (/max-age=0/i.test(v)) {
+					const cookies = cookieJar.split('; ').filter(
+						(c) => c && !c.startsWith(`${name}=`),
+					)
+					cookieJar = cookies.join('; ')
+				} else {
+					const cookies = cookieJar
+						? cookieJar.split('; ').filter((c) => c && !c.startsWith(`${name}=`))
+						: []
+					cookies.push(pair)
+					cookieJar = cookies.join('; ')
+				}
+			},
+		})
+		return doc
+	}
+
 	beforeEach(() => {
-		vi.stubGlobal('localStorage', mockLocalStorage())
-		vi.useFakeTimers()
+		cookieJar = ''
+		setCalls = []
+		vi.stubGlobal('document', createCookieDoc())
 	})
 
-	afterEach(() => {
-		vi.useRealTimers()
-	})
-
-	it('returns null when no token is stored', () => {
+	it('returns null when no token cookie exists', () => {
 		expect(loadToken()).toBeNull()
 	})
 
@@ -57,31 +83,18 @@ describe('token storage', () => {
 		expect(loadToken()).toBe('tok_abc')
 	})
 
-	it('returns null for an expired token', () => {
-		saveToken('tok_expired', 60)
-		// Advance past the 60-second expiry
-		vi.advanceTimersByTime(61_000)
-		expect(loadToken()).toBeNull()
-	})
-
-	it('returns the token before it expires', () => {
-		saveToken('tok_valid', 3600)
-		vi.advanceTimersByTime(1800_000) // 30 min into a 55 min effective window
-		expect(loadToken()).toBe('tok_valid')
-	})
-
 	it('clears the stored token', () => {
 		saveToken('tok_abc', 3600)
 		clearToken()
 		expect(loadToken()).toBeNull()
 	})
 
-	it('auto-clears expired token from storage on load', () => {
-		saveToken('tok_old', 1)
-		vi.advanceTimersByTime(2000)
-		loadToken()
-		// After loading an expired token, storage should be cleaned up
-		expect(localStorage.getItem('stronger_token')).toBeNull()
-		expect(localStorage.getItem('stronger_token_expiry')).toBeNull()
+	it('applies a 5-minute buffer to max-age and sets security flags', () => {
+		saveToken('tok_buf', 3600)
+		const raw = setCalls[setCalls.length - 1]
+		// 3600 - 300 = 3300
+		expect(raw).toContain('max-age=3300')
+		expect(raw).toContain('SameSite=Strict')
+		expect(raw).toContain('Secure')
 	})
 })
