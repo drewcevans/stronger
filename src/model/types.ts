@@ -153,3 +153,29 @@ export interface SetResult {
 	/** The set type after any user override (pre-filled with planned setType). */
 	actualSetType: SetType;
 }
+
+// ---------------------------------------------------------------------------
+// Layer 6 – Progression (post-workout weight update proposals)
+// ---------------------------------------------------------------------------
+
+/** A proposed weight change for a single lift after completing a workout. */
+export interface ProgressionProposal {
+	/** References the LiftConfig.id this proposal applies to. */
+	liftId: string;
+	/** Human-readable lift name. */
+	liftName: string;
+	/** Current top-set weight from the config. */
+	currentTopSetWeight: number;
+	/** Current backoff weight from the config. */
+	currentBackoffWeight: number;
+	/** Proposed new top-set weight after progression. */
+	proposedTopSetWeight: number;
+	/** Proposed new backoff weight after progression. */
+	proposedBackoffWeight: number;
+	/** The configured increment for this lift. */
+	increment: number;
+	/** Whether the top-set rep target was met or exceeded. */
+	topSetHit: boolean;
+	/** Whether the backoff rep target was met or exceeded. */
+	backoffHit: boolean;
+}

@@ -1,8 +1,12 @@
 import { useState, useCallback } from 'react';
-import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets } from './google/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal } from './model/index.js';
+import { computeProgression } from './model/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues } from './google/index.js';
+import type { WorkoutDefinition } from './data/sample-workouts.js';
+import { buildWorkoutsFromConfigs } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
+import { ProgressionReview } from './components/ProgressionReview.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import './App.css';
 
@@ -13,10 +17,15 @@ function App() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [startTime, setStartTime] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
+  const [configs, setConfigs] = useState<LiftConfig[]>([]);
+  const [definitions, setDefinitions] = useState<WorkoutDefinition[]>([]);
+  const [progressionProposals, setProgressionProposals] = useState<ProgressionProposal[] | null>(null);
 
   const handleConnected = useCallback(
-    (loadedWorkouts: Workout[], _configs: LiftConfig[], sheetId: string) => {
+    (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[]) => {
       setWorkouts(loadedWorkouts);
+      setConfigs(loadedConfigs);
+      setDefinitions(defs);
       setSpreadsheetId(sheetId);
       setSheetConnected(true);
     },
@@ -28,8 +37,11 @@ function App() {
     setActiveWorkout(null);
     setPreviousSets(null);
     setWorkouts([]);
+    setConfigs([]);
+    setDefinitions([]);
     setSpreadsheetId(null);
     setStartTime(null);
+    setProgressionProposals(null);
   }, []);
 
   const loadPreviousSets = useCallback(
@@ -68,12 +80,51 @@ function App() {
           endTime,
         );
       }
+
+      // Compute progression proposals for the completed workout
+      const workoutDef = definitions.find((d) => d.id === workout.id);
+      if (workoutDef && configs.length > 0) {
+        const proposals = computeProgression(
+          workout.exercises,
+          results,
+          configs,
+          workoutDef.templates,
+        );
+        setProgressionProposals(proposals);
+      }
+
       setActiveWorkout(null);
       setStartTime(null);
       setPreviousSets(null);
     },
-    [spreadsheetId, startTime],
+    [spreadsheetId, startTime, configs, definitions],
   );
+
+  const handleProgressionConfirm = useCallback(
+    (updates: Map<string, { topSetWeight: number; backoffWeight: number }>) => {
+      // Apply updates to configs
+      const updatedConfigs = configs.map((c) => {
+        const update = updates.get(c.id);
+        if (!update) return c;
+        return { ...c, topSetWeight: update.topSetWeight, backoffWeight: update.backoffWeight };
+      });
+
+      // Write updated configs back to the sheet
+      if (spreadsheetId) {
+        void writeConfigValues(spreadsheetId, updatedConfigs);
+      }
+
+      // Update local state so the next workout uses the new weights
+      setConfigs(updatedConfigs);
+      setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
+      setProgressionProposals(null);
+    },
+    [spreadsheetId, configs, definitions],
+  );
+
+  const handleProgressionSkip = useCallback(() => {
+    setProgressionProposals(null);
+  }, []);
 
   // Gate: require auth + sheet connection before showing workouts
   if (!sheetConnected) {
@@ -81,6 +132,17 @@ function App() {
       <GoogleAuth
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
+      />
+    );
+  }
+
+  // Show progression review after finishing a workout
+  if (progressionProposals) {
+    return (
+      <ProgressionReview
+        proposals={progressionProposals}
+        onConfirm={handleProgressionConfirm}
+        onSkip={handleProgressionSkip}
       />
     );
   }
