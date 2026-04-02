@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Workout, LiftConfig } from '../model/index.ts'
 import { defaultLiftConfigs, buildWorkoutsFromConfigs, workoutDefinitions } from '../data/sample-workouts.ts'
+import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 import {
 	loadGis,
 	loadGapi,
@@ -32,7 +33,7 @@ type Phase =
 	| 'error' // something went wrong
 
 interface Props {
-	onConnected: (workouts: Workout[], configs: LiftConfig[], spreadsheetId: string) => void
+	onConnected: (workouts: Workout[], configs: LiftConfig[], spreadsheetId: string, definitions: WorkoutDefinition[]) => void
 	onDisconnected: () => void
 }
 
@@ -127,7 +128,7 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 
 			const workouts = buildWorkoutsFromConfigs(configs, defs)
 			setPhase('connected')
-			onConnected(workouts, configs, spreadsheetId)
+			onConnected(workouts, configs, spreadsheetId, defs)
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Unable to access the sheet.',

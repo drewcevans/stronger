@@ -259,6 +259,31 @@ export async function writeDefaultConfig(
 	})
 }
 
+/**
+ * Write updated lift config values back to the config zone.
+ * Overwrites rows 2+ (below the header) with the supplied configs.
+ * Used by the progression review to persist weight changes.
+ */
+export async function writeConfigValues(
+	spreadsheetId: string,
+	configs: LiftConfig[],
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const rows = configs.map(liftConfigToRow)
+	const startRow = 2 // row 1 is the header
+	const endRow = startRow + rows.length - 1
+	const range = `${TARGET_TAB_NAME}!A${startRow}:G${endRow}`
+
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range,
+		valueInputOption: 'RAW',
+		resource: { values: rows },
+	})
+}
+
 /* ------------------------------------------------------------------ */
 /*  Log zone serialization                                             */
 /* ------------------------------------------------------------------ */

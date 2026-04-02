@@ -4,6 +4,7 @@ export type {
 	ExerciseTemplate,
 	LiftConfig,
 	PreviousSetData,
+	ProgressionProposal,
 	SetResult,
 	SetTemplate,
 	SetType,
@@ -18,3 +19,8 @@ export {
 	computeWeight,
 	roundToNearest,
 } from './compute.js';
+
+export {
+	computeProgression,
+	isSecondaryExercise,
+} from './progression.js';

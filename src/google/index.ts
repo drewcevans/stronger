@@ -15,6 +15,7 @@ export {
 	connectToSheet,
 	readConfigZone,
 	writeDefaultConfig,
+	writeConfigValues,
 	appendLogRows,
 	buildLogRow,
 	liftConfigToRow,
