@@ -7,6 +7,7 @@
  */
 
 import { GOOGLE_CLIENT_ID, SHEETS_DISCOVERY_DOC, SHEETS_SCOPE } from './config.ts'
+import { saveToken, loadToken, clearToken } from './storage.ts'
 import type { TokenClient, TokenResponse } from './types.ts'
 
 /* ------------------------------------------------------------------ */
@@ -100,6 +101,7 @@ export function signIn(): Promise<string> {
 			if (resp.error) {
 				reject(new Error(resp.error_description ?? resp.error))
 			} else {
+				saveToken(resp.access_token, resp.expires_in)
 				resolve(resp.access_token)
 			}
 		})
@@ -112,6 +114,7 @@ export function signIn(): Promise<string> {
  */
 export function signOut(): Promise<void> {
 	return new Promise<void>((resolve) => {
+		clearToken()
 		const gapi = window.gapi
 		const token = gapi?.client.getToken()
 		if (token) {
@@ -128,4 +131,19 @@ export function signOut(): Promise<void> {
 /** Check whether gapi currently holds an access token. */
 export function hasToken(): boolean {
 	return window.gapi?.client.getToken() != null
+}
+
+/**
+ * Restore a previously saved access token into gapi.
+ * Returns `true` if a valid (non-expired) token was restored.
+ */
+export function restoreToken(): boolean {
+	const accessToken = loadToken()
+	if (!accessToken) return false
+
+	const gapi = window.gapi
+	if (!gapi) return false
+
+	gapi.client.setToken({ access_token: accessToken })
+	return true
 }

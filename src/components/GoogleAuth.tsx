@@ -8,6 +8,7 @@ import {
 	signIn,
 	signOut,
 	hasToken,
+	restoreToken,
 	extractSheetId,
 	saveSheetId,
 	loadSheetId,
@@ -59,6 +60,9 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 				await Promise.all([loadGis(), loadGapi()])
 				await initGapiClient()
 				if (cancelled) return
+
+				// Restore a previously saved token (survives page reloads)
+				restoreToken()
 
 				// If gapi already has a token (e.g. same page session), skip sign-in
 				if (hasToken()) {
