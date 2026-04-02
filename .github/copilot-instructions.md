@@ -16,6 +16,8 @@
 
 ## Engineering Practices
 
+- We use **spec-driven development**. Every feature starts with a spec in `specs/` (or `.archive/specs/` once completed). Always read and reference the relevant spec when implementing a feature.
+- When iteratively refining a feature after its spec-based PR was merged, go back to the spec and **append a summary of additional decisions** made during iteration — even if the spec has been moved to `.archive/specs/`. The spec should remain a living record of what was decided and why.
 - When adding a feature, ensure that specs, planning documents, task lists, documentation, and examples are updated as well, per the conventions of the current project.
 - Break tasks down into clear, discrete units that can be reviewed in chunks.
 - Ask questions, reason about the problem, and suggest an approach before diving in. You don't need permission for every decision — just the things a reasonable engineer would want feedback on.
