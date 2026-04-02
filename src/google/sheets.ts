@@ -385,7 +385,7 @@ export function decodeWeightBasis(raw: string): WeightBasis | null {
 	return null
 }
 
-/** Encode a single exercise-role string (e.g. "primary") from a display name or role. */
+/** Valid exercise roles within a workout definition. */
 type ExerciseRole = 'primary' | 'secondary' | 'assistance'
 
 /**
@@ -422,7 +422,10 @@ export function workoutDefsToRows(
 	return rows
 }
 
-/** Extract a role string from a display name like "Primary: Bench Press". */
+/**
+ * Extract an exercise role from a display name like "Primary: Bench Press".
+ * Falls back to 'assistance' when the name doesn't start with a recognised prefix.
+ */
 function inferExerciseRole(name: string): ExerciseRole {
 	const lower = name.toLowerCase()
 	if (lower.startsWith('primary')) return 'primary'
