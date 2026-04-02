@@ -402,8 +402,8 @@ body {
 	font-weight: 700;
 	border: none;
 	border-radius: var(--radius);
-	background: var(--color-primary);
-	color: #000;
+	background: #333;
+	color: var(--color-text);
 	cursor: pointer;
 	min-height: 56px;
 }
