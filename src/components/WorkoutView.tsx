@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import type { ComputedSet, LiftConfig, SetResult, Workout } from '../model/index.js';
+import type { ComputedSet, SetResult, Workout } from '../model/index.js';
 
 interface WorkoutViewProps {
 	workout: Workout;
-	liftConfigs: LiftConfig[];
 	onBack: () => void;
 	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
@@ -39,7 +38,7 @@ function initResults(workout: Workout): SetResult[][] {
 	);
 }
 
-export function WorkoutView({ workout, liftConfigs: _liftConfigs, onBack, onFinish }: WorkoutViewProps) {
+export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 	const [results, setResults] = useState<SetResult[][]>(() =>
 		initResults(workout),
 	);

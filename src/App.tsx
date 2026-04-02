@@ -10,14 +10,12 @@ function App() {
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [sheetConnected, setSheetConnected] = useState(false);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [liftConfigs, setLiftConfigs] = useState<LiftConfig[]>([]);
   const [startTime, setStartTime] = useState<string | null>(null);
   const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
 
   const handleConnected = useCallback(
-    (loadedWorkouts: Workout[], configs: LiftConfig[], sheetId: string) => {
+    (loadedWorkouts: Workout[], _configs: LiftConfig[], sheetId: string) => {
       setWorkouts(loadedWorkouts);
-      setLiftConfigs(configs);
       setSpreadsheetId(sheetId);
       setSheetConnected(true);
     },
@@ -28,7 +26,6 @@ function App() {
     setSheetConnected(false);
     setActiveWorkout(null);
     setWorkouts([]);
-    setLiftConfigs([]);
     setSpreadsheetId(null);
     setStartTime(null);
   }, []);
@@ -71,7 +68,6 @@ function App() {
     return (
       <WorkoutView
         workout={activeWorkout}
-        liftConfigs={liftConfigs}
         onBack={() => {
           setActiveWorkout(null);
           setStartTime(null);
