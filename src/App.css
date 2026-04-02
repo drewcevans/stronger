@@ -361,10 +361,10 @@ body {
 
 /* Previous workout data */
 .set-previous {
-	width: 100%;
 	font-size: 0.6875rem;
 	color: var(--color-text-muted);
-	padding-left: 2.5rem; /* indent past checkbox */
+	white-space: nowrap;
+	margin-left: auto;
 }
 
 /* Add-set button */

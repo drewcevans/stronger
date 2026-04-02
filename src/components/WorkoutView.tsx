@@ -207,6 +207,11 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 											</option>
 										))}
 									</select>
+									{prev && (
+										<span className="set-previous">
+											{prev.weight}×{prev.reps}
+										</span>
+									)}
 									<div className="set-fields">
 										<label className="field-group">
 											<span className="field-label">
@@ -258,11 +263,6 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 											/>
 										</label>
 									</div>
-									{prev && (
-										<span className="set-previous">
-											Last: {prev.weight} × {prev.reps}
-										</span>
-									)}
 									{comment && (
 										<p className="set-comment">
 											{comment}
