@@ -360,6 +360,27 @@ body {
 	padding-left: 2.5rem; /* indent past checkbox */
 }
 
+/* Add-set button */
+.btn-add-set {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 44px;
+	padding: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-text-muted);
+	background: transparent;
+	border: 1px dashed var(--color-border);
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.btn-add-set:active {
+	background: var(--color-surface);
+}
+
 /* Finish bar */
 .finish-bar {
 	position: fixed;
