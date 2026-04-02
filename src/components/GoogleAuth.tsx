@@ -21,6 +21,8 @@ import {
 	createWorkoutDefsTab,
 	readWorkoutDefs,
 	writeDefaultWorkoutDefs,
+	verifyLogTab,
+	createLogTab,
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
 
@@ -115,6 +117,12 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 			const defsTabExists = await verifyWorkoutDefsTab(spreadsheetId)
 			if (!defsTabExists) {
 				await createWorkoutDefsTab(spreadsheetId)
+			}
+
+			// Ensure log tab exists
+			const logTabExists = await verifyLogTab(spreadsheetId)
+			if (!logTabExists) {
+				await createLogTab(spreadsheetId)
 			}
 
 			// Build a lift-name lookup for exercise display names

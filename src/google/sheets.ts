@@ -5,7 +5,7 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME } from './config.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME } from './config.ts'
 import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
@@ -14,16 +14,16 @@ import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the config zone: header row + up to 20 lift rows. */
-const CONFIG_RANGE = `${TARGET_TAB_NAME}!A1:G21`
+const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A1:G21`
 
-/** A1 range for the log zone header (row 10). */
-const LOG_HEADER_RANGE = `${TARGET_TAB_NAME}!A10:M10`
+/** A1 range for the log zone header (row 1 of the log tab). */
+const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:M1`
 
-/** A1 range used for appending log data (row 11 onward). */
-const LOG_APPEND_RANGE = `${TARGET_TAB_NAME}!A11:M11`
+/** A1 range used for appending log data (row 2 onward). */
+const LOG_APPEND_RANGE = `'${LOG_TAB_NAME}'!A2:M2`
 
-/** A1 range for reading all log data (row 11 onward, generous upper bound). */
-const LOG_READ_RANGE = `${TARGET_TAB_NAME}!A11:M10000`
+/** A1 range for reading all log data (row 2 onward, generous upper bound). */
+const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:M10000`
 
 const CONFIG_HEADER: string[] = [
 	'id',
@@ -112,7 +112,7 @@ export async function createStrongerTab(
 /* ------------------------------------------------------------------ */
 
 /**
- * High-level helper: verify sheet access and ensure the "Stronger" tab
+ * High-level helper: verify sheet access and ensure the "Stronger - Exercises" tab
  * exists. Returns the spreadsheet title.
  */
 export async function connectToSheet(spreadsheetId: string): Promise<string> {
@@ -121,6 +121,53 @@ export async function connectToSheet(spreadsheetId: string): Promise<string> {
 		await createStrongerTab(spreadsheetId)
 	}
 	return info.title
+}
+
+/* ------------------------------------------------------------------ */
+/*  Log tab management                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Check if the log tab exists in the spreadsheet.
+ */
+export async function verifyLogTab(
+	spreadsheetId: string,
+): Promise<boolean> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.get({
+		spreadsheetId,
+	})
+	const sheets = response.result.sheets ?? []
+	return sheets.some(
+		(s) => s.properties.title === LOG_TAB_NAME,
+	)
+}
+
+/**
+ * Create the log tab and write the header row.
+ */
+export async function createLogTab(
+	spreadsheetId: string,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	await gapi.client.sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		resource: {
+			requests: [{ addSheet: { properties: { title: LOG_TAB_NAME } } }],
+		},
+	})
+
+	// Write log header to row 1
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: LOG_HEADER_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: [LOG_HEADER] },
+	})
 }
 
 /* ------------------------------------------------------------------ */
@@ -226,8 +273,7 @@ export async function readConfigZone(
 
 /**
  * Write the config header + default lift config values to the config zone.
- * Also writes the log header to row 10. Used on first connection when
- * the tab is empty.
+ * Used on first connection when the tab is empty.
  */
 export async function writeDefaultConfig(
 	spreadsheetId: string,
@@ -242,20 +288,12 @@ export async function writeDefaultConfig(
 		...defaults.map(liftConfigToRow),
 	]
 
-	// Write config zone (rows 1–8)
+	// Write config zone
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
 		range: CONFIG_RANGE,
 		valueInputOption: 'RAW',
 		resource: { values: configRows },
-	})
-
-	// Write log header to row 10
-	await gapi.client.sheets.spreadsheets.values.update({
-		spreadsheetId,
-		range: LOG_HEADER_RANGE,
-		valueInputOption: 'RAW',
-		resource: { values: [LOG_HEADER] },
 	})
 }
 
@@ -274,7 +312,7 @@ export async function writeConfigValues(
 	const rows = configs.map(liftConfigToRow)
 	const startRow = 2 // row 1 is the header
 	const endRow = startRow + rows.length - 1
-	const range = `${TARGET_TAB_NAME}!A${startRow}:G${endRow}`
+	const range = `'${TARGET_TAB_NAME}'!A${startRow}:G${endRow}`
 
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
@@ -327,7 +365,7 @@ export function buildLogRow(
 /* ------------------------------------------------------------------ */
 
 /**
- * Append set-level log rows to the log zone (row 11+).
+ * Append set-level log rows to the log tab (row 2+).
  * Rows are appended below all existing data.
  */
 export async function appendLogRows(
@@ -812,7 +850,7 @@ export function findPreviousWorkoutSets(
 }
 
 /**
- * Read the log zone (row 11+) and return parsed log rows.
+ * Read the log tab (row 2+) and return parsed log rows.
  * Returns an empty array if there are no log entries yet.
  */
 export async function readLogZone(

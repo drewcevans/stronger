@@ -16,8 +16,11 @@ export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
 export const SHEETS_DISCOVERY_DOC =
 	'https://sheets.googleapis.com/$discovery/rest?version=v4'
 
-/** Name of the tab the app targets inside the user's spreadsheet. */
-export const TARGET_TAB_NAME = 'Stronger'
+/** Name of the tab the app targets for lift configurations. */
+export const TARGET_TAB_NAME = 'Stronger - Exercises'
 
 /** Name of the tab that holds workout definitions (exercise structure). */
-export const WORKOUT_DEFS_TAB_NAME = 'Workout Defs'
+export const WORKOUT_DEFS_TAB_NAME = 'Stronger - Workouts'
+
+/** Name of the tab that holds the workout log (completed set data). */
+export const LOG_TAB_NAME = 'Stronger - Log'

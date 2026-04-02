@@ -162,13 +162,19 @@ function App() {
     );
   }
 
+  // Compute missing liftIds: referenced in definitions but absent from configs
+  const configIds = new Set(configs.map((c) => c.id));
+  const missingLiftIds = [...new Set(
+    definitions.flatMap((d) => d.templates.map((t) => t.liftId))
+  )].filter((id) => !configIds.has(id));
+
   return (
     <>
       <GoogleAuth
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
       />
-      <WorkoutSelect workouts={workouts} onSelect={handleSelectWorkout} />
+      <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} />
     </>
   );
 }

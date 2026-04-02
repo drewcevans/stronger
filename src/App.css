@@ -505,6 +505,16 @@ body {
 	word-break: break-word;
 }
 
+.config-warning {
+	color: #ffa726;
+	font-size: 0.8125rem;
+	background: rgba(255, 167, 38, 0.1);
+	padding: 0.5rem 0.75rem;
+	border-radius: 8px;
+	margin-top: 1rem;
+	text-align: left;
+}
+
 .btn-google {
 	padding: 0.875rem 2rem;
 	font-size: 1rem;

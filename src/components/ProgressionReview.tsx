@@ -44,15 +44,6 @@ export function ProgressionReview({
 		});
 	}
 
-	const hasChanges = proposals.some((p) => {
-		const edit = edits.get(p.liftId);
-		return (
-			edit &&
-			(edit.topSetWeight !== p.currentTopSetWeight ||
-				edit.backoffWeight !== p.currentBackoffWeight)
-		);
-	});
-
 	return (
 		<div className="workout-view">
 			<header className="workout-header">
@@ -144,12 +135,11 @@ export function ProgressionReview({
 				<button
 					className="btn-primary"
 					onClick={() => onConfirm(edits)}
-					disabled={!hasChanges}
 				>
-					Confirm Changes
+					Confirm
 				</button>
 				<button className="btn-link" onClick={onSkip}>
-					{hasChanges ? 'Skip — Keep Current Weights' : 'Continue'}
+					Skip
 				</button>
 			</div>
 		</div>

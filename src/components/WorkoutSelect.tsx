@@ -4,10 +4,11 @@ import { LiftBadge } from './LiftBadge.js';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
+	missingLiftIds?: string[];
 	onSelect: (workout: Workout) => void;
 }
 
-export function WorkoutSelect({ workouts, onSelect }: WorkoutSelectProps) {
+export function WorkoutSelect({ workouts, missingLiftIds, onSelect }: WorkoutSelectProps) {
 	return (
 		<div className="workout-select">
 			<Banner />
@@ -29,6 +30,11 @@ export function WorkoutSelect({ workouts, onSelect }: WorkoutSelectProps) {
 						</button>
 					))}
 				</div>
+			)}
+			{missingLiftIds && missingLiftIds.length > 0 && (
+				<p className="config-warning">
+					Missing lift configs: {missingLiftIds.join(', ')}
+				</p>
 			)}
 		</div>
 	);
