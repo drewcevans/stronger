@@ -43,14 +43,14 @@ export function computeWeight(
  * @param set          – the set template to resolve
  * @param liftConfig   – the owning lift's configuration
  * @param allConfigs   – lookup map for cross-references
- * @returns the fully calculated weight for this set
- * @throws if a cross-referenced lift is not found in `allConfigs`
+ * @returns the fully calculated weight for this set, or `null` if a
+ *          cross-referenced lift is missing from `allConfigs`
  */
 export function computeSetWeight(
 	set: SetTemplate,
 	liftConfig: LiftConfig,
 	allConfigs: ReadonlyMap<string, LiftConfig>,
-): number {
+): number | null {
 	switch (set.weightBasis.kind) {
 		case 'fixed':
 			return set.weightBasis.weight;
@@ -74,9 +74,7 @@ export function computeSetWeight(
 		case 'crossReference': {
 			const ref = allConfigs.get(set.weightBasis.liftId);
 			if (!ref) {
-				throw new Error(
-					`Cross-reference lift "${set.weightBasis.liftId}" not found`,
-				);
+				return null;
 			}
 			return computeWeight(
 				set.percentage,
@@ -90,15 +88,18 @@ export function computeSetWeight(
 
 /**
  * Produce a {@link ComputedSet} from a template.
+ * Returns `null` if the set weight cannot be resolved (e.g. missing cross-reference).
  */
 export function computeSet(
 	set: SetTemplate,
 	liftConfig: LiftConfig,
 	allConfigs: ReadonlyMap<string, LiftConfig>,
-): ComputedSet {
+): ComputedSet | null {
+	const weight = computeSetWeight(set, liftConfig, allConfigs);
+	if (weight === null) return null;
 	return {
 		setType: set.setType,
-		weight: computeSetWeight(set, liftConfig, allConfigs),
+		weight,
 		minReps: set.minReps,
 		maxReps: set.maxReps,
 		amrap: set.amrap,
@@ -109,23 +110,33 @@ export function computeSet(
 /**
  * Compute every set weight for an exercise, producing a week-ready instance.
  *
+ * Returns `null` if the template's liftId is not found in `allConfigs`,
+ * allowing callers to gracefully skip missing exercises.
+ * Sets that cannot be resolved (e.g. missing cross-reference) are silently
+ * dropped from the result.
+ *
  * @param template   – the exercise template (set list + lift reference)
  * @param allConfigs – all lift configs keyed by id
- * @returns a {@link ComputedExercise} with concrete weights
- * @throws if the template's liftId is not found in `allConfigs`
+ * @returns a {@link ComputedExercise} with concrete weights, or `null`
  */
 export function computeExercise(
 	template: ExerciseTemplate,
 	allConfigs: ReadonlyMap<string, LiftConfig>,
-): ComputedExercise {
+): ComputedExercise | null {
 	const liftConfig = allConfigs.get(template.liftId);
 	if (!liftConfig) {
-		throw new Error(`Lift "${template.liftId}" not found in configs`);
+		return null;
+	}
+
+	const sets: ComputedSet[] = [];
+	for (const s of template.sets) {
+		const computed = computeSet(s, liftConfig, allConfigs);
+		if (computed) sets.push(computed);
 	}
 
 	return {
 		liftId: template.liftId,
 		name: template.name,
-		sets: template.sets.map((s) => computeSet(s, liftConfig, allConfigs)),
+		sets,
 	};
 }

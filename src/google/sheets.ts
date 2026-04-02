@@ -12,8 +12,8 @@ import type { LiftConfig, ComputedSet, SetResult } from '../model/types.ts'
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-/** A1 range for the config zone: header row + 6 lift rows. */
-const CONFIG_RANGE = `${TARGET_TAB_NAME}!A1:G8`
+/** A1 range for the config zone: header row + up to 20 lift rows. */
+const CONFIG_RANGE = `${TARGET_TAB_NAME}!A1:G21`
 
 /** A1 range for the log zone header (row 10). */
 const LOG_HEADER_RANGE = `${TARGET_TAB_NAME}!A10:M10`
@@ -138,17 +138,48 @@ export function liftConfigToRow(
 	]
 }
 
-/** Parse a spreadsheet row back into a LiftConfig. */
-export function rowToLiftConfig(row: string[]): LiftConfig {
-	return {
-		id: row[0],
-		name: row[1],
-		topSetWeight: Number(row[2]),
-		backoffWeight: Number(row[3]),
-		increment: Number(row[4]),
-		minimumWeight: Number(row[5]),
-		roundingFactor: Number(row[6]),
+/**
+ * Parse a spreadsheet row back into a LiftConfig.
+ * Returns `null` if the row is missing required fields or contains
+ * non-numeric values where numbers are expected.
+ */
+export function rowToLiftConfig(row: string[]): LiftConfig | null {
+	// Need at least id (col 0) and name (col 1) plus 5 numeric columns
+	if (!row || row.length < 7) return null;
+
+	const id = (row[0] ?? '').trim();
+	const name = (row[1] ?? '').trim();
+	if (!id || !name) return null;
+
+	const rawTopSet = (row[2] ?? '').trim();
+	const rawBackoff = (row[3] ?? '').trim();
+	const rawIncrement = (row[4] ?? '').trim();
+	const rawMinWeight = (row[5] ?? '').trim();
+	const rawRounding = (row[6] ?? '').trim();
+
+	// Reject rows where any numeric field is blank
+	if (!rawTopSet || !rawBackoff || !rawIncrement || !rawMinWeight || !rawRounding) {
+		return null;
 	}
+
+	const topSetWeight = Number(rawTopSet);
+	const backoffWeight = Number(rawBackoff);
+	const increment = Number(rawIncrement);
+	const minimumWeight = Number(rawMinWeight);
+	const roundingFactor = Number(rawRounding);
+
+	// Reject rows where any numeric field is NaN or negative
+	if (
+		!Number.isFinite(topSetWeight) || topSetWeight < 0 ||
+		!Number.isFinite(backoffWeight) || backoffWeight < 0 ||
+		!Number.isFinite(increment) || increment < 0 ||
+		!Number.isFinite(minimumWeight) || minimumWeight < 0 ||
+		!Number.isFinite(roundingFactor) || roundingFactor < 0
+	) {
+		return null;
+	}
+
+	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor };
 }
 
 /* ------------------------------------------------------------------ */
@@ -176,8 +207,11 @@ export async function readConfigZone(
 		return null
 	}
 
-	// Skip header row, parse data rows
-	return rows.slice(1).map(rowToLiftConfig)
+	// Skip header row, parse data rows, filter out invalid entries
+	const configs = rows.slice(1)
+		.map(rowToLiftConfig)
+		.filter((c): c is LiftConfig => c !== null);
+	return configs.length > 0 ? configs : null;
 }
 
 /**
