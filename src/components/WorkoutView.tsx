@@ -149,6 +149,9 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 				<span className="progress-badge">
 					{completedSets}/{totalSets}
 				</span>
+				<button className="btn-finish" onClick={handleFinish}>
+					Finish
+				</button>
 			</header>
 
 			{workout.exercises.map((exercise, exerciseIdx) => {
@@ -273,11 +276,6 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 				);
 			})}
 
-			<div className="finish-bar">
-				<button className="btn-finish" onClick={handleFinish}>
-					Finish Workout
-				</button>
-			</div>
 		</div>
 	);
 }
