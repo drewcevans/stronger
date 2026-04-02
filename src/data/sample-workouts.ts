@@ -120,11 +120,11 @@ export const workoutAExercises: ExerciseTemplate[] = [
 		name: 'Secondary: Press',
 		sets: [
 			{ setType: 'warmup', percentage: 1.0, weightBasis: { kind: 'fixed', weight: 45 }, minReps: 10, maxReps: 10, amrap: false },
-			{ setType: 'warmup', percentage: 0.3825, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 5, amrap: false },
-			{ setType: 'warmup', percentage: 0.5525, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 3, maxReps: 3, amrap: false },
-			{ setType: 'warmup', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 2, maxReps: 2, amrap: false },
-			{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: false },
-			{ setType: 'backoff', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: true },
+			{ setType: 'warmup', percentage: 0.3825, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 5, amrap: false }, // 45% of 85%
+			{ setType: 'warmup', percentage: 0.5525, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 3, maxReps: 3, amrap: false }, // 65% of 85%
+			{ setType: 'warmup', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 2, maxReps: 2, amrap: false }, // 85% of 85%
+			{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: false }, // 100% of 85%
+			{ setType: 'backoff', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: true }, // 85% of 85%
 		],
 	},
 	{
@@ -154,10 +154,10 @@ export const workoutBExercises: ExerciseTemplate[] = [
 		liftId: 'deadlift',
 		name: 'Secondary: Deadlift',
 		sets: [
-			{ setType: 'warmup', percentage: 0.3825, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 5, maxReps: 5, amrap: false },
-			{ setType: 'warmup', percentage: 0.5525, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 3, maxReps: 3, amrap: false },
-			{ setType: 'warmup', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 2, maxReps: 2, amrap: false },
-			{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 5, maxReps: 5, amrap: false },
+			{ setType: 'warmup', percentage: 0.3825, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 5, maxReps: 5, amrap: false }, // 45% of 85%
+			{ setType: 'warmup', percentage: 0.5525, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 3, maxReps: 3, amrap: false }, // 65% of 85%
+			{ setType: 'warmup', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 2, maxReps: 2, amrap: false }, // 85% of 85%
+			{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'deadlift' }, minReps: 5, maxReps: 5, amrap: false }, // 100% of 85%
 		],
 	},
 	{
@@ -165,7 +165,7 @@ export const workoutBExercises: ExerciseTemplate[] = [
 		name: 'Assistance: Chin-up',
 		sets: [
 			{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: false },
-			{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: true },
+			{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'backoff' }, minReps: 8, maxReps: 8, amrap: true },
 		],
 	},
 ];
@@ -188,11 +188,11 @@ export const workoutCExercises: ExerciseTemplate[] = [
 		name: 'Secondary: Bench Press',
 		sets: [
 			{ setType: 'warmup', percentage: 1.0, weightBasis: { kind: 'fixed', weight: 45 }, minReps: 10, maxReps: 10, amrap: false },
-			{ setType: 'warmup', percentage: 0.3825, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 5, maxReps: 5, amrap: false },
-			{ setType: 'warmup', percentage: 0.5525, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 3, maxReps: 3, amrap: false },
-			{ setType: 'warmup', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 2, maxReps: 2, amrap: false },
-			{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 5, maxReps: 8, amrap: false },
-			{ setType: 'backoff', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 5, maxReps: 8, amrap: true },
+			{ setType: 'warmup', percentage: 0.3825, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 5, maxReps: 5, amrap: false }, // 45% of 85%
+			{ setType: 'warmup', percentage: 0.5525, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 3, maxReps: 3, amrap: false }, // 65% of 85%
+			{ setType: 'warmup', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 2, maxReps: 2, amrap: false }, // 85% of 85%
+			{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 5, maxReps: 8, amrap: false }, // 100% of 85%
+			{ setType: 'backoff', percentage: 0.7225, weightBasis: { kind: 'crossReference', liftId: 'bench' }, minReps: 5, maxReps: 8, amrap: true }, // 85% of 85%
 		],
 	},
 	{
@@ -231,12 +231,12 @@ export const workoutDExercises: ExerciseTemplate[] = [
 		name: 'Secondary: Squat',
 		sets: [
 			{ setType: 'warmup', percentage: 1.0, weightBasis: { kind: 'fixed', weight: 45 }, minReps: 10, maxReps: 10, amrap: false },
-			{ setType: 'warmup', percentage: 0.3375, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false },
-			{ setType: 'warmup', percentage: 0.4875, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 3, maxReps: 3, amrap: false },
-			{ setType: 'warmup', percentage: 0.6375, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 2, maxReps: 2, amrap: false },
-			{ setType: 'work', percentage: 0.75, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false },
-			{ setType: 'work', percentage: 0.75, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false },
-			{ setType: 'work', percentage: 0.75, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false },
+			{ setType: 'warmup', percentage: 0.3375, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false }, // 45% of 75%
+			{ setType: 'warmup', percentage: 0.4875, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 3, maxReps: 3, amrap: false }, // 65% of 75%
+			{ setType: 'warmup', percentage: 0.6375, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 2, maxReps: 2, amrap: false }, // 85% of 75%
+			{ setType: 'work', percentage: 0.75, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false }, // 100% of 75%
+			{ setType: 'work', percentage: 0.75, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false }, // 100% of 75%
+			{ setType: 'work', percentage: 0.75, weightBasis: { kind: 'crossReference', liftId: 'squat' }, minReps: 5, maxReps: 5, amrap: false }, // 100% of 75%
 		],
 	},
 	{
