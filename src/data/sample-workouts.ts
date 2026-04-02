@@ -249,15 +249,22 @@ export const workoutDefinitions: WorkoutDefinition[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Build workouts from a set of LiftConfig values.
- * Used by the sheet integration to compute workouts from sheet-sourced configs.
+ * Build workouts from a set of LiftConfig values and workout definitions.
+ * Used by the sheet integration to compute workouts from sheet-sourced data.
  *
  * Exercises whose liftId is not present in `configs` are silently skipped.
  * Workouts with no remaining exercises are excluded from the result.
+ *
+ * @param configs - lift configurations (weights, rounding, etc.)
+ * @param definitions - workout definitions; defaults to the hard-coded
+ *   `workoutDefinitions` for backward compatibility during first-connect seeding.
  */
-export function buildWorkoutsFromConfigs(configs: LiftConfig[]): Workout[] {
+export function buildWorkoutsFromConfigs(
+	configs: LiftConfig[],
+	definitions: WorkoutDefinition[] = workoutDefinitions,
+): Workout[] {
 	const map = new Map(configs.map((c) => [c.id, c]));
-	return workoutDefinitions
+	return definitions
 		.map((def) => {
 			const exercises = def.templates
 				.map((t) => computeExercise(t, map))

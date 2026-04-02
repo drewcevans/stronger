@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Workout, LiftConfig } from '../model/index.ts'
-import { defaultLiftConfigs, buildWorkoutsFromConfigs } from '../data/sample-workouts.ts'
+import { defaultLiftConfigs, buildWorkoutsFromConfigs, workoutDefinitions } from '../data/sample-workouts.ts'
 import {
 	loadGis,
 	loadGapi,
@@ -15,6 +15,10 @@ import {
 	connectToSheet,
 	readConfigZone,
 	writeDefaultConfig,
+	verifyWorkoutDefsTab,
+	createWorkoutDefsTab,
+	readWorkoutDefs,
+	writeDefaultWorkoutDefs,
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
 
@@ -102,7 +106,22 @@ export function GoogleAuth({ onConnected, onDisconnected }: Props) {
 				configs = defaultLiftConfigs
 			}
 
-			const workouts = buildWorkoutsFromConfigs(configs)
+			// Read workout defs — if tab missing or empty, create + write defaults
+			const defsTabExists = await verifyWorkoutDefsTab(spreadsheetId)
+			if (!defsTabExists) {
+				await createWorkoutDefsTab(spreadsheetId)
+			}
+
+			// Build a lift-name lookup for exercise display names
+			const liftNames = new Map(configs.map((c) => [c.id, c.name]))
+
+			let defs = await readWorkoutDefs(spreadsheetId, liftNames)
+			if (!defs) {
+				await writeDefaultWorkoutDefs(spreadsheetId, workoutDefinitions)
+				defs = workoutDefinitions
+			}
+
+			const workouts = buildWorkoutsFromConfigs(configs, defs)
 			setPhase('connected')
 			onConnected(workouts, configs, spreadsheetId)
 		} catch (err) {
