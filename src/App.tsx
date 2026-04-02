@@ -115,7 +115,7 @@ async function logWorkoutResults(
           exercise.name,
           exercise.liftId,
           si + 1,
-          exercise.sets[si].setType,
+          results[ei][si].actualSetType,
           exercise.sets[si],
           results[ei][si],
         ),

@@ -131,6 +131,7 @@ describe('buildLogRow', () => {
 		actualWeight: 200,
 		actualReps: 6,
 		completed: true,
+		actualSetType: 'work',
 	};
 
 	it('returns a row with all 13 columns', () => {
@@ -154,7 +155,7 @@ describe('buildLogRow', () => {
 			3,
 			'backoff',
 			{ ...planned, setType: 'backoff', weight: 170, maxReps: 8 },
-			{ actualWeight: 170, actualReps: 7, completed: true },
+			{ actualWeight: 170, actualReps: 7, completed: true, actualSetType: 'backoff' },
 		);
 		expect(row).toEqual([
 			'2026-04-01',
@@ -202,5 +203,18 @@ describe('buildLogRow', () => {
 			result,
 		);
 		expect(row[9]).toBe(8); // plannedReps = maxReps
+	});
+
+	it('records joker as the set type when overridden', () => {
+		const row = buildLogRow(
+			ctx,
+			'Primary: Bench Press',
+			'bench',
+			2,
+			'joker',
+			planned,
+			result,
+		);
+		expect(row[7]).toBe('joker');
 	});
 });

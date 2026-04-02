@@ -39,7 +39,7 @@ export interface LiftConfig {
 // ---------------------------------------------------------------------------
 
 /** Categorises a set within a workout. */
-export type SetType = 'warmup' | 'work' | 'backoff';
+export type SetType = 'warmup' | 'work' | 'backoff' | 'joker';
 
 /**
  * Determines which reference weight the set's percentage is applied to.
@@ -142,4 +142,6 @@ export interface SetResult {
 	actualReps: number;
 	/** Whether the user has marked this set as complete. */
 	completed: boolean;
+	/** The set type after any user override (pre-filled with planned setType). */
+	actualSetType: SetType;
 }

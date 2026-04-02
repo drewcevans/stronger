@@ -12,6 +12,7 @@
 	--color-warmup: #ffa726;
 	--color-work: #66bb6a;
 	--color-backoff: #ab47bc;
+	--color-joker: #ffd600;
 	--color-completed: #2e7d32;
 	--color-border: #333;
 	--radius: 12px;
@@ -227,6 +228,48 @@ body {
 .set-type-backoff {
 	background: rgba(171, 71, 188, 0.2);
 	color: var(--color-backoff);
+}
+
+.set-type-joker {
+	background: rgba(255, 214, 0, 0.2);
+	color: var(--color-joker);
+}
+
+/* Set type dropdown */
+.set-type-select {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	text-align: center;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	white-space: nowrap;
+	border: none;
+	cursor: pointer;
+	min-height: 36px;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+}
+
+.set-type-select.set-type-warmup {
+	background-color: rgba(255, 167, 38, 0.2);
+	color: var(--color-warmup);
+}
+
+.set-type-select.set-type-work {
+	background-color: rgba(102, 187, 106, 0.2);
+	color: var(--color-work);
+}
+
+.set-type-select.set-type-backoff {
+	background-color: rgba(171, 71, 188, 0.2);
+	color: var(--color-backoff);
+}
+
+.set-type-select.set-type-joker {
+	background-color: rgba(255, 214, 0, 0.2);
+	color: var(--color-joker);
 }
 
 /* Editable weight/rep fields */

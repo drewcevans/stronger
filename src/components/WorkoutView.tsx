@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ComputedSet, SetResult, Workout } from '../model/index.js';
+import type { ComputedSet, SetResult, SetType, Workout } from '../model/index.js';
 
 interface WorkoutViewProps {
 	workout: Workout;
@@ -27,7 +27,7 @@ function buildComment(set: ComputedSet): string | undefined {
 }
 
 /** Label for set type, with a visual class. */
-function setTypeLabel(type: ComputedSet['setType']): string {
+function setTypeLabel(type: SetType): string {
 	switch (type) {
 		case 'warmup':
 			return 'Warm-up';
@@ -35,8 +35,13 @@ function setTypeLabel(type: ComputedSet['setType']): string {
 			return 'Work';
 		case 'backoff':
 			return 'Backoff';
+		case 'joker':
+			return 'Joker';
 	}
 }
+
+/** All available set types for the dropdown. */
+const SET_TYPES: SetType[] = ['warmup', 'work', 'backoff', 'joker'];
 
 function initResults(workout: Workout): SetResult[][] {
 	return workout.exercises.map((ex) =>
@@ -44,6 +49,7 @@ function initResults(workout: Workout): SetResult[][] {
 			actualWeight: set.weight,
 			actualReps: set.minReps,
 			completed: false,
+			actualSetType: set.setType,
 		})),
 	);
 }
@@ -137,11 +143,27 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 											}
 										/>
 									</label>
-									<span
-										className={`set-type set-type-${set.setType}`}
+									<select
+										className={`set-type-select set-type-${result.actualSetType}`}
+										value={result.actualSetType}
+										onChange={(e) =>
+											updateSet(
+												exerciseIdx,
+												setIdx,
+												{
+													actualSetType:
+														e.target
+															.value as SetType,
+												},
+											)
+										}
 									>
-										{setTypeLabel(set.setType)}
-									</span>
+										{SET_TYPES.map((t) => (
+											<option key={t} value={t}>
+												{setTypeLabel(t)}
+											</option>
+										))}
+									</select>
 									<div className="set-fields">
 										<label className="field-group">
 											<span className="field-label">
