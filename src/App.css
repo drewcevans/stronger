@@ -350,6 +350,37 @@ body {
 	padding-top: 0.75rem; /* align with input, not label */
 }
 
+/* Rep stepper +/− buttons */
+.rep-stepper {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding-top: 0.625rem; /* align with input, not label */
+}
+
+.rep-stepper-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--color-text-muted);
+	background: var(--color-bg);
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.rep-stepper-btn:active {
+	background: var(--color-surface-hover);
+	color: var(--color-text);
+}
+
 /* Set comment */
 .set-comment {
 	width: 100%;

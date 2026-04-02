@@ -262,6 +262,46 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 												}
 											/>
 										</label>
+									<div className="rep-stepper">
+										<button
+											type="button"
+											className="rep-stepper-btn"
+											aria-label="Increase reps"
+											onClick={() =>
+												updateSet(
+													exerciseIdx,
+													setIdx,
+													{
+														actualReps:
+															result.actualReps +
+															1,
+													},
+												)
+											}
+										>
+											+
+										</button>
+										<button
+											type="button"
+											className="rep-stepper-btn"
+											aria-label="Decrease reps"
+											onClick={() =>
+												updateSet(
+													exerciseIdx,
+													setIdx,
+													{
+														actualReps: Math.max(
+															0,
+															result.actualReps -
+																1,
+														),
+													},
+												)
+											}
+										>
+											−
+										</button>
+									</div>
 									</div>
 									{comment && (
 										<p className="set-comment">
