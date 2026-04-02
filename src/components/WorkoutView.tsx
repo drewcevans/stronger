@@ -7,13 +7,23 @@ interface WorkoutViewProps {
 	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
 
-/** Format reps: "5" for fixed, "5–8" for a range, with "+" suffix for AMRAP. */
-function formatReps(set: ComputedSet): string {
-	const range =
-		set.minReps === set.maxReps
-			? `${set.minReps}`
-			: `${set.minReps}–${set.maxReps}`;
-	return set.amrap ? `${range}+` : range;
+/**
+ * Build a comment string that includes rep-range / AMRAP hints (when present)
+ * merged with any existing set comment.
+ */
+function buildComment(set: ComputedSet): string | undefined {
+	const parts: string[] = [];
+	const hasRange = set.minReps !== set.maxReps;
+	if (hasRange) {
+		parts.push(`${set.minReps}–${set.maxReps} reps`);
+	}
+	if (set.amrap) {
+		parts.push('AMRAP');
+	}
+	if (set.comment) {
+		parts.push(set.comment);
+	}
+	return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
 /** Label for set type, with a visual class. */
@@ -105,6 +115,7 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 					<div className="sets-list">
 						{exercise.sets.map((set, setIdx) => {
 							const result = results[exerciseIdx][setIdx];
+							const comment = buildComment(set);
 							return (
 								<div
 									key={setIdx}
@@ -182,17 +193,9 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 											/>
 										</label>
 									</div>
-									<span className="set-target">
-										{formatReps(set)}
-									</span>
-									{set.amrap && (
-										<span className="amrap-badge">
-											AMRAP
-										</span>
-									)}
-									{set.comment && (
+									{comment && (
 										<p className="set-comment">
-											{set.comment}
+											{comment}
 										</p>
 									)}
 								</div>
