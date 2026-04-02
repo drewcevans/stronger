@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { ComputedSet, SetResult, SetType, Workout } from '../model/index.js';
 
 interface WorkoutViewProps {
@@ -58,6 +58,9 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 	const [results, setResults] = useState<SetResult[][]>(() =>
 		initResults(workout),
 	);
+	const [addedSets, setAddedSets] = useState<ComputedSet[][]>(() =>
+		workout.exercises.map(() => []),
+	);
 	const [finished, setFinished] = useState(false);
 
 	function updateSet(
@@ -75,6 +78,39 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 			),
 		);
 	}
+
+	const addSet = useCallback(
+		(exerciseIdx: number) => {
+			const exercise = workout.exercises[exerciseIdx];
+			const extraSets = addedSets[exerciseIdx];
+			const allSets = [...exercise.sets, ...extraSets];
+			const lastSet = allSets[allSets.length - 1];
+
+			const newSet: ComputedSet = { ...lastSet };
+
+			setAddedSets((prev) =>
+				prev.map((sets, i) =>
+					i === exerciseIdx ? [...sets, newSet] : sets,
+				),
+			);
+			setResults((prev) =>
+				prev.map((ex, i) =>
+					i === exerciseIdx
+						? [
+								...ex,
+								{
+									actualWeight: lastSet.weight,
+									actualReps: lastSet.minReps,
+									completed: false,
+									actualSetType: lastSet.setType,
+								},
+							]
+						: ex,
+				),
+			);
+		},
+		[workout, addedSets],
+	);
 
 	const totalSets = results.flat().length;
 	const completedSets = results.flat().filter((s) => s.completed).length;
@@ -115,11 +151,13 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 				</span>
 			</header>
 
-			{workout.exercises.map((exercise, exerciseIdx) => (
+			{workout.exercises.map((exercise, exerciseIdx) => {
+				const allSets = [...exercise.sets, ...addedSets[exerciseIdx]];
+				return (
 				<section key={exerciseIdx} className="exercise-card">
 					<h2 className="exercise-name">{exercise.name}</h2>
 					<div className="sets-list">
-						{exercise.sets.map((set, setIdx) => {
+						{allSets.map((set, setIdx) => {
 							const result = results[exerciseIdx][setIdx];
 							const comment = buildComment(set);
 							return (
@@ -223,9 +261,17 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 								</div>
 							);
 						})}
+						<button
+							type="button"
+							className="btn-add-set"
+							onClick={() => addSet(exerciseIdx)}
+						>
+							+ Add Set
+						</button>
 					</div>
 				</section>
-			))}
+				);
+			})}
 
 			<div className="finish-bar">
 				<button className="btn-finish" onClick={handleFinish}>

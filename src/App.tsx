@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Workout, LiftConfig, SetResult } from './model/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet } from './model/index.js';
 import { appendLogRows, buildLogRow } from './google/index.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
@@ -108,7 +108,17 @@ async function logWorkoutResults(
   const rows: (string | number | boolean)[][] = [];
   for (let ei = 0; ei < workout.exercises.length; ei++) {
     const exercise = workout.exercises[ei];
-    for (let si = 0; si < exercise.sets.length; si++) {
+    for (let si = 0; si < results[ei].length; si++) {
+      const planned: ComputedSet =
+        si < exercise.sets.length
+          ? exercise.sets[si]
+          : {
+              setType: results[ei][si].actualSetType,
+              weight: results[ei][si].actualWeight,
+              minReps: results[ei][si].actualReps,
+              maxReps: results[ei][si].actualReps,
+              amrap: false,
+            };
       rows.push(
         buildLogRow(
           ctx,
@@ -116,7 +126,7 @@ async function logWorkoutResults(
           exercise.liftId,
           si + 1,
           results[ei][si].actualSetType,
-          exercise.sets[si],
+          planned,
           results[ei][si],
         ),
       );
