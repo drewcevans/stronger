@@ -364,8 +364,8 @@ body {
 	font-size: 0.6875rem;
 	color: var(--color-text-muted);
 	white-space: nowrap;
-	margin-left: auto;
 	padding-top: 0.75rem; /* align with inputs, not labels */
+	margin-right: 0.5rem;
 }
 
 /* Add-set button */
