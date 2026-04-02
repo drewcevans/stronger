@@ -365,6 +365,7 @@ body {
 	color: var(--color-text-muted);
 	white-space: nowrap;
 	margin-left: auto;
+	padding-top: 0.75rem; /* align with inputs, not labels */
 }
 
 /* Add-set button */
