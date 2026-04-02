@@ -472,8 +472,8 @@ export function parseWorkoutDefRow(row: string[]): WorkoutDefRow | null {
 	const exerciseOrder = Number(rawOrder)
 	if (!Number.isFinite(exerciseOrder) || exerciseOrder < 1) return null
 
-	const setType = rawSetType as 'warmup' | 'work' | 'backoff'
-	if (setType !== 'warmup' && setType !== 'work' && setType !== 'backoff') return null
+	const setType = rawSetType as 'warmup' | 'work' | 'backoff' | 'joker'
+	if (setType !== 'warmup' && setType !== 'work' && setType !== 'backoff' && setType !== 'joker') return null
 
 	const percentage = Number(rawPct)
 	if (!Number.isFinite(percentage) || percentage < 0) return null

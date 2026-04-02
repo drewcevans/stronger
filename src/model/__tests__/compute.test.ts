@@ -256,6 +256,21 @@ describe('computeSet', () => {
 		const result = computeSet(set, benchConfig, configs);
 		expect(result).not.toHaveProperty('comment');
 	});
+
+	it('preserves joker set type', () => {
+		const set: SetTemplate = {
+			setType: 'joker',
+			percentage: 1.0,
+			weightBasis: { kind: 'topSet' },
+			minReps: 1,
+			maxReps: 1,
+			amrap: false,
+		};
+		const result = computeSet(set, benchConfig, configs);
+		expect(result).not.toBeNull();
+		expect(result!.setType).toBe('joker');
+		expect(result!.weight).toBe(200);
+	});
 });
 
 // ---------------------------------------------------------------------------

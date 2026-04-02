@@ -245,6 +245,14 @@ describe('parseWorkoutDefRow', () => {
 		expect(parseWorkoutDefRow(row)).toBeNull();
 	});
 
+	it('parses joker as a valid setType', () => {
+		const row = [...validRow];
+		row[5] = 'joker';
+		const result = parseWorkoutDefRow(row);
+		expect(result).not.toBeNull();
+		expect(result!.set.setType).toBe('joker');
+	});
+
 	it('returns null for invalid weightBasis', () => {
 		const row = [...validRow];
 		row[7] = 'unknown';
