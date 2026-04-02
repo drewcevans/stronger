@@ -10,7 +10,6 @@ export function WorkoutSelect({ workouts, onSelect }: WorkoutSelectProps) {
 	return (
 		<div className="workout-select">
 			<Banner />
-			<p className="subtitle">Choose a workout</p>
 			{workouts.length === 0 ? (
 				<p className="auth-error">
 					No workouts available. Check that your sheet has valid lift
