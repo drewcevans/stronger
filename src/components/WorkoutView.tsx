@@ -48,7 +48,7 @@ function initResults(workout: Workout): SetResult[][] {
 	return workout.exercises.map((ex) =>
 		ex.sets.map((set) => ({
 			actualWeight: set.weight,
-			actualReps: set.minReps,
+			actualReps: set.maxReps,
 			completed: false,
 			actualSetType: set.setType,
 		})),
