@@ -8,18 +8,20 @@ When the user taps "Finish" on a workout, instead of immediately returning to th
 
 Each proposed change is shown as a line item the user can review and override (e.g. accept the suggested increase, keep the current weight, or type a custom value). Once the user confirms, the app writes the updated `topSetWeight` and/or `backoffWeight` values back to the config zone of the Google Sheet. The next time a workout is loaded, it picks up the new weights automatically.
 
-This covers primary, secondary, and assistance lifts — any exercise whose sets have a rep range triggers a progression check.
+This covers primary and assistance lifts only. Secondary lifts are always derived from their primary lift's config (via cross-reference percentages) and are not independently editable — when a primary lift's weight is updated, the secondary lift's weight follows automatically on the next load.
 
 ## Acceptance Criteria
 
 - [ ] Tapping "Finish" navigates to a progression review page (not directly back to the workout list).
-- [ ] For each exercise, the page reads the lift's `increment` from the sheet config and the rep-range upper bound from the set template.
+- [ ] For each primary and assistance exercise, the page reads the lift's `increment` from the sheet config and the rep-range upper bound from the set template.
+- [ ] Secondary lifts (exercises using `crossReference` weight basis) are excluded from the progression page — their weights are always derived from the primary.
 - [ ] If the recorded reps on the relevant set meet or exceed the upper bound, the proposed new weight = current weight + increment.
 - [ ] If the recorded reps are below the upper bound, the proposed new weight = current weight (no change).
 - [ ] Each proposed weight is editable — the user can accept, reject, or override with a custom value.
 - [ ] A "Confirm" button writes the final weights back to the config zone (`topSetWeight` / `backoffWeight` columns) in the Google Sheet.
 - [ ] After confirmation, the app navigates to the workout list (or the existing "Workout Complete" summary).
 - [ ] Exercises that share the same underlying `liftId` are grouped so the user sees one progression decision per lift, not per exercise row.
+- [ ] Secondary lifts are not shown on the progression page.
 
 ## Scope
 
@@ -40,6 +42,6 @@ This covers primary, secondary, and assistance lifts — any exercise whose sets
 
 - The progression check should look at the **work** and **backoff** set types specifically (not warmup sets).
 - For work sets, compare against `topSetWeight`; for backoff sets, compare against `backoffWeight`.
-- Secondary lifts derive their weights from a primary lift's config. The progression update should target the **source** `LiftConfig`, not the derived weight.
-- If a lift appears multiple times across exercises (e.g. the same `liftId` as both primary and secondary), surface it once with the most relevant progression signal.
+- Secondary lifts always derive their weights from a primary lift's config via cross-reference percentages. They have no independent progression — updating the primary automatically updates the secondary on the next load.
+- If a lift appears multiple times across exercises (e.g. the same `liftId` as both primary and assistance), surface it once with the most relevant progression signal.
 - The `increment` field already exists on `LiftConfig` and is read from the sheet — no schema changes needed.
