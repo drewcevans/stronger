@@ -7,6 +7,7 @@ export {
 	signIn,
 	signOut,
 	hasToken,
+	restoreToken,
 } from './auth.ts'
 export {
 	verifySheetAccess,
