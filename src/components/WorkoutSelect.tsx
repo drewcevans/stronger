@@ -1,5 +1,6 @@
 import type { Workout } from '../model/index.js';
 import { Banner } from './Banner.js';
+import { LiftBadge } from './LiftBadge.js';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -23,7 +24,7 @@ export function WorkoutSelect({ workouts, onSelect }: WorkoutSelectProps) {
 							className="workout-card"
 							onClick={() => onSelect(w)}
 						>
-							<span className="workout-id">{w.id}</span>
+							<LiftBadge liftId={w.exercises[0]?.liftId ?? 'unknown'} size={48} />
 							<span className="workout-name">{w.name}</span>
 						</button>
 					))}
