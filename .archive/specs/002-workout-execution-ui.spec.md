@@ -45,3 +45,9 @@ When all sets are done (or the user decides they're finished), they tap "Finish 
 - This spec assumes the data model from spec 001 is in place and the sheet is populated with computed workout data that the app can read.
 - The "Finish Workout" write should append data, never modify the inputs zone at the top of the sheet. The inputs are edited manually (for now) and the computed workout zone is read-only from the app's perspective.
 - Consider what happens if the user closes the app mid-workout. Saving only on "Finish" means progress could be lost. This is acceptable for v1 — we can add auto-save in a future spec if needed.
+
+## Post-merge iterations
+
+- **Finish button relocated**: The "Finish Workout" button was moved from a fixed bottom bar to a compact button in the sticky header (top right). This freed up the entire viewport for scrolling through sets, which matters on a phone. The button label was shortened from "Finish Workout" to "Finish".
+- **Color scheme de-blued**: The finish button background was changed from the blue accent color to dark grey (`#333`) with light text. The back button was similarly changed from blue to muted grey (`var(--color-text-muted)`). This removed the last blue interactive elements from the workout view for a more cohesive dark theme.
+- **Set comments moved below inline badges**: Rep range and AMRAP info were moved from inline badges to a comment line below the set row for a cleaner layout.

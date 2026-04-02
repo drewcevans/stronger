@@ -37,3 +37,9 @@ The art-deco style should be consistent with the lift icons (spec 009): hard edg
 
 - The "STRONGER" text treatment can be CSS-styled text or SVG — whichever looks better and stays crisp. If using a web font, keep it to one weight to minimize load.
 - Style reference: the same WPA / Chrysler Building aesthetic from spec 009. The "S" could incorporate stepped forms, radiating lines, or chevron motifs that suggest upward movement.
+
+## Post-merge iterations
+
+- **Single banner image**: The logo + "STRONGER" text were replaced with a single `stronger-banner.png` image. The SVG logo and CSS-styled text were removed in favor of the unified banner for visual consistency.
+- **Favicon**: Uses `stronger-bolt.png` (a lightning bolt motif) instead of the original "S" SVG.
+- **Landing page cleanup**: The decorative rule divider, subtitle text, and excess spacing below the banner were removed for a tighter layout. Banner `margin-bottom` tuned to `1.5rem`; workout-select vertical padding removed entirely.

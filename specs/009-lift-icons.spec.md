@@ -37,3 +37,8 @@ Icon assignment is based on the primary lift name, not the workout ID. If Workou
 - Inline SVGs are preferred over image files so they scale cleanly and can be styled with CSS (e.g., color changes for dark mode later).
 - The icon-to-lift mapping should be a simple lookup by primary lift name string. Keep it extensible — adding a new icon later is just adding an entry to the map.
 - Art-deco reference: geometric symmetry, bold outlines, stepped/radiating forms, minimal curves. Think Chrysler Building motifs applied to gym equipment.
+
+## Post-merge iterations
+
+- **PNG badges instead of SVGs**: The icons were implemented as pre-rendered PNG badge images (`stronger-badge-{lift}.png`) rather than inline SVGs. This was driven by the art-deco visual complexity being easier to author as raster images. A `LiftBadge` component maps `liftId` strings to badge PNGs with an `unknown` fallback.
+- **Mapping by liftId**: Assignment uses the first exercise's `liftId` field (e.g., `bench`, `squat`, `press`, `deadlift`), not the exercise name string.

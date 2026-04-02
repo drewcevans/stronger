@@ -34,3 +34,8 @@ When the workout is saved, each set's actual type (including any changes or joke
 
 - Joker sets are a concept from 5/3/1 and similar programs — extra heavy singles/doubles when the lifter feels good. For now it's just a label; no computation or progression logic is attached.
 - Consider whether changing a warmup to "work" mid-session has implications for the saved log. For v1, just record whatever the user picked — no validation.
+
+## Post-merge iterations
+
+- **Dropdown arrow removed**: The native `<select>` dropdown arrow was hidden via `appearance: none` for a cleaner pill-like appearance.
+- **Text centering**: `text-align-last: center` was added (in addition to `text-align: center`) because mobile browsers ignore `text-align` on `<select>` elements. A `min-width: 5rem` was also added to give the text room to visually center.

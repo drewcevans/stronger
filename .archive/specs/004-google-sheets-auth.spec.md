@@ -43,3 +43,7 @@ This spec covers only the auth and connection plumbing — no reading or writing
 - A Google Cloud project with OAuth credentials and the Sheets API enabled is a prerequisite. The OAuth client ID will need to be configured — this can be hard-coded initially per the manifesto's guidance.
 - The Google Sheet URL format is `https://docs.google.com/spreadsheets/d/{SHEET_ID}/...` — extracting the ID is straightforward.
 - Consider using the `gapi` client library or the newer Google Identity Services (GIS) library. GIS is the current recommended approach and handles the OAuth flow with less boilerplate.
+
+## Post-merge iterations
+
+- **Token persistence**: Initially persisted in `localStorage`. Later switched to a `Secure; SameSite=Strict` cookie for better security posture. Cookie max-age set to 7 days (not tied to token `expiresIn`) so the user stays logged in for a week between gym sessions.
