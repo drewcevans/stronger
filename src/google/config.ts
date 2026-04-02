@@ -18,3 +18,6 @@ export const SHEETS_DISCOVERY_DOC =
 
 /** Name of the tab the app targets inside the user's spreadsheet. */
 export const TARGET_TAB_NAME = 'Stronger'
+
+/** Name of the tab that holds workout definitions (exercise structure). */
+export const WORKOUT_DEFS_TAB_NAME = 'Workout Defs'
