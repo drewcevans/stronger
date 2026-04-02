@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import type { ComputedSet, SetResult, SetType, Workout } from '../model/index.js';
+import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
 
 interface WorkoutViewProps {
 	workout: Workout;
+	previousSets?: PreviousSetData[][] | null;
 	onBack: () => void;
 	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
@@ -54,7 +55,7 @@ function initResults(workout: Workout): SetResult[][] {
 	);
 }
 
-export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
+export function WorkoutView({ workout, previousSets, onBack, onFinish }: WorkoutViewProps) {
 	const [results, setResults] = useState<SetResult[][]>(() =>
 		initResults(workout),
 	);
@@ -163,6 +164,7 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 						{allSets.map((set, setIdx) => {
 							const result = results[exerciseIdx][setIdx];
 							const comment = buildComment(set);
+							const prev = previousSets?.[exerciseIdx]?.[setIdx];
 							return (
 								<div
 									key={setIdx}
@@ -256,6 +258,11 @@ export function WorkoutView({ workout, onBack, onFinish }: WorkoutViewProps) {
 											/>
 										</label>
 									</div>
+									{prev && (
+										<span className="set-previous">
+											Last: {prev.weight} × {prev.reps}
+										</span>
+									)}
 									{comment && (
 										<p className="set-comment">
 											{comment}

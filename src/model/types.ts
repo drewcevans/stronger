@@ -134,6 +134,14 @@ export interface Workout {
 // Layer 5 – Execution state (tracking what the user actually does)
 // ---------------------------------------------------------------------------
 
+/** Previous-session data for a single set (read-only context). */
+export interface PreviousSetData {
+	/** The weight used in the previous session. */
+	weight: number;
+	/** The reps performed in the previous session. */
+	reps: number;
+}
+
 /** Tracks the user's actual performance for a single set during workout execution. */
 export interface SetResult {
 	/** The weight actually used (pre-filled with planned weight). */
