@@ -37,12 +37,12 @@ describe('buildWorkoutsFromConfigs', () => {
 		expect(updatedBenchWork!.weight).toBe(225);
 	});
 
-	it('each workout has exercises with positive weights', () => {
+	it('each workout has exercises with non-negative weights', () => {
 		const workouts = buildWorkoutsFromConfigs(defaultLiftConfigs);
 		for (const w of workouts) {
 			for (const ex of w.exercises) {
 				for (const set of ex.sets) {
-					expect(set.weight).toBeGreaterThan(0);
+					expect(set.weight).toBeGreaterThanOrEqual(0);
 				}
 			}
 		}

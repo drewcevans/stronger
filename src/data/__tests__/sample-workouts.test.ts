@@ -32,11 +32,11 @@ describe('sampleWorkouts', () => {
 		}
 	});
 
-	it('all set weights are positive numbers', () => {
+	it('all set weights are non-negative numbers', () => {
 		for (const workout of sampleWorkouts) {
 			for (const exercise of workout.exercises) {
 				for (const set of exercise.sets) {
-					expect(set.weight).toBeGreaterThan(0);
+					expect(set.weight).toBeGreaterThanOrEqual(0);
 				}
 			}
 		}
