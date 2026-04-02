@@ -676,6 +676,14 @@ body {
 	margin-left: auto;
 }
 
+/* Weight stepper +/− buttons (progression page) */
+.weight-stepper {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 2px;
+}
+
 .progression-actions {
 	display: flex;
 	flex-direction: column;

@@ -117,6 +117,7 @@ export function computeProgression(
 				? config.backoffWeight + config.increment
 				: config.backoffWeight,
 			increment: config.increment,
+			roundingFactor: config.roundingFactor,
 			topSetHit: signals.topSetHit,
 			backoffHit: signals.backoffHit,
 		});

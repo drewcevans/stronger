@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { ProgressionProposal } from '../model/index.js';
 
+const DEFAULT_STEP = 5;
+
 interface ProgressionReviewProps {
 	proposals: ProgressionProposal[];
 	onConfirm: (
@@ -44,6 +46,15 @@ export function ProgressionReview({
 		});
 	}
 
+	function stepWeight(
+		liftId: string,
+		field: 'topSetWeight' | 'backoffWeight',
+		step: number,
+		current: number,
+	) {
+		updateWeight(liftId, field, Math.max(0, current + step));
+	}
+
 	return (
 		<div className="workout-view">
 			<header className="workout-header">
@@ -75,18 +86,52 @@ export function ProgressionReview({
 									{proposal.currentTopSetWeight}
 								</span>
 								<span className="progression-arrow">→</span>
-								<input
-									type="number"
-									className="progression-input"
-									value={edit.topSetWeight}
-									onChange={(e) =>
-										updateWeight(
-											proposal.liftId,
-											'topSetWeight',
-											Number(e.target.value) || 0,
-										)
-									}
-								/>
+								<div className="weight-stepper">
+									<button
+										type="button"
+										className="rep-stepper-btn"
+										aria-label={`Decrease work weight by ${proposal.roundingFactor || DEFAULT_STEP}`}
+										onClick={() => {
+											const step = proposal.roundingFactor || DEFAULT_STEP;
+											stepWeight(
+												proposal.liftId,
+												'topSetWeight',
+												-step,
+												edit.topSetWeight,
+											);
+										}}
+									>
+										−
+									</button>
+									<input
+										type="number"
+										className="progression-input"
+										value={edit.topSetWeight}
+										onChange={(e) =>
+											updateWeight(
+												proposal.liftId,
+												'topSetWeight',
+												Number(e.target.value) || 0,
+											)
+										}
+									/>
+									<button
+										type="button"
+										className="rep-stepper-btn"
+										aria-label={`Increase work weight by ${proposal.roundingFactor || DEFAULT_STEP}`}
+										onClick={() => {
+											const step = proposal.roundingFactor || DEFAULT_STEP;
+											stepWeight(
+												proposal.liftId,
+												'topSetWeight',
+												step,
+												edit.topSetWeight,
+											);
+										}}
+									>
+										+
+									</button>
+								</div>
 								<span className="progression-label-unit">
 									lbs
 								</span>
@@ -105,18 +150,52 @@ export function ProgressionReview({
 									{proposal.currentBackoffWeight}
 								</span>
 								<span className="progression-arrow">→</span>
-								<input
-									type="number"
-									className="progression-input"
-									value={edit.backoffWeight}
-									onChange={(e) =>
-										updateWeight(
-											proposal.liftId,
-											'backoffWeight',
-											Number(e.target.value) || 0,
-										)
-									}
-								/>
+								<div className="weight-stepper">
+									<button
+										type="button"
+										className="rep-stepper-btn"
+										aria-label={`Decrease backoff weight by ${proposal.roundingFactor || DEFAULT_STEP}`}
+										onClick={() => {
+											const step = proposal.roundingFactor || DEFAULT_STEP;
+											stepWeight(
+												proposal.liftId,
+												'backoffWeight',
+												-step,
+												edit.backoffWeight,
+											);
+										}}
+									>
+										−
+									</button>
+									<input
+										type="number"
+										className="progression-input"
+										value={edit.backoffWeight}
+										onChange={(e) =>
+											updateWeight(
+												proposal.liftId,
+												'backoffWeight',
+												Number(e.target.value) || 0,
+											)
+										}
+									/>
+									<button
+										type="button"
+										className="rep-stepper-btn"
+										aria-label={`Increase backoff weight by ${proposal.roundingFactor || DEFAULT_STEP}`}
+										onClick={() => {
+											const step = proposal.roundingFactor || DEFAULT_STEP;
+											stepWeight(
+												proposal.liftId,
+												'backoffWeight',
+												step,
+												edit.backoffWeight,
+											);
+										}}
+									>
+										+
+									</button>
+								</div>
 								<span className="progression-label-unit">
 									lbs
 								</span>

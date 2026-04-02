@@ -194,6 +194,7 @@ describe('computeProgression', () => {
 		expect(proposals[0].backoffHit).toBe(false);
 		expect(proposals[0].proposedTopSetWeight).toBe(202.5); // 200 + 2.5
 		expect(proposals[0].proposedBackoffWeight).toBe(170); // no change
+		expect(proposals[0].roundingFactor).toBe(5); // bench roundingFactor
 	});
 
 	it('proposes no change when rep target is not met', () => {
@@ -568,6 +569,7 @@ describe('computeProgression', () => {
 		expect(benchProposal!.backoffHit).toBe(true);
 		expect(benchProposal!.proposedTopSetWeight).toBe(202.5);
 		expect(benchProposal!.proposedBackoffWeight).toBe(172.5);
+		expect(benchProposal!.roundingFactor).toBe(5);
 
 		const skullProposal = proposals.find((p) => p.liftId === 'skull-crusher');
 		expect(skullProposal).toBeDefined();
@@ -575,6 +577,7 @@ describe('computeProgression', () => {
 		expect(skullProposal!.backoffHit).toBe(true);
 		expect(skullProposal!.proposedTopSetWeight).toBe(62.5);
 		expect(skullProposal!.proposedBackoffWeight).toBe(53.5);
+		expect(skullProposal!.roundingFactor).toBe(2.5);
 
 		// No proposal for press (all sets use crossReference)
 		expect(proposals.find((p) => p.liftId === 'press')).toBeUndefined();
