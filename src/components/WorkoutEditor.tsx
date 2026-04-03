@@ -180,11 +180,12 @@ export function WorkoutEditor({
 
 	// --- Exercise-level updates ---
 	const addExercise = useCallback(() => {
+		if (lifts.length === 0) return;
 		setWorkout((prev) => ({
 			...prev,
 			exercises: [
 				...prev.exercises,
-				{ liftId: lifts[0]?.id ?? '', role: 'assistance', sets: [defaultSet()] },
+				{ liftId: lifts[0].id, role: 'assistance', sets: [defaultSet()] },
 			],
 		}));
 	}, [lifts]);
@@ -261,9 +262,12 @@ export function WorkoutEditor({
 				case 'backoff':
 					wb = { kind: 'backoff' };
 					break;
-				case 'crossReference':
-					wb = { kind: 'crossReference', liftId: extraValue ?? lifts[0]?.id ?? '' };
+				case 'crossReference': {
+					const refLiftId = extraValue || lifts[0]?.id;
+					if (!refLiftId) return; // no lifts available
+					wb = { kind: 'crossReference', liftId: refLiftId };
 					break;
+				}
 				case 'fixed':
 					wb = { kind: 'fixed', weight: Number(extraValue) || 0 };
 					break;
@@ -444,18 +448,19 @@ export function WorkoutEditor({
 											<select
 												className="editor-basis-select"
 												value={set.weightBasis.kind}
-												onChange={(e) =>
+												onChange={(e) => {
+													const wb = set.weightBasis;
+													const prevValue =
+														wb.kind === 'crossReference' ? wb.liftId
+														: wb.kind === 'fixed' ? String(wb.weight)
+														: undefined;
 													updateWeightBasis(
 														exerciseIdx,
 														setIdx,
 														e.target.value,
-														set.weightBasis.kind === 'crossReference'
-															? (set.weightBasis as { liftId: string }).liftId
-															: set.weightBasis.kind === 'fixed'
-																? String((set.weightBasis as { weight: number }).weight)
-																: undefined,
-													)
-												}
+														prevValue,
+													);
+												}}
 											>
 												<option value="topSet">Top set</option>
 												<option value="backoff">Backoff</option>
@@ -576,5 +581,4 @@ export function WorkoutEditor({
 	);
 }
 
-// Re-export for use in App.tsx
-export type { EditableExercise };
+
