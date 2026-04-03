@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { Workout, ScheduleEntry } from '../model/index.js';
-import { CalendarPlus, X, ChevronRight, Activity } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, Activity, Dumbbell } from 'lucide-react';
 
 interface CalendarViewProps {
 	workouts: Workout[];
@@ -162,9 +162,10 @@ export function CalendarView({
 													</span>
 												) : (
 													<button
-														className="calendar-workout-link"
+														className="calendar-workout-link calendar-workout-link-strength"
 														onClick={() => onOpenWorkout(wid)}
 													>
+														<Dumbbell size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -200,9 +201,10 @@ export function CalendarView({
 										{strengthWorkouts.map((w) => (
 											<button
 												key={w.id}
-												className="calendar-picker-item"
+												className="calendar-picker-item calendar-picker-item-strength"
 												onClick={() => handleAssign(w.id)}
 											>
+												<Dumbbell size={14} />
 												{w.name}
 											</button>
 										))}
