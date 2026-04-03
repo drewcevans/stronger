@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Workout, LiftConfig } from '../model/index.ts'
-import { defaultLiftConfigs, buildWorkoutsFromConfigs, workoutDefinitions } from '../data/sample-workouts.ts'
+import { buildWorkoutsFromConfigs, workoutDefinitions } from '../data/sample-workouts.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 import {
 	loadGis,
@@ -15,7 +15,6 @@ import {
 	loadSheetId,
 	connectToSheet,
 	readConfigZone,
-	writeDefaultConfig,
 	verifyWorkoutDefsTab,
 	createWorkoutDefsTab,
 	readWorkoutDefs,
@@ -37,11 +36,12 @@ type Phase =
 interface Props {
 	onConnected: (workouts: Workout[], configs: LiftConfig[], spreadsheetId: string, definitions: WorkoutDefinition[]) => void
 	onDisconnected: () => void
+	onNeedsSetup?: (spreadsheetId: string) => void
 	onOpenCalendar?: () => void
 	onGoToList?: () => void
 }
 
-export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoToList }: Props) {
+export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onGoToList }: Props) {
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
@@ -106,11 +106,24 @@ export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoTo
 			await connectToSheet(spreadsheetId)
 			saveSheetId(spreadsheetId)
 
-			// Read config zone — if empty, write defaults first
-			let configs = await readConfigZone(spreadsheetId)
+			// Read config zone — if empty, signal setup needed
+			const configs = await readConfigZone(spreadsheetId)
 			if (!configs) {
-				await writeDefaultConfig(spreadsheetId, defaultLiftConfigs)
-				configs = defaultLiftConfigs
+				// Ensure tabs exist before handing off to setup
+				const defsTabExists = await verifyWorkoutDefsTab(spreadsheetId)
+				if (!defsTabExists) {
+					await createWorkoutDefsTab(spreadsheetId)
+				}
+				const logTabExists = await verifyLogTab(spreadsheetId)
+				if (!logTabExists) {
+					await createLogTab(spreadsheetId)
+				}
+
+				setPhase('connected')
+				if (onNeedsSetup) {
+					onNeedsSetup(spreadsheetId)
+				}
+				return
 			}
 
 			// Read workout defs — if tab missing or empty, create + write defaults
@@ -143,7 +156,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoTo
 			)
 			setPhase('error')
 		}
-	}, [onConnected])
+	}, [onConnected, onNeedsSetup])
 
 	const handleSignIn = useCallback(async () => {
 		try {
