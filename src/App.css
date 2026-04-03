@@ -586,6 +586,31 @@ body {
 	margin-bottom: 0.5rem;
 }
 
+.toolbar-nav {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.btn-toolbar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
+}
+
+.btn-toolbar:active {
+	background: var(--color-surface);
+	color: var(--color-text);
+}
+
 .sheet-name {
 	flex: 1;
 	overflow: hidden;

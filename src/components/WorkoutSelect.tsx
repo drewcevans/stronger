@@ -1,16 +1,14 @@
 import type { Workout } from '../model/index.js';
 import { Banner } from './Banner.js';
 import { LiftBadge } from './LiftBadge.js';
-import { Calendar } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
 	missingLiftIds?: string[];
 	onSelect: (workout: Workout) => void;
-	onOpenCalendar?: () => void;
 }
 
-export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onOpenCalendar }: WorkoutSelectProps) {
+export function WorkoutSelect({ workouts, missingLiftIds, onSelect }: WorkoutSelectProps) {
 	return (
 		<div className="workout-select">
 			<Banner />
@@ -32,12 +30,6 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onOpenCalend
 						</button>
 					))}
 				</div>
-			)}
-			{onOpenCalendar && (
-				<button className="btn-calendar" onClick={onOpenCalendar}>
-					<Calendar size={20} />
-					<span>Schedule</span>
-				</button>
 			)}
 			{missingLiftIds && missingLiftIds.length > 0 && (
 				<p className="config-warning">
