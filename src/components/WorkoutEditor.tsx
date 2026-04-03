@@ -8,14 +8,14 @@ import type { ActivityType } from '../model/types.js';
 type ExerciseRole = 'primary' | 'secondary' | 'assistance';
 
 /** Local state for an exercise being edited. */
-interface EditableExercise {
+export interface EditableExercise {
 	liftId: string;
 	role: ExerciseRole;
 	sets: SetTemplate[];
 }
 
 /** Local state for a workout being edited. */
-interface EditableWorkout {
+export interface EditableWorkout {
 	id: string;
 	name: string;
 	category: ActivityType;
@@ -62,7 +62,7 @@ function inferRole(name: string): ExerciseRole {
 }
 
 /** Generate a kebab-case ID from a workout name. */
-function nameToId(name: string): string {
+export function nameToId(name: string): string {
 	return name
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, '-')
@@ -82,7 +82,7 @@ function defaultSet(): SetTemplate {
 }
 
 /** Convert a WorkoutDefinition to the local editable format. */
-function toEditable(def: WorkoutDefinition): EditableWorkout {
+export function toEditable(def: WorkoutDefinition): EditableWorkout {
 	return {
 		id: def.id,
 		name: def.name,
@@ -96,7 +96,7 @@ function toEditable(def: WorkoutDefinition): EditableWorkout {
 }
 
 /** Convert the local editable format back to a WorkoutDefinition. */
-function fromEditable(e: EditableWorkout, configs: LiftConfig[]): WorkoutDefinition {
+export function fromEditable(e: EditableWorkout, configs: LiftConfig[]): WorkoutDefinition {
 	const liftMap = new Map(configs.map((c) => [c.id, c.name]));
 	return {
 		id: e.id,
