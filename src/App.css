@@ -158,6 +158,9 @@ body {
 }
 
 .btn-back {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
 	background: none;
 	border: none;
 	color: var(--color-text-muted);
@@ -404,6 +407,7 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	gap: 0.25rem;
 	width: 100%;
 	min-height: 44px;
 	padding: 0.5rem;
@@ -642,6 +646,8 @@ body {
 }
 
 .progression-arrow {
+	display: inline-flex;
+	align-items: center;
 	color: var(--color-text-muted);
 	font-size: 0.875rem;
 }
@@ -670,6 +676,9 @@ body {
 }
 
 .progression-hit {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.125rem;
 	font-size: 0.75rem;
 	font-weight: 600;
 	color: var(--color-work);
