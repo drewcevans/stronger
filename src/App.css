@@ -1031,3 +1031,368 @@ body {
 	padding: 0.25rem 0;
 	min-height: 36px;
 }
+
+/* -----------------------------------------------------------------------
+   Workout editor
+   ----------------------------------------------------------------------- */
+
+.workout-editor {
+	padding-bottom: 2rem;
+}
+
+.editor-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-bottom: 1.25rem;
+}
+
+.editor-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.editor-field-inline {
+	flex: 1;
+}
+
+.editor-field-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.editor-field-hint {
+	font-weight: 400;
+	text-transform: none;
+	color: var(--color-text-muted);
+	opacity: 0.7;
+}
+
+.editor-text-input {
+	padding: 0.625rem 0.75rem;
+	font-size: 1rem;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	width: 100%;
+}
+
+.editor-text-input::placeholder {
+	color: var(--color-text-muted);
+}
+
+.editor-id-input {
+	font-family: monospace;
+	font-size: 0.875rem;
+}
+
+.editor-select {
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	min-height: 40px;
+	cursor: pointer;
+}
+
+/* Exercise card in editor */
+.editor-exercise {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 0.75rem;
+	margin-bottom: 0.75rem;
+}
+
+.editor-exercise-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.5rem;
+}
+
+.editor-exercise-number {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	text-transform: uppercase;
+}
+
+.btn-remove-exercise {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	padding: 0.375rem;
+	min-width: 32px;
+	min-height: 32px;
+	border-radius: 6px;
+}
+
+.btn-remove-exercise:active {
+	color: #ef5350;
+	background: rgba(239, 83, 80, 0.1);
+}
+
+.editor-exercise-meta {
+	display: flex;
+	gap: 0.5rem;
+	margin-bottom: 0.75rem;
+}
+
+/* Sets table in editor */
+.editor-sets {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.editor-sets-header {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0 0.25rem 0.25rem;
+	font-size: 0.625rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.editor-set-row {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem;
+	background: var(--color-bg);
+	border-radius: 6px;
+}
+
+.editor-col-type { width: 4.5rem; }
+.editor-col-pct { width: 3rem; text-align: center; }
+.editor-col-basis { flex: 1; min-width: 4rem; }
+.editor-col-reps { width: 2.5rem; text-align: center; }
+.editor-col-amrap { width: 2.5rem; text-align: center; }
+.editor-col-remove { width: 1.75rem; }
+
+.editor-set-type {
+	width: 4.5rem;
+	font-size: 0.6875rem;
+	min-height: 32px;
+	min-width: 4.5rem;
+}
+
+.editor-pct-input {
+	width: 3rem;
+	padding: 0.25rem;
+	text-align: center;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	-moz-appearance: textfield;
+}
+
+.editor-pct-input::-webkit-outer-spin-button,
+.editor-pct-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.editor-basis-group {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+	min-width: 4rem;
+}
+
+.editor-basis-select {
+	font-size: 0.6875rem;
+	padding: 0.25rem;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	min-height: 28px;
+	cursor: pointer;
+}
+
+.editor-basis-extra {
+	font-size: 0.6875rem;
+	padding: 0.125rem 0.25rem;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background: var(--color-surface);
+	color: var(--color-primary);
+	min-height: 24px;
+	cursor: pointer;
+}
+
+.editor-basis-extra-input {
+	width: 100%;
+	font-size: 0.75rem;
+	padding: 0.125rem 0.25rem;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background: var(--color-surface);
+	color: var(--color-primary);
+	-moz-appearance: textfield;
+}
+
+.editor-basis-extra-input::-webkit-outer-spin-button,
+.editor-basis-extra-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.editor-rep-input {
+	width: 2.5rem;
+	padding: 0.25rem;
+	text-align: center;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid var(--color-border);
+	border-radius: 4px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	-moz-appearance: textfield;
+}
+
+.editor-rep-input::-webkit-outer-spin-button,
+.editor-rep-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.editor-amrap-check {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+}
+
+.editor-amrap-check input[type='checkbox'] {
+	width: 1.25rem;
+	height: 1.25rem;
+	accent-color: var(--color-primary);
+	cursor: pointer;
+}
+
+.btn-remove-set {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	padding: 0;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.btn-remove-set:active {
+	color: #ef5350;
+}
+
+.btn-add-exercise {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.75rem;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	background: transparent;
+	border: 1px dashed var(--color-primary);
+	border-radius: var(--radius);
+	cursor: pointer;
+	margin-bottom: 1rem;
+}
+
+.btn-add-exercise:active {
+	background: rgba(79, 195, 247, 0.1);
+}
+
+.editor-errors {
+	margin-top: 0.75rem;
+}
+
+.editor-error {
+	color: #ef5350;
+	font-size: 0.8125rem;
+	background: rgba(239, 83, 80, 0.1);
+	padding: 0.375rem 0.75rem;
+	border-radius: 6px;
+	margin-bottom: 0.25rem;
+}
+
+/* Edit button on workout cards */
+.workout-card-wrapper {
+	display: flex;
+	align-items: stretch;
+	gap: 0;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	transition: background 0.15s;
+}
+
+.workout-card-wrapper .workout-card {
+	flex: 1;
+	border: none;
+	border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.btn-edit-workout {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	border-left: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	cursor: pointer;
+	padding: 0 0.75rem;
+	min-width: 44px;
+	border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.btn-edit-workout:active {
+	color: var(--color-primary);
+	background: rgba(79, 195, 247, 0.1);
+}
+
+.btn-new-workout {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	margin-top: 0.75rem;
+	padding: 0.75rem 1rem;
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	background: transparent;
+	border: 1px dashed var(--color-primary);
+	border-radius: var(--radius);
+	cursor: pointer;
+	min-height: 48px;
+}
+
+.btn-new-workout:active {
+	background: rgba(79, 195, 247, 0.1);
+}

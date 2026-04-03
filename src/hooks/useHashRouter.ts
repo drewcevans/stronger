@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 export type Route =
   | { view: 'list' }
   | { view: 'workout'; workoutId: string }
-  | { view: 'calendar' };
+  | { view: 'calendar' }
+  | { view: 'editor'; workoutId?: string };
 
 /**
  * Parse the current `window.location.hash` into a Route.
@@ -11,6 +12,8 @@ export type Route =
  * Recognised patterns:
  *   (empty) | `#/`             → { view: 'list' }
  *   `#/workout/<id>`           → { view: 'workout', workoutId: id }
+ *   `#/edit/new`               → { view: 'editor' }
+ *   `#/edit/<id>`              → { view: 'editor', workoutId: id }
  *   anything else              → { view: 'list' }
  */
 export function parseHash(hash: string = window.location.hash): Route {
@@ -18,6 +21,10 @@ export function parseHash(hash: string = window.location.hash): Route {
   if (!stripped) return { view: 'list' };
 
   if (stripped === 'calendar') return { view: 'calendar' };
+
+  if (stripped === 'edit/new') return { view: 'editor' };
+  const editMatch = stripped.match(/^edit\/([^/]+)$/);
+  if (editMatch) return { view: 'editor', workoutId: decodeURIComponent(editMatch[1]) };
 
   const match = stripped.match(/^workout\/([^/]+)$/);
   if (match) return { view: 'workout', workoutId: decodeURIComponent(match[1]) };
@@ -29,6 +36,7 @@ export function parseHash(hash: string = window.location.hash): Route {
 export function routeToHash(route: Route): string {
   if (route.view === 'workout') return `/workout/${encodeURIComponent(route.workoutId)}`;
   if (route.view === 'calendar') return '/calendar';
+  if (route.view === 'editor') return route.workoutId ? `/edit/${encodeURIComponent(route.workoutId)}` : '/edit/new';
   return '/';
 }
 

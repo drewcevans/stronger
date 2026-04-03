@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import { buildWorkoutsFromConfigs } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
+import { WorkoutEditor } from './components/WorkoutEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView } from './components/CalendarView.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
@@ -208,6 +209,38 @@ function App() {
     navigateTo({ view: 'calendar' });
   }, [navigateTo]);
 
+  // Editor handlers
+  const handleEditWorkout = useCallback((workoutId: string) => {
+    navigateTo({ view: 'editor', workoutId });
+  }, [navigateTo]);
+
+  const handleNewWorkout = useCallback(() => {
+    navigateTo({ view: 'editor' });
+  }, [navigateTo]);
+
+  const handleEditorCancel = useCallback(() => {
+    navigateTo({ view: 'list' });
+  }, [navigateTo]);
+
+  const handleEditorSave = useCallback(
+    (definition: WorkoutDefinition) => {
+      const isNew = !definitions.some((d) => d.id === definition.id);
+      const updatedDefs = isNew
+        ? [...definitions, definition]
+        : definitions.map((d) => (d.id === definition.id ? definition : d));
+
+      setDefinitions(updatedDefs);
+      setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
+
+      if (spreadsheetId) {
+        void writeWorkoutDefs(spreadsheetId, updatedDefs);
+      }
+
+      navigateTo({ view: 'list' });
+    },
+    [definitions, configs, spreadsheetId, navigateTo],
+  );
+
   // Deep-link resolution: when auth completes and workouts are loaded,
   // check if the URL contains a workout ID and auto-select it.
   useEffect(() => {
@@ -267,6 +300,29 @@ function App() {
     );
   }
 
+  if (route.view === 'editor') {
+    const editDef = route.workoutId
+      ? definitions.find((d) => d.id === route.workoutId)
+      : undefined;
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+        />
+        <WorkoutEditor
+          existing={editDef}
+          allDefinitions={definitions}
+          configs={configs}
+          onSave={handleEditorSave}
+          onCancel={handleEditorCancel}
+        />
+      </>
+    );
+  }
+
   if (route.view === 'calendar') {
     return (
       <>
@@ -301,7 +357,13 @@ function App() {
         onGoToList={handleGoToList}
         onOpenCalendar={handleOpenCalendar}
       />
-      <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} />
+      <WorkoutSelect
+        workouts={workouts}
+        missingLiftIds={missingLiftIds}
+        onSelect={handleSelectWorkout}
+        onEdit={handleEditWorkout}
+        onNew={handleNewWorkout}
+      />
     </>
   );
 }
