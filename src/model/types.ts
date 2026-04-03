@@ -174,6 +174,8 @@ export interface ProgressionProposal {
 	proposedBackoffWeight: number;
 	/** The configured increment for this lift. */
 	increment: number;
+	/** Rounding factor for this lift's weights (used as step size for +/− buttons). */
+	roundingFactor: number;
 	/** Whether the top-set rep target was met or exceeded. */
 	topSetHit: boolean;
 	/** Whether the backoff rep target was met or exceeded. */
