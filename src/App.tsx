@@ -282,7 +282,6 @@ function App() {
           onAssign={handleScheduleAssign}
           onRemove={handleScheduleRemove}
           onOpenWorkout={handleCalendarOpenWorkout}
-          onBack={handleGoToList}
         />
       </>
     );

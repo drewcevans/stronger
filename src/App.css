@@ -17,8 +17,6 @@
 	--color-border: #333;
 	--color-surface-alt: #232323;
 	--color-weekday: #1565c0;
-	--color-weekend: #1b5e20;
-	--color-strength: #fb8c00;
 	--radius: 12px;
 }
 
@@ -795,23 +793,6 @@ body {
 	padding-bottom: 2rem;
 }
 
-.calendar-header {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding: 1rem 0;
-	position: sticky;
-	top: 0;
-	background: var(--color-bg);
-	z-index: 10;
-}
-
-.calendar-title {
-	flex: 1;
-	font-size: 1.125rem;
-	font-weight: 600;
-}
-
 .calendar-days {
 	display: flex;
 	flex-direction: column;
@@ -829,10 +810,6 @@ body {
 .calendar-day-today {
 	border-color: var(--color-primary);
 	border-left-color: var(--color-weekday);
-}
-
-.calendar-day-weekend {
-	border-left-color: var(--color-weekend);
 }
 
 .calendar-day-header {
@@ -1022,18 +999,12 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	color: var(--color-primary);
 }
 
 .calendar-picker-item-strength {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	color: var(--color-strength);
-}
-
-.calendar-workout-link-strength {
-	color: var(--color-strength);
 }
 
 /* Cardio workout in calendar day */
@@ -1048,7 +1019,6 @@ body {
 	gap: 0.375rem;
 	font-size: 0.875rem;
 	font-weight: 500;
-	color: var(--color-primary);
 	padding: 0.25rem 0;
 	min-height: 36px;
 }

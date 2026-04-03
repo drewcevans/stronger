@@ -8,7 +8,6 @@ interface CalendarViewProps {
 	onAssign: (date: string, workoutId: string) => void;
 	onRemove: (date: string, workoutId: string) => void;
 	onOpenWorkout: (workoutId: string) => void;
-	onBack: () => void;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -21,13 +20,6 @@ function formatDate(dateStr: string): { weekday: string; display: string } {
 		day: 'numeric',
 	});
 	return { weekday, display };
-}
-
-/** Check if a date string falls on a weekend (Saturday or Sunday). */
-function isWeekend(dateStr: string): boolean {
-	const [y, m, d] = dateStr.split('-').map(Number);
-	const day = new Date(y, m - 1, d).getDay();
-	return day === 0 || day === 6;
 }
 
 /** Check if a date string is today. */
@@ -56,7 +48,6 @@ export function CalendarView({
 	onAssign,
 	onRemove,
 	onOpenWorkout,
-	onBack,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
 
@@ -114,13 +105,6 @@ export function CalendarView({
 
 	return (
 		<div className="calendar-view">
-			<div className="calendar-header">
-				<button className="btn-back" onClick={onBack}>
-					← Back
-				</button>
-				<h2 className="calendar-title">Schedule</h2>
-			</div>
-
 			<div className="calendar-days">
 				{days.map((dateStr) => {
 					const { weekday, display } = formatDate(dateStr);
@@ -130,7 +114,7 @@ export function CalendarView({
 					return (
 						<div
 							key={dateStr}
-							className={`calendar-day${today ? ' calendar-day-today' : ''}${isWeekend(dateStr) ? ' calendar-day-weekend' : ''}`}
+							className={`calendar-day${today ? ' calendar-day-today' : ''}`}
 						>
 							<div className="calendar-day-header">
 								<div className="calendar-day-date">
