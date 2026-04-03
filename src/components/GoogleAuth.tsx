@@ -13,7 +13,6 @@ import {
 	extractSheetId,
 	saveSheetId,
 	loadSheetId,
-	clearSheetId,
 	connectToSheet,
 	readConfigZone,
 	writeDefaultConfig,
@@ -46,7 +45,6 @@ export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoTo
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
-	const [sheetTitle, setSheetTitle] = useState<string | null>(null)
 
 	/* ---------------------------------------------------------------- */
 	/*  Load Google scripts on mount                                     */
@@ -105,9 +103,8 @@ export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoTo
 		try {
 			setPhase('connecting')
 			setError(null)
-			const title = await connectToSheet(spreadsheetId)
+			await connectToSheet(spreadsheetId)
 			saveSheetId(spreadsheetId)
-			setSheetTitle(title)
 
 			// Read config zone — if empty, write defaults first
 			let configs = await readConfigZone(spreadsheetId)
@@ -181,8 +178,6 @@ export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoTo
 
 	const handleSignOut = useCallback(async () => {
 		await signOut()
-		clearSheetId()
-		setSheetTitle(null)
 		setSheetUrl('')
 		setError(null)
 		setPhase('sign-in')
@@ -263,9 +258,6 @@ export function GoogleAuth({ onConnected, onDisconnected, onOpenCalendar, onGoTo
 					</button>
 				)}
 			</div>
-			<span className="sheet-name" title={sheetTitle ?? undefined}>
-				{sheetTitle}
-			</span>
 			<button className="btn-toolbar" onClick={handleSignOut} title="Sign out">
 				<LogOut size={20} />
 			</button>
