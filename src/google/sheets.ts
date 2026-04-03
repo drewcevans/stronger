@@ -792,6 +792,37 @@ export async function writeDefaultWorkoutDefs(
 	})
 }
 
+/**
+ * Write the full set of workout definitions to the "Workout Defs" tab.
+ * Clears existing data first, then writes header + all rows.
+ */
+export async function writeWorkoutDefs(
+	spreadsheetId: string,
+	defs: WorkoutDefinition[],
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const dataRows = workoutDefsToRows(defs)
+	const allRows: (string | number)[][] = [
+		WORKOUT_DEFS_HEADER,
+		...dataRows,
+	]
+
+	// Clear existing data then write fresh (handles row count changes)
+	await gapi.client.sheets.spreadsheets.values.clear({
+		spreadsheetId,
+		range: WORKOUT_DEFS_RANGE,
+	})
+
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: WORKOUT_DEFS_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: allRows },
+	})
+}
+
 /* ------------------------------------------------------------------ */
 /*  Log zone – read & parse                                            */
 /* ------------------------------------------------------------------ */

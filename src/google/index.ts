@@ -29,6 +29,7 @@ export {
 	createWorkoutDefsTab,
 	readWorkoutDefs,
 	writeDefaultWorkoutDefs,
+	writeWorkoutDefs,
 	verifyLogTab,
 	createLogTab,
 	parseLogRow,
