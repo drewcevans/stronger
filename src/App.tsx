@@ -270,6 +270,8 @@ function App() {
         <GoogleAuth
           onConnected={handleConnected}
           onDisconnected={handleDisconnected}
+          onGoToList={handleCalendarBack}
+          onOpenCalendar={handleOpenCalendar}
         />
         <CalendarView
           workouts={workouts}
@@ -294,8 +296,10 @@ function App() {
       <GoogleAuth
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
+        onGoToList={handleCalendarBack}
+        onOpenCalendar={handleOpenCalendar}
       />
-      <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} onOpenCalendar={handleOpenCalendar} />
+      <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} />
     </>
   );
 }
