@@ -197,7 +197,7 @@ function App() {
     [workouts, handleSelectWorkout],
   );
 
-  const handleCalendarBack = useCallback(() => {
+  const handleGoToList = useCallback(() => {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
 
@@ -270,7 +270,7 @@ function App() {
         <GoogleAuth
           onConnected={handleConnected}
           onDisconnected={handleDisconnected}
-          onGoToList={handleCalendarBack}
+          onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
         />
         <CalendarView
@@ -279,7 +279,7 @@ function App() {
           onAssign={handleScheduleAssign}
           onRemove={handleScheduleRemove}
           onOpenWorkout={handleCalendarOpenWorkout}
-          onBack={handleCalendarBack}
+          onBack={handleGoToList}
         />
       </>
     );
@@ -296,7 +296,7 @@ function App() {
       <GoogleAuth
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
-        onGoToList={handleCalendarBack}
+        onGoToList={handleGoToList}
         onOpenCalendar={handleOpenCalendar}
       />
       <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} />
