@@ -604,6 +604,36 @@ body {
 	color: var(--color-text-muted);
 }
 
+.sheet-option {
+	width: 100%;
+	max-width: 400px;
+}
+
+.sheet-option-label {
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--color-text);
+	margin-bottom: 0.5rem;
+}
+
+.sheet-divider {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	max-width: 400px;
+	gap: 1rem;
+	color: var(--color-text-muted);
+	font-size: 0.8125rem;
+}
+
+.sheet-divider::before,
+.sheet-divider::after {
+	content: '';
+	flex: 1;
+	height: 1px;
+	background: var(--color-border);
+}
+
 .btn-link {
 	background: none;
 	border: none;

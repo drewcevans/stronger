@@ -13,6 +13,7 @@ import {
 	extractSheetId,
 	saveSheetId,
 	loadSheetId,
+	createSpreadsheet,
 	connectToSheet,
 	readConfigZone,
 	verifyWorkoutDefsTab,
@@ -45,6 +46,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
+	const [sheetName, setSheetName] = useState('Stronger')
 
 	/* ---------------------------------------------------------------- */
 	/*  Load Google scripts on mount                                     */
@@ -189,6 +191,29 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 		[sheetUrl, tryConnect],
 	)
 
+	const handleCreateSheet = useCallback(
+		async (e: React.FormEvent) => {
+			e.preventDefault()
+			const name = sheetName.trim()
+			if (!name) {
+				setError('Please enter a name for the sheet.')
+				return
+			}
+			try {
+				setError(null)
+				setPhase('connecting')
+				const spreadsheetId = await createSpreadsheet(name)
+				await tryConnect(spreadsheetId)
+			} catch (err) {
+				setError(
+					err instanceof Error ? err.message : 'Failed to create the sheet.',
+				)
+				setPhase('error')
+			}
+		},
+		[sheetName, tryConnect],
+	)
+
 	const handleSignOut = useCallback(async () => {
 		await signOut()
 		setSheetUrl('')
@@ -226,21 +251,45 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 		return (
 			<div className="auth-screen">
 				<h1 className="app-title">Stronger</h1>
-				<p className="subtitle">Paste your Google Sheet URL</p>
 				{error && <p className="auth-error">{error}</p>}
-				<form className="sheet-form" onSubmit={handleSheetSubmit}>
-					<input
-						className="sheet-url-input"
-						type="url"
-						placeholder="https://docs.google.com/spreadsheets/d/…"
-						value={sheetUrl}
-						onChange={(e) => setSheetUrl(e.target.value)}
-						autoFocus
-					/>
-					<button className="btn-primary" type="submit">
-						Connect
-					</button>
-				</form>
+
+				<div className="sheet-option">
+					<p className="sheet-option-label">Create new sheet</p>
+					<form className="sheet-form" onSubmit={handleCreateSheet}>
+						<input
+							className="sheet-url-input"
+							type="text"
+							placeholder="Sheet name"
+							value={sheetName}
+							onChange={(e) => setSheetName(e.target.value)}
+							autoFocus
+						/>
+						<button className="btn-primary" type="submit">
+							Create &amp; connect
+						</button>
+					</form>
+				</div>
+
+				<div className="sheet-divider">
+					<span>or</span>
+				</div>
+
+				<div className="sheet-option">
+					<p className="sheet-option-label">Connect to existing sheet</p>
+					<form className="sheet-form" onSubmit={handleSheetSubmit}>
+						<input
+							className="sheet-url-input"
+							type="url"
+							placeholder="https://docs.google.com/spreadsheets/d/…"
+							value={sheetUrl}
+							onChange={(e) => setSheetUrl(e.target.value)}
+						/>
+						<button className="btn-primary" type="submit">
+							Connect
+						</button>
+					</form>
+				</div>
+
 				<button className="btn-link" onClick={handleSignOut}>
 					Sign out
 				</button>

@@ -12,6 +12,7 @@ export {
 export {
 	verifySheetAccess,
 	createStrongerTab,
+	createSpreadsheet,
 	connectToSheet,
 	readConfigZone,
 	writeDefaultConfig,
