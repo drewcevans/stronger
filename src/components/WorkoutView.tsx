@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
 
 interface WorkoutViewProps {
@@ -144,7 +145,7 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 		<div className="workout-view">
 			<header className="workout-header">
 				<button className="btn-back" onClick={onBack}>
-					← Back
+					<ArrowLeft size={20} /> Back
 				</button>
 				<h1 className="workout-title">{workout.name}</h1>
 				<span className="progress-badge">
@@ -262,7 +263,7 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 														)
 													}
 												>
-													−
+													<Minus size={16} />
 												</button>
 												<input
 													type="number"
@@ -298,7 +299,7 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 														)
 													}
 												>
-													+
+													<Plus size={16} />
 												</button>
 											</div>
 										</label>
@@ -316,7 +317,7 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 							className="btn-add-set"
 							onClick={() => addSet(exerciseIdx)}
 						>
-							+ Add Set
+							<Plus size={16} /> Add Set
 						</button>
 					</div>
 				</section>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowRight, Check, Minus, Plus } from 'lucide-react';
 import type { ProgressionProposal } from '../model/index.js';
 
 const DEFAULT_STEP = 5;
@@ -85,7 +86,7 @@ export function ProgressionReview({
 								<span className="progression-current">
 									{proposal.currentTopSetWeight}
 								</span>
-								<span className="progression-arrow">→</span>
+								<span className="progression-arrow"><ArrowRight size={16} /></span>
 								<div className="weight-stepper">
 									<button
 										type="button"
@@ -101,7 +102,7 @@ export function ProgressionReview({
 											);
 										}}
 									>
-										−
+										<Minus size={16} />
 									</button>
 									<input
 										type="number"
@@ -129,7 +130,7 @@ export function ProgressionReview({
 											);
 										}}
 									>
-										+
+										<Plus size={16} />
 									</button>
 								</div>
 								<span className="progression-label-unit">
@@ -137,7 +138,7 @@ export function ProgressionReview({
 								</span>
 								{proposal.topSetHit && (
 									<span className="progression-hit">
-										✓ +{proposal.increment}
+										<Check size={14} /> +{proposal.increment}
 									</span>
 								)}
 							</div>
@@ -149,7 +150,7 @@ export function ProgressionReview({
 								<span className="progression-current">
 									{proposal.currentBackoffWeight}
 								</span>
-								<span className="progression-arrow">→</span>
+								<span className="progression-arrow"><ArrowRight size={16} /></span>
 								<div className="weight-stepper">
 									<button
 										type="button"
@@ -165,7 +166,7 @@ export function ProgressionReview({
 											);
 										}}
 									>
-										−
+										<Minus size={16} />
 									</button>
 									<input
 										type="number"
@@ -193,7 +194,7 @@ export function ProgressionReview({
 											);
 										}}
 									>
-										+
+										<Plus size={16} />
 									</button>
 								</div>
 								<span className="progression-label-unit">
@@ -201,7 +202,7 @@ export function ProgressionReview({
 								</span>
 								{proposal.backoffHit && (
 									<span className="progression-hit">
-										✓ +{proposal.increment}
+										<Check size={14} /> +{proposal.increment}
 									</span>
 								)}
 							</div>
