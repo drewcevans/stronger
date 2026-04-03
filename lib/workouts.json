@@ -1,0 +1,161 @@
+[
+	{
+		"id": "A",
+		"name": "Workout A — Bench / Press",
+		"templates": [
+			{
+				"liftId": "bench",
+				"name": "Primary: Bench Press",
+				"sets": [
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": true, "comment": "Min 3 reps. If 5 reps completed, increase by 2.5 lbs next week" },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "If 8 reps completed, increase backoff weight by 2.5 lbs next week" }
+				]
+			},
+			{
+				"liftId": "press",
+				"name": "Secondary: Press",
+				"sets": [
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 0.85, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 8, "amrap": false },
+					{ "setType": "backoff", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 8, "amrap": true }
+				]
+			},
+			{
+				"liftId": "skull-crusher",
+				"name": "Assistance: Skull Crusher",
+				"sets": [
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+				]
+			}
+		]
+	},
+	{
+		"id": "B",
+		"name": "Workout B — Squat / Deadlift",
+		"templates": [
+			{
+				"liftId": "squat",
+				"name": "Primary: Squat",
+				"sets": [
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": true, "comment": "Min 3 reps. If 5 reps completed, increase by 5 lbs next week" },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "If 8 reps completed, increase backoff weight by 5 lbs next week" }
+				]
+			},
+			{
+				"liftId": "deadlift",
+				"name": "Secondary: Deadlift",
+				"sets": [
+					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 0.85, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 5, "maxReps": 5, "amrap": false }
+				]
+			},
+			{
+				"liftId": "chin-up",
+				"name": "Assistance: Chin-up",
+				"sets": [
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+				]
+			}
+		]
+	},
+	{
+		"id": "C",
+		"name": "Workout C — Press / Bench",
+		"templates": [
+			{
+				"liftId": "press",
+				"name": "Primary: Press",
+				"sets": [
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": true, "comment": "Min 3 reps. If 5 reps completed, increase by 2.5 lbs next week" },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "If 8 reps completed, increase backoff weight by 2.5 lbs next week" }
+				]
+			},
+			{
+				"liftId": "bench",
+				"name": "Secondary: Bench Press",
+				"sets": [
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 0.85, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 8, "amrap": false },
+					{ "setType": "backoff", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 8, "amrap": true }
+				]
+			},
+			{
+				"liftId": "bicep-curl",
+				"name": "Assistance: Bicep Curl",
+				"sets": [
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+				]
+			},
+			{
+				"liftId": "lateral-raise",
+				"name": "Assistance: Lateral Raise",
+				"sets": [
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 10, "maxReps": 15, "amrap": false, "comment": "Do not increase weight until 15 reps on all sets" },
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 10, "maxReps": 15, "amrap": false },
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 10, "maxReps": 15, "amrap": false }
+				]
+			}
+		]
+	},
+	{
+		"id": "D",
+		"name": "Workout D — Deadlift / Squat",
+		"templates": [
+			{
+				"liftId": "deadlift",
+				"name": "Primary: Deadlift",
+				"sets": [
+					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": true, "comment": "Min 3 reps. If 5 reps completed, increase by 5 lbs next week" },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "Optional. If 8 reps completed, increase backoff weight by 5 lbs next week" }
+				]
+			},
+			{
+				"liftId": "squat",
+				"name": "Secondary: Squat",
+				"sets": [
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.3375, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.4875, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 3, "maxReps": 3, "amrap": false },
+					{ "setType": "warmup", "percentage": 0.6375, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 2, "maxReps": 2, "amrap": false },
+					{ "setType": "work", "percentage": 0.75, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "work", "percentage": 0.75, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
+					{ "setType": "work", "percentage": 0.75, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false }
+				]
+			},
+			{
+				"liftId": "dumbbell-row",
+				"name": "Assistance: Dumbbell Row",
+				"sets": [
+					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
+					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+				]
+			}
+		]
+	}
+]
