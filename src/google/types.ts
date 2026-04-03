@@ -100,6 +100,10 @@ export interface GapiClient {
 					insertDataOption?: string
 					resource: { values: (string | number | boolean)[][] }
 				}) => Promise<ValuesAppendResponse>
+				clear: (params: {
+					spreadsheetId: string
+					range: string
+				}) => Promise<unknown>
 			}
 		}
 	}

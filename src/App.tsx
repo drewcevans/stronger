@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal } from './model/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import { buildWorkoutsFromConfigs } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
+import { CalendarView } from './components/CalendarView.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import './App.css';
@@ -22,6 +23,7 @@ function App() {
   const [configs, setConfigs] = useState<LiftConfig[]>([]);
   const [definitions, setDefinitions] = useState<WorkoutDefinition[]>([]);
   const [progressionProposals, setProgressionProposals] = useState<ProgressionProposal[] | null>(null);
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
 
   const handleConnected = useCallback(
     (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[]) => {
@@ -30,6 +32,8 @@ function App() {
       setDefinitions(defs);
       setSpreadsheetId(sheetId);
       setSheetConnected(true);
+      // Fire-and-forget: load schedule data
+      void loadScheduleData(sheetId);
     },
     [],
   );
@@ -44,6 +48,7 @@ function App() {
     setSpreadsheetId(null);
     setStartTime(null);
     setProgressionProposals(null);
+    setSchedule([]);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
@@ -138,6 +143,68 @@ function App() {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
 
+  // Schedule handlers
+  const loadScheduleData = useCallback(async (sheetId: string) => {
+    try {
+      const tabExists = await verifyScheduleTab(sheetId);
+      if (!tabExists) {
+        await createScheduleTab(sheetId);
+      }
+      const entries = await readSchedule(sheetId);
+      setSchedule(entries);
+    } catch {
+      // Silently ignore — schedule data is optional
+    }
+  }, []);
+
+  const handleScheduleAssign = useCallback(
+    (date: string, workoutId: string) => {
+      const updated = [...schedule, { date, workoutId }];
+      setSchedule(updated);
+      if (spreadsheetId) {
+        void writeSchedule(spreadsheetId, updated);
+      }
+    },
+    [schedule, spreadsheetId],
+  );
+
+  const handleScheduleRemove = useCallback(
+    (date: string, workoutId: string) => {
+      // Remove the first matching entry for this date+workoutId
+      let removed = false;
+      const updated = schedule.filter((e) => {
+        if (!removed && e.date === date && e.workoutId === workoutId) {
+          removed = true;
+          return false;
+        }
+        return true;
+      });
+      setSchedule(updated);
+      if (spreadsheetId) {
+        void writeSchedule(spreadsheetId, updated);
+      }
+    },
+    [schedule, spreadsheetId],
+  );
+
+  const handleCalendarOpenWorkout = useCallback(
+    (workoutId: string) => {
+      const match = workouts.find((w) => w.id === workoutId);
+      if (match) {
+        handleSelectWorkout(match);
+      }
+    },
+    [workouts, handleSelectWorkout],
+  );
+
+  const handleCalendarBack = useCallback(() => {
+    navigateTo({ view: 'list' });
+  }, [navigateTo]);
+
+  const handleOpenCalendar = useCallback(() => {
+    navigateTo({ view: 'calendar' });
+  }, [navigateTo]);
+
   // Deep-link resolution: when auth completes and workouts are loaded,
   // check if the URL contains a workout ID and auto-select it.
   useEffect(() => {
@@ -197,6 +264,25 @@ function App() {
     );
   }
 
+  if (route.view === 'calendar') {
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+        />
+        <CalendarView
+          workouts={workouts}
+          schedule={schedule}
+          onAssign={handleScheduleAssign}
+          onRemove={handleScheduleRemove}
+          onOpenWorkout={handleCalendarOpenWorkout}
+          onBack={handleCalendarBack}
+        />
+      </>
+    );
+  }
+
   // Compute missing liftIds: referenced in definitions but absent from configs
   const configIds = new Set(configs.map((c) => c.id));
   const missingLiftIds = [...new Set(
@@ -209,7 +295,7 @@ function App() {
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
       />
-      <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} />
+      <WorkoutSelect workouts={workouts} missingLiftIds={missingLiftIds} onSelect={handleSelectWorkout} onOpenCalendar={handleOpenCalendar} />
     </>
   );
 }

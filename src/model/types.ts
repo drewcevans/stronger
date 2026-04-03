@@ -155,7 +155,19 @@ export interface SetResult {
 }
 
 // ---------------------------------------------------------------------------
-// Layer 6 – Progression (post-workout weight update proposals)
+// Layer 6 – Schedule (day→workout mapping for calendar planning)
+// ---------------------------------------------------------------------------
+
+/** A single schedule entry mapping a date to a workout. */
+export interface ScheduleEntry {
+	/** Date in YYYY-MM-DD format. */
+	date: string;
+	/** References a Workout.id (e.g. "A", "B"). */
+	workoutId: string;
+}
+
+// ---------------------------------------------------------------------------
+// Layer 7 – Progression (post-workout weight update proposals)
 // ---------------------------------------------------------------------------
 
 /** A proposed weight change for a single lift after completing a workout. */

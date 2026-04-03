@@ -5,8 +5,8 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData } from '../model/types.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData, ScheduleEntry } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -870,4 +870,145 @@ export async function readLogZone(
 	return rawRows
 		.map(parseLogRow)
 		.filter((r): r is ParsedLogRow => r !== null)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Schedule tab – constants                                           */
+/* ------------------------------------------------------------------ */
+
+/** A1 range for the schedule header (row 1). */
+const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:B1`
+
+/** A1 range for reading all schedule data (row 2 onward, generous upper bound). */
+const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:B10000`
+
+/** A1 range covering the full schedule tab for clearing. */
+const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:B10000`
+
+const SCHEDULE_HEADER: string[] = ['date', 'workoutId']
+
+/* ------------------------------------------------------------------ */
+/*  Schedule tab – serialization                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Parse a single raw schedule row (string array) into a {@link ScheduleEntry}.
+ * Returns `null` for incomplete or invalid rows.
+ */
+export function parseScheduleRow(row: string[]): ScheduleEntry | null {
+	if (!row || row.length < 2) return null
+
+	const date = (row[0] ?? '').trim()
+	const workoutId = (row[1] ?? '').trim()
+
+	if (!date || !workoutId) return null
+	// Basic date format validation: YYYY-MM-DD
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+
+	return { date, workoutId }
+}
+
+/** Convert a {@link ScheduleEntry} to a spreadsheet row. */
+export function scheduleEntryToRow(entry: ScheduleEntry): string[] {
+	return [entry.date, entry.workoutId]
+}
+
+/* ------------------------------------------------------------------ */
+/*  Schedule tab – read/write                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Check if the schedule tab exists in the spreadsheet.
+ */
+export async function verifyScheduleTab(
+	spreadsheetId: string,
+): Promise<boolean> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.get({
+		spreadsheetId,
+	})
+	const sheets = response.result.sheets ?? []
+	return sheets.some(
+		(s) => s.properties.title === SCHEDULE_TAB_NAME,
+	)
+}
+
+/**
+ * Create the schedule tab and write the header row.
+ */
+export async function createScheduleTab(
+	spreadsheetId: string,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	await gapi.client.sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		resource: {
+			requests: [{ addSheet: { properties: { title: SCHEDULE_TAB_NAME } } }],
+		},
+	})
+
+	// Write schedule header to row 1
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: SCHEDULE_HEADER_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: [SCHEDULE_HEADER] },
+	})
+}
+
+/**
+ * Read the schedule tab and return parsed schedule entries.
+ * Returns an empty array if there are no entries yet.
+ */
+export async function readSchedule(
+	spreadsheetId: string,
+): Promise<ScheduleEntry[]> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: SCHEDULE_READ_RANGE,
+	})
+
+	const rawRows = response.result.values
+	if (!rawRows || rawRows.length === 0) return []
+
+	return rawRows
+		.map(parseScheduleRow)
+		.filter((r): r is ScheduleEntry => r !== null)
+}
+
+/**
+ * Write the full schedule to the sheet (header + all entries).
+ * This overwrites all existing schedule data.
+ */
+export async function writeSchedule(
+	spreadsheetId: string,
+	entries: ScheduleEntry[],
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const rows: string[][] = [
+		SCHEDULE_HEADER,
+		...entries.map(scheduleEntryToRow),
+	]
+
+	// Clear existing data then write fresh
+	await gapi.client.sheets.spreadsheets.values.clear({
+		spreadsheetId,
+		range: SCHEDULE_FULL_RANGE,
+	})
+
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: SCHEDULE_FULL_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: rows },
+	})
 }
