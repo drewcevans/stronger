@@ -15,6 +15,7 @@
 	--color-joker: #ffd600;
 	--color-completed: #2e7d32;
 	--color-border: #333;
+	--color-surface-alt: #232323;
 	--radius: 12px;
 }
 
@@ -764,6 +765,15 @@ body {
 
 .calendar-day-today {
 	border-color: var(--color-primary);
+}
+
+.calendar-day-weekend {
+	background: var(--color-surface-alt);
+}
+
+.calendar-day-weekend .calendar-weekday {
+	color: var(--color-text-muted);
+	opacity: 0.7;
 }
 
 .calendar-day-header {
