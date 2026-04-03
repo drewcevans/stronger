@@ -545,8 +545,8 @@ interface WorkoutDefCardioRow {
 
 type ParsedDefRow = WorkoutDefRow | WorkoutDefCardioRow
 
-/** Type guard: is this a cardio marker row? */
-function isCardioRow(row: ParsedDefRow): row is WorkoutDefCardioRow {
+/** Type guard: is this a cardio marker row (no exercise/set data)? */
+function isCardioMarkerRow(row: ParsedDefRow): row is WorkoutDefCardioRow {
 	return 'cardio' in row
 }
 
@@ -643,7 +643,7 @@ export function rowsToWorkoutDefs(
 			workoutOrder.push(r.workoutId)
 			workoutMap.set(r.workoutId, { name: r.workoutName, category: r.category, rows: [] })
 		}
-		if (!isCardioRow(r)) {
+		if (!isCardioMarkerRow(r)) {
 			workoutMap.get(r.workoutId)!.rows.push(r)
 		}
 	}
