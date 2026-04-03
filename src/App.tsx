@@ -1,14 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
-import { buildWorkoutsFromConfigs } from './data/sample-workouts.js';
+import { defaultLiftConfigs, buildWorkoutsFromConfigs, workoutDefinitions } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { WorkoutEditor } from './components/WorkoutEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView } from './components/CalendarView.js';
+import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import './App.css';
@@ -25,6 +26,7 @@ function App() {
   const [definitions, setDefinitions] = useState<WorkoutDefinition[]>([]);
   const [progressionProposals, setProgressionProposals] = useState<ProgressionProposal[] | null>(null);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [needsSetup, setNeedsSetup] = useState(false);
 
   const handleConnected = useCallback(
     (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[]) => {
@@ -33,10 +35,44 @@ function App() {
       setDefinitions(defs);
       setSpreadsheetId(sheetId);
       setSheetConnected(true);
+      setNeedsSetup(false);
       // Fire-and-forget: load schedule data
       void loadScheduleData(sheetId);
     },
     [],
+  );
+
+  const handleNeedsSetup = useCallback((sheetId: string) => {
+    setSpreadsheetId(sheetId);
+    setSheetConnected(true);
+    setNeedsSetup(true);
+  }, []);
+
+  const handleSetupConfirm = useCallback(
+    async (configs: LiftConfig[]) => {
+      if (!spreadsheetId) return;
+
+      // Write the user's configs to the sheet
+      await writeDefaultConfig(spreadsheetId, configs);
+      setConfigs(configs);
+
+      // Read or write default workout definitions
+      const liftNames = new Map(configs.map((c) => [c.id, c.name]));
+      let defs = await readWorkoutDefs(spreadsheetId, liftNames);
+      if (!defs) {
+        await writeDefaultWorkoutDefs(spreadsheetId, workoutDefinitions);
+        defs = workoutDefinitions;
+      }
+      setDefinitions(defs);
+
+      const builtWorkouts = buildWorkoutsFromConfigs(configs, defs);
+      setWorkouts(builtWorkouts);
+      setNeedsSetup(false);
+
+      // Fire-and-forget: load schedule data
+      void loadScheduleData(spreadsheetId);
+    },
+    [spreadsheetId],
   );
 
   const handleDisconnected = useCallback(() => {
@@ -50,6 +86,7 @@ function App() {
     setStartTime(null);
     setProgressionProposals(null);
     setSchedule([]);
+    setNeedsSetup(false);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
@@ -274,6 +311,17 @@ function App() {
       <GoogleAuth
         onConnected={handleConnected}
         onDisconnected={handleDisconnected}
+        onNeedsSetup={handleNeedsSetup}
+      />
+    );
+  }
+
+  // Show setup page for first-time users (empty config zone)
+  if (needsSetup) {
+    return (
+      <SetupPage
+        defaults={defaultLiftConfigs}
+        onConfirm={handleSetupConfirm}
       />
     );
   }
