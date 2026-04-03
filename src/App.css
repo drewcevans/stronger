@@ -611,14 +611,6 @@ body {
 	color: var(--color-text);
 }
 
-.sheet-name {
-	flex: 1;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	color: var(--color-text-muted);
-}
-
 /* -----------------------------------------------------------------------
    Progression review page
    ----------------------------------------------------------------------- */
