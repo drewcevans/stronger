@@ -6,7 +6,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData, ScheduleEntry } from '../model/types.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData, ScheduleEntry, ActivityType } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -389,7 +389,7 @@ export async function appendLogRows(
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the workout defs header + data rows (generous upper bound). */
-const WORKOUT_DEFS_RANGE = `'${WORKOUT_DEFS_TAB_NAME}'!A1:L500`
+const WORKOUT_DEFS_RANGE = `'${WORKOUT_DEFS_TAB_NAME}'!A1:M500`
 
 const WORKOUT_DEFS_HEADER: string[] = [
 	'workoutId',
@@ -404,6 +404,7 @@ const WORKOUT_DEFS_HEADER: string[] = [
 	'maxReps',
 	'amrap',
 	'comment',
+	'category',
 ]
 
 /* ------------------------------------------------------------------ */
@@ -463,25 +464,46 @@ export function workoutDefsToRows(
 ): (string | number)[][] {
 	const rows: (string | number)[][] = []
 	for (const def of defs) {
-		for (let ei = 0; ei < def.templates.length; ei++) {
-			const tpl = def.templates[ei]
-			const exerciseOrder = ei + 1
-			const role = inferExerciseRole(tpl.name)
-			for (const set of tpl.sets) {
-				rows.push([
-					def.id,
-					def.name,
-					exerciseOrder,
-					role,
-					tpl.liftId,
-					set.setType,
-					set.percentage,
-					encodeWeightBasis(set.weightBasis),
-					set.minReps,
-					set.maxReps,
-					set.amrap ? 'TRUE' : 'FALSE',
-					set.comment ?? '',
-				])
+		const category = def.category ?? 'strength'
+		if (def.templates.length === 0) {
+			// Cardio or other template-less activities: emit a single marker row
+			rows.push([
+				def.id,
+				def.name,
+				'',  // exerciseOrder
+				'',  // exerciseRole
+				'',  // liftId
+				'',  // setType
+				'',  // percentage
+				'',  // weightBasis
+				'',  // minReps
+				'',  // maxReps
+				'',  // amrap
+				'',  // comment
+				category,
+			])
+		} else {
+			for (let ei = 0; ei < def.templates.length; ei++) {
+				const tpl = def.templates[ei]
+				const exerciseOrder = ei + 1
+				const role = inferExerciseRole(tpl.name)
+				for (const set of tpl.sets) {
+					rows.push([
+						def.id,
+						def.name,
+						exerciseOrder,
+						role,
+						tpl.liftId,
+						set.setType,
+						set.percentage,
+						encodeWeightBasis(set.weightBasis),
+						set.minReps,
+						set.maxReps,
+						set.amrap ? 'TRUE' : 'FALSE',
+						set.comment ?? '',
+						category,
+					])
+				}
 			}
 		}
 	}
@@ -509,19 +531,55 @@ interface WorkoutDefRow {
 	exerciseOrder: number
 	exerciseRole: string
 	liftId: string
+	category: ActivityType
 	set: SetTemplate
 }
 
+/** A marker row for a template-less (e.g. cardio) activity. */
+interface WorkoutDefCardioRow {
+	workoutId: string
+	workoutName: string
+	category: ActivityType
+	cardio: true
+}
+
+type ParsedDefRow = WorkoutDefRow | WorkoutDefCardioRow
+
+/** Type guard: is this a cardio marker row (no exercise/set data)? */
+function isCardioMarkerRow(row: ParsedDefRow): row is WorkoutDefCardioRow {
+	return 'cardio' in row
+}
+
 /**
- * Parse a single spreadsheet row into a {@link WorkoutDefRow}.
+ * Parse a single spreadsheet row into a {@link ParsedDefRow}.
  * Returns `null` for invalid or incomplete rows.
+ *
+ * Supports two flavours:
+ * 1. **Strength row** – all 12 original columns present (category in col 13 optional, defaults to 'strength').
+ * 2. **Cardio marker row** – workoutId + workoutName present, exerciseOrder blank, category = 'cardio'.
  */
-export function parseWorkoutDefRow(row: string[]): WorkoutDefRow | null {
-	if (!row || row.length < 11) return null
+export function parseWorkoutDefRow(row: string[]): ParsedDefRow | null {
+	if (!row || row.length < 2) return null
 
 	const workoutId = (row[0] ?? '').trim()
 	const workoutName = (row[1] ?? '').trim()
+	if (!workoutId || !workoutName) return null
+
+	// Detect category from column 13 (index 12) — default to 'strength'
+	const rawCategory = (row[12] ?? '').trim().toLowerCase()
+	const category: ActivityType = rawCategory === 'cardio' ? 'cardio' : 'strength'
+
+	// If the exerciseOrder column is empty, this is a cardio marker row
 	const rawOrder = (row[2] ?? '').trim()
+	if (!rawOrder) {
+		// Only allow cardio activities to have no exercise data
+		if (category !== 'cardio') return null
+		return { workoutId, workoutName, category, cardio: true }
+	}
+
+	// Full strength row — validate all fields
+	if (row.length < 11) return null
+
 	const exerciseRole = (row[3] ?? '').trim()
 	const liftId = (row[4] ?? '').trim()
 	const rawSetType = (row[5] ?? '').trim()
@@ -532,7 +590,7 @@ export function parseWorkoutDefRow(row: string[]): WorkoutDefRow | null {
 	const rawAmrap = (row[10] ?? '').trim().toUpperCase()
 	const comment = (row[11] ?? '').trim()
 
-	if (!workoutId || !workoutName || !rawOrder || !exerciseRole || !liftId) return null
+	if (!exerciseRole || !liftId) return null
 	if (!rawSetType || !rawPct || !rawBasis || !rawMin || !rawMax) return null
 
 	const exerciseOrder = Number(rawOrder)
@@ -564,7 +622,7 @@ export function parseWorkoutDefRow(row: string[]): WorkoutDefRow | null {
 		...(comment ? { comment } : {}),
 	}
 
-	return { workoutId, workoutName, exerciseOrder, exerciseRole, liftId, set }
+	return { workoutId, workoutName, exerciseOrder, exerciseRole, liftId, category, set }
 }
 
 /**
@@ -574,23 +632,32 @@ export function parseWorkoutDefRow(row: string[]): WorkoutDefRow | null {
  * (caller should map lift names afterward using configs if desired).
  */
 export function rowsToWorkoutDefs(
-	rows: WorkoutDefRow[],
+	rows: ParsedDefRow[],
 	liftNames?: ReadonlyMap<string, string>,
 ): WorkoutDefinition[] {
 	// Group by workoutId, preserving row order for stable workout ordering
 	const workoutOrder: string[] = []
-	const workoutMap = new Map<string, { name: string; rows: WorkoutDefRow[] }>()
+	const workoutMap = new Map<string, { name: string; category: ActivityType; rows: WorkoutDefRow[] }>()
 	for (const r of rows) {
 		if (!workoutMap.has(r.workoutId)) {
 			workoutOrder.push(r.workoutId)
-			workoutMap.set(r.workoutId, { name: r.workoutName, rows: [] })
+			workoutMap.set(r.workoutId, { name: r.workoutName, category: r.category, rows: [] })
 		}
-		workoutMap.get(r.workoutId)!.rows.push(r)
+		if (!isCardioMarkerRow(r)) {
+			workoutMap.get(r.workoutId)!.rows.push(r)
+		}
 	}
 
 	const defs: WorkoutDefinition[] = []
 	for (const wid of workoutOrder) {
 		const entry = workoutMap.get(wid)!
+
+		// Cardio entries with no set rows → template-less definition
+		if (entry.rows.length === 0) {
+			defs.push({ id: wid, name: entry.name, category: entry.category, templates: [] })
+			continue
+		}
+
 		// Group by exerciseOrder within this workout
 		const exerciseOrderSet: number[] = []
 		const exerciseMap = new Map<number, WorkoutDefRow[]>()
@@ -620,7 +687,7 @@ export function rowsToWorkoutDefs(
 			})
 		}
 
-		defs.push({ id: wid, name: entry.name, templates })
+		defs.push({ id: wid, name: entry.name, category: entry.category, templates })
 	}
 
 	return defs
@@ -692,7 +759,7 @@ export async function readWorkoutDefs(
 	// Skip header, parse data rows, filter out nulls
 	const parsed = allRows.slice(1)
 		.map(parseWorkoutDefRow)
-		.filter((r): r is WorkoutDefRow => r !== null)
+		.filter((r): r is ParsedDefRow => r !== null)
 
 	if (parsed.length === 0) return null
 

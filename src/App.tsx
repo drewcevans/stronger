@@ -66,6 +66,8 @@ function App() {
   );
 
   const handleSelectWorkout = useCallback((workout: Workout) => {
+    // Cardio items don't have a workout execution view
+    if (workout.category === 'cardio') return;
     setStartTime(new Date().toISOString());
     setActiveWorkout(workout);
     setPreviousSets(null);
@@ -190,7 +192,8 @@ function App() {
   const handleCalendarOpenWorkout = useCallback(
     (workoutId: string) => {
       const match = workouts.find((w) => w.id === workoutId);
-      if (match) {
+      // Only open the workout execution view for strength workouts
+      if (match && match.category !== 'cardio') {
         handleSelectWorkout(match);
       }
     },

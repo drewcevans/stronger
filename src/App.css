@@ -141,6 +141,47 @@ body {
 	font-weight: 500;
 }
 
+/* Category divider between strength and cardio */
+.category-divider {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.25rem 0;
+}
+
+.category-divider::before,
+.category-divider::after {
+	content: '';
+	flex: 1;
+	height: 1px;
+	background: var(--color-border);
+}
+
+.category-divider-label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	white-space: nowrap;
+}
+
+/* Cardio badge (icon placeholder in the workout card) */
+.cardio-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 3rem;
+	height: 3rem;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: rgba(79, 195, 247, 0.12);
+	color: var(--color-primary);
+}
+
+.workout-card-cardio {
+	border-style: dashed;
+}
+
 /* -----------------------------------------------------------------------
    Workout view (execution screen)
    ----------------------------------------------------------------------- */
@@ -962,4 +1003,39 @@ body {
 
 .calendar-picker-item:active {
 	background: var(--color-surface-hover);
+}
+
+/* Calendar picker category divider */
+.calendar-picker-divider {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	padding: 0.375rem 0.75rem;
+	border-bottom: 1px solid var(--color-border);
+	background: var(--color-surface-alt);
+}
+
+.calendar-picker-item-cardio {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--color-primary);
+}
+
+/* Cardio workout in calendar day */
+.calendar-workout-cardio {
+	opacity: 0.85;
+}
+
+.calendar-workout-link-cardio {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--color-primary);
+	padding: 0.25rem 0;
+	min-height: 36px;
 }

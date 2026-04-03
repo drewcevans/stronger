@@ -80,4 +80,27 @@ describe('buildWorkoutsFromConfigs', () => {
 			}
 		}
 	});
+
+	it('includes cardio definitions with empty exercises', () => {
+		const defs = [
+			...workoutDefinitions,
+			{ id: 'run', name: 'Easy Run', category: 'cardio' as const, templates: [] },
+			{ id: 'ruck', name: 'Ruck March', category: 'cardio' as const, templates: [] },
+		];
+		const workouts = buildWorkoutsFromConfigs(defaultLiftConfigs, defs);
+		// 4 strength + 2 cardio
+		expect(workouts).toHaveLength(6);
+		const cardioWorkouts = workouts.filter((w) => w.category === 'cardio');
+		expect(cardioWorkouts).toHaveLength(2);
+		expect(cardioWorkouts[0].id).toBe('run');
+		expect(cardioWorkouts[0].exercises).toHaveLength(0);
+		expect(cardioWorkouts[1].id).toBe('ruck');
+	});
+
+	it('sets category to strength for default definitions', () => {
+		const workouts = buildWorkoutsFromConfigs(defaultLiftConfigs);
+		for (const w of workouts) {
+			expect(w.category).toBe('strength');
+		}
+	});
 });

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { Workout, ScheduleEntry } from '../model/index.js';
-import { CalendarPlus, X, ChevronRight } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, Activity } from 'lucide-react';
 
 interface CalendarViewProps {
 	workouts: Workout[];
@@ -82,6 +82,26 @@ export function CalendarView({
 		return map;
 	}, [workouts]);
 
+	// Build a set of cardio workout IDs for quick lookup
+	const cardioIds = useMemo(() => {
+		const ids = new Set<string>();
+		for (const w of workouts) {
+			if (w.category === 'cardio') ids.add(w.id);
+		}
+		return ids;
+	}, [workouts]);
+
+	// Split workouts into strength and cardio for the picker
+	const { strengthWorkouts, cardioWorkouts } = useMemo(() => {
+		const strengthWorkouts: Workout[] = [];
+		const cardioWorkouts: Workout[] = [];
+		for (const w of workouts) {
+			if (w.category === 'cardio') cardioWorkouts.push(w);
+			else strengthWorkouts.push(w);
+		}
+		return { strengthWorkouts, cardioWorkouts };
+	}, [workouts]);
+
 	const handleAssign = useCallback(
 		(workoutId: string) => {
 			if (addingForDate) {
@@ -129,26 +149,38 @@ export function CalendarView({
 
 							{assigned.length > 0 && (
 								<div className="calendar-workouts">
-									{assigned.map((wid, idx) => (
-										<div key={`${wid}-${idx}`} className="calendar-workout-item">
-											<button
-												className="calendar-workout-link"
-												onClick={() => onOpenWorkout(wid)}
-											>
-												<span className="calendar-workout-name">
-													{workoutNames.get(wid) ?? wid}
-												</span>
-												<ChevronRight size={14} />
-											</button>
-											<button
-												className="calendar-remove-btn"
-												onClick={() => onRemove(dateStr, wid)}
-												aria-label={`Remove ${workoutNames.get(wid) ?? wid}`}
-											>
-												<X size={14} />
-											</button>
-										</div>
-									))}
+									{assigned.map((wid, idx) => {
+										const isCardio = cardioIds.has(wid);
+										return (
+											<div key={`${wid}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
+												{isCardio ? (
+													<span className="calendar-workout-link calendar-workout-link-cardio">
+														<Activity size={14} />
+														<span className="calendar-workout-name">
+															{workoutNames.get(wid) ?? wid}
+														</span>
+													</span>
+												) : (
+													<button
+														className="calendar-workout-link"
+														onClick={() => onOpenWorkout(wid)}
+													>
+														<span className="calendar-workout-name">
+															{workoutNames.get(wid) ?? wid}
+														</span>
+														<ChevronRight size={14} />
+													</button>
+												)}
+												<button
+													className="calendar-remove-btn"
+													onClick={() => onRemove(dateStr, wid)}
+													aria-label={`Remove ${workoutNames.get(wid) ?? wid}`}
+												>
+													<X size={14} />
+												</button>
+											</div>
+										);
+									})}
 								</div>
 							)}
 
@@ -165,12 +197,25 @@ export function CalendarView({
 										</button>
 									</div>
 									<div className="calendar-picker-list">
-										{workouts.map((w) => (
+										{strengthWorkouts.map((w) => (
 											<button
 												key={w.id}
 												className="calendar-picker-item"
 												onClick={() => handleAssign(w.id)}
 											>
+												{w.name}
+											</button>
+										))}
+										{cardioWorkouts.length > 0 && strengthWorkouts.length > 0 && (
+											<div className="calendar-picker-divider">Cardio</div>
+										)}
+										{cardioWorkouts.map((w) => (
+											<button
+												key={w.id}
+												className="calendar-picker-item calendar-picker-item-cardio"
+												onClick={() => handleAssign(w.id)}
+											>
+												<Activity size={14} />
 												{w.name}
 											</button>
 										))}
