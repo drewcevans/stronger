@@ -17,7 +17,8 @@
 	--color-border: #333;
 	--color-surface-alt: #232323;
 	--color-weekday: #1565c0;
-	--color-weekend: #e65100;
+	--color-weekend: #bf360c;
+	--color-strength: #fb8c00;
 	--radius: 12px;
 }
 
@@ -1021,6 +1022,17 @@ body {
 	align-items: center;
 	gap: 0.5rem;
 	color: var(--color-primary);
+}
+
+.calendar-picker-item-strength {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--color-strength);
+}
+
+.calendar-workout-link-strength {
+	color: var(--color-strength);
 }
 
 /* Cardio workout in calendar day */
