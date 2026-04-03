@@ -1,0 +1,66 @@
+import { useState, useEffect, useCallback } from 'react';
+
+export type Route =
+  | { view: 'list' }
+  | { view: 'workout'; workoutId: string };
+
+/**
+ * Parse the current `window.location.hash` into a Route.
+ *
+ * Recognised patterns:
+ *   (empty) | `#/`             → { view: 'list' }
+ *   `#/workout/<id>`           → { view: 'workout', workoutId: id }
+ *   anything else              → { view: 'list' }
+ */
+export function parseHash(hash: string = window.location.hash): Route {
+  const stripped = hash.replace(/^#\/?/, '');
+  if (!stripped) return { view: 'list' };
+
+  const match = stripped.match(/^workout\/([^/]+)$/);
+  if (match) return { view: 'workout', workoutId: decodeURIComponent(match[1]) };
+
+  return { view: 'list' };
+}
+
+/** Convert a Route back to a hash string (without the leading `#`). */
+export function routeToHash(route: Route): string {
+  if (route.view === 'workout') return `/workout/${encodeURIComponent(route.workoutId)}`;
+  return '/';
+}
+
+/**
+ * Lightweight hash-based router hook.
+ *
+ * - Reads the initial route from `window.location.hash`
+ * - Listens for `hashchange` to stay in sync with browser navigation
+ * - Provides `navigateTo` to push a new route (updates hash + state)
+ * - Provides `replaceTo` to replace the current route without adding history
+ */
+export function useHashRouter() {
+  const [route, setRoute] = useState<Route>(() => parseHash());
+
+  useEffect(() => {
+    const onHashChange = () => setRoute(parseHash());
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+  /** Push a new route — adds a history entry so the back button works. */
+  const navigateTo = useCallback((r: Route) => {
+    const hash = '#' + routeToHash(r);
+    // Only push if the hash actually changed
+    if (window.location.hash !== hash) {
+      window.location.hash = hash;
+    }
+    setRoute(r);
+  }, []);
+
+  /** Replace the current route — does NOT add a history entry. */
+  const replaceTo = useCallback((r: Route) => {
+    const hash = '#' + routeToHash(r);
+    window.history.replaceState(null, '', hash);
+    setRoute(r);
+  }, []);
+
+  return { route, navigateTo, replaceTo } as const;
+}

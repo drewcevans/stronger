@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal } from './model/index.js';
 import { computeProgression } from './model/index.js';
 import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues } from './google/index.js';
@@ -8,9 +8,11 @@ import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
+import { useHashRouter } from './hooks/useHashRouter.js';
 import './App.css';
 
 function App() {
+  const { route, navigateTo, replaceTo } = useHashRouter();
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [previousSets, setPreviousSets] = useState<PreviousSetData[][] | null>(null);
   const [sheetConnected, setSheetConnected] = useState(false);
@@ -42,7 +44,8 @@ function App() {
     setSpreadsheetId(null);
     setStartTime(null);
     setProgressionProposals(null);
-  }, []);
+    replaceTo({ view: 'list' });
+  }, [replaceTo]);
 
   const loadPreviousSets = useCallback(
     async (sheetId: string, workoutId: string) => {
@@ -61,11 +64,12 @@ function App() {
     setStartTime(new Date().toISOString());
     setActiveWorkout(workout);
     setPreviousSets(null);
+    navigateTo({ view: 'workout', workoutId: workout.id });
     // Fire-and-forget: load previous workout data for context
     if (spreadsheetId) {
       void loadPreviousSets(spreadsheetId, workout.id);
     }
-  }, [spreadsheetId, loadPreviousSets]);
+  }, [spreadsheetId, loadPreviousSets, navigateTo]);
 
   const handleFinish = useCallback(
     (workout: Workout, results: SetResult[][]) => {
@@ -96,8 +100,9 @@ function App() {
       setActiveWorkout(null);
       setStartTime(null);
       setPreviousSets(null);
+      navigateTo({ view: 'list' });
     },
-    [spreadsheetId, startTime, configs, definitions],
+    [spreadsheetId, startTime, configs, definitions, navigateTo],
   );
 
   const handleProgressionConfirm = useCallback(
@@ -126,6 +131,40 @@ function App() {
     setProgressionProposals(null);
   }, []);
 
+  const handleBack = useCallback(() => {
+    setActiveWorkout(null);
+    setStartTime(null);
+    setPreviousSets(null);
+    navigateTo({ view: 'list' });
+  }, [navigateTo]);
+
+  // Deep-link resolution: when auth completes and workouts are loaded,
+  // check if the URL contains a workout ID and auto-select it.
+  useEffect(() => {
+    if (!sheetConnected || workouts.length === 0) return;
+    if (route.view !== 'workout') return;
+    // Already showing the right workout — nothing to do
+    if (activeWorkout?.id === route.workoutId) return;
+
+    const match = workouts.find((w) => w.id === route.workoutId);
+    if (match) {
+      handleSelectWorkout(match);
+    } else {
+      // Invalid workout ID — redirect to list
+      replaceTo({ view: 'list' });
+    }
+  }, [sheetConnected, workouts, route, activeWorkout?.id, handleSelectWorkout, replaceTo]);
+
+  // Sync state when the user presses the browser back button:
+  // if the URL changed to list while a workout is active, clear it.
+  useEffect(() => {
+    if (route.view === 'list' && activeWorkout && !progressionProposals) {
+      setActiveWorkout(null);
+      setStartTime(null);
+      setPreviousSets(null);
+    }
+  }, [route, activeWorkout, progressionProposals]);
+
   // Gate: require auth + sheet connection before showing workouts
   if (!sheetConnected) {
     return (
@@ -152,11 +191,7 @@ function App() {
       <WorkoutView
         workout={activeWorkout}
         previousSets={previousSets}
-        onBack={() => {
-          setActiveWorkout(null);
-          setStartTime(null);
-          setPreviousSets(null);
-        }}
+        onBack={handleBack}
         onFinish={handleFinish}
       />
     );
