@@ -6,7 +6,7 @@
  * workouts from sheet-sourced configs on subsequent visits.
  */
 
-import type { ExerciseTemplate, LiftConfig, Workout, ComputedExercise } from '../model/index.js';
+import type { ExerciseTemplate, LiftConfig, Workout, ComputedExercise, ActivityType } from '../model/index.js';
 import { computeExercise } from '../model/index.js';
 
 // ---------------------------------------------------------------------------
@@ -256,6 +256,8 @@ export const workoutDExercises: ExerciseTemplate[] = [
 export interface WorkoutDefinition {
 	id: string;
 	name: string;
+	/** Activity category; defaults to 'strength' when omitted. */
+	category?: ActivityType;
 	templates: ExerciseTemplate[];
 }
 
@@ -288,16 +290,18 @@ export function buildWorkoutsFromConfigs(
 	const map = new Map(configs.map((c) => [c.id, c]));
 	return definitions
 		.map((def) => {
+			const category = def.category ?? 'strength';
 			const exercises = def.templates
 				.map((t) => computeExercise(t, map))
 				.filter((e): e is ComputedExercise => e !== null && e.sets.length > 0);
 			return {
 				id: def.id,
 				name: def.name,
+				category,
 				exercises,
 			};
 		})
-		.filter((w) => w.exercises.length > 0);
+		.filter((w) => w.category === 'cardio' || w.exercises.length > 0);
 }
 
 export const sampleWorkouts: Workout[] = buildWorkoutsFromConfigs(defaultLiftConfigs);

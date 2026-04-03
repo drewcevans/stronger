@@ -10,6 +10,18 @@ import type { WeightBasis, SetTemplate } from '../../model/types.ts';
 import type { WorkoutDefinition } from '../../data/sample-workouts.ts';
 import { workoutDefinitions, defaultLiftConfigs, buildWorkoutsFromConfigs } from '../../data/sample-workouts.ts';
 
+/**
+ * Assert that a parsed row is a strength row (not a cardio marker)
+ * and narrow the type for subsequent assertions.
+ */
+function expectStrengthRow(result: ReturnType<typeof parseWorkoutDefRow>) {
+	expect(result).not.toBeNull();
+	const r = result!;
+	expect('set' in r).toBe(true);
+	if (!('set' in r)) throw new Error('expected strength row');
+	return r;
+}
+
 /* ------------------------------------------------------------------ */
 /*  encodeWeightBasis                                                  */
 /* ------------------------------------------------------------------ */
@@ -131,9 +143,9 @@ describe('workoutDefsToRows', () => {
 		expect(rows).toHaveLength(1);
 	});
 
-	it('produces 12 columns per row', () => {
+	it('produces 13 columns per row', () => {
 		const rows = workoutDefsToRows([minimalDef]);
-		expect(rows[0]).toHaveLength(12);
+		expect(rows[0]).toHaveLength(13);
 	});
 
 	it('populates columns in correct order', () => {
@@ -151,6 +163,7 @@ describe('workoutDefsToRows', () => {
 			5,               // maxReps
 			'TRUE',          // amrap
 			'Test comment',  // comment
+			'strength',      // category
 		]);
 	});
 
@@ -190,6 +203,21 @@ describe('workoutDefsToRows', () => {
 		}
 		expect(rows).toHaveLength(totalSets);
 	});
+
+	it('writes a single marker row for a cardio definition', () => {
+		const cardioDef: WorkoutDefinition = {
+			id: 'run',
+			name: 'Easy Run',
+			category: 'cardio',
+			templates: [],
+		};
+		const rows = workoutDefsToRows([cardioDef]);
+		expect(rows).toHaveLength(1);
+		expect(rows[0][0]).toBe('run');
+		expect(rows[0][1]).toBe('Easy Run');
+		expect(rows[0][2]).toBe('');  // no exerciseOrder
+		expect(rows[0][12]).toBe('cardio');
+	});
 });
 
 /* ------------------------------------------------------------------ */
@@ -203,20 +231,20 @@ describe('parseWorkoutDefRow', () => {
 	];
 
 	it('parses a valid row', () => {
-		const result = parseWorkoutDefRow(validRow);
-		expect(result).not.toBeNull();
-		expect(result!.workoutId).toBe('A');
-		expect(result!.workoutName).toBe('Workout A — Bench / Squat');
-		expect(result!.exerciseOrder).toBe(1);
-		expect(result!.exerciseRole).toBe('primary');
-		expect(result!.liftId).toBe('bench');
-		expect(result!.set.setType).toBe('work');
-		expect(result!.set.percentage).toBe(1.0);
-		expect(result!.set.weightBasis).toEqual({ kind: 'topSet' });
-		expect(result!.set.minReps).toBe(5);
-		expect(result!.set.maxReps).toBe(5);
-		expect(result!.set.amrap).toBe(true);
-		expect(result!.set.comment).toBe('Test comment');
+		const result = expectStrengthRow(parseWorkoutDefRow(validRow));
+		expect(result.workoutId).toBe('A');
+		expect(result.workoutName).toBe('Workout A — Bench / Squat');
+		expect(result.exerciseOrder).toBe(1);
+		expect(result.exerciseRole).toBe('primary');
+		expect(result.liftId).toBe('bench');
+		expect(result.category).toBe('strength');
+		expect(result.set.setType).toBe('work');
+		expect(result.set.percentage).toBe(1.0);
+		expect(result.set.weightBasis).toEqual({ kind: 'topSet' });
+		expect(result.set.minReps).toBe(5);
+		expect(result.set.maxReps).toBe(5);
+		expect(result.set.amrap).toBe(true);
+		expect(result.set.comment).toBe('Test comment');
 	});
 
 	it('returns null for rows with fewer than 11 columns', () => {
@@ -248,9 +276,8 @@ describe('parseWorkoutDefRow', () => {
 	it('parses joker as a valid setType', () => {
 		const row = [...validRow];
 		row[5] = 'joker';
-		const result = parseWorkoutDefRow(row);
-		expect(result).not.toBeNull();
-		expect(result!.set.setType).toBe('joker');
+		const result = expectStrengthRow(parseWorkoutDefRow(row));
+		expect(result.set.setType).toBe('joker');
 	});
 
 	it('returns null for invalid weightBasis', () => {
@@ -269,22 +296,48 @@ describe('parseWorkoutDefRow', () => {
 	it('parses FALSE amrap correctly', () => {
 		const row = [...validRow];
 		row[10] = 'FALSE';
-		const result = parseWorkoutDefRow(row);
-		expect(result!.set.amrap).toBe(false);
+		const result = expectStrengthRow(parseWorkoutDefRow(row));
+		expect(result.set.amrap).toBe(false);
 	});
 
 	it('omits comment when empty', () => {
 		const row = [...validRow];
 		row[11] = '';
-		const result = parseWorkoutDefRow(row);
-		expect(result!.set.comment).toBeUndefined();
+		const result = expectStrengthRow(parseWorkoutDefRow(row));
+		expect(result.set.comment).toBeUndefined();
 	});
 
 	it('handles row with exactly 11 columns (no comment)', () => {
 		const row = validRow.slice(0, 11);
+		const result = expectStrengthRow(parseWorkoutDefRow(row));
+		expect(result.set.comment).toBeUndefined();
+	});
+
+	it('defaults to strength when category column is missing', () => {
+		const result = expectStrengthRow(parseWorkoutDefRow(validRow));
+		expect(result.category).toBe('strength');
+	});
+
+	it('reads explicit strength category from column 13', () => {
+		const row = [...validRow, 'strength'];
+		const result = expectStrengthRow(parseWorkoutDefRow(row));
+		expect(result.category).toBe('strength');
+	});
+
+	it('parses a cardio marker row', () => {
+		const row = ['run', 'Easy Run', '', '', '', '', '', '', '', '', '', '', 'cardio'];
 		const result = parseWorkoutDefRow(row);
 		expect(result).not.toBeNull();
-		expect(result!.set.comment).toBeUndefined();
+		expect(result!.workoutId).toBe('run');
+		expect(result!.workoutName).toBe('Easy Run');
+		expect(result!.category).toBe('cardio');
+		expect('cardio' in result!).toBe(true);
+	});
+
+	it('returns null for empty exerciseOrder without cardio category', () => {
+		// exerciseOrder blank but category is not cardio → invalid
+		const row = ['run', 'Easy Run', '', '', '', '', '', '', '', '', '', '', 'strength'];
+		expect(parseWorkoutDefRow(row)).toBeNull();
 	});
 });
 
@@ -295,8 +348,8 @@ describe('parseWorkoutDefRow', () => {
 describe('rowsToWorkoutDefs', () => {
 	it('groups rows by workoutId into separate definitions', () => {
 		const parsed = [
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
-			{ workoutId: 'B', workoutName: 'WB', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'squat', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'B', workoutName: 'WB', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'squat', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
 		];
 		const defs = rowsToWorkoutDefs(parsed);
 		expect(defs).toHaveLength(2);
@@ -306,9 +359,9 @@ describe('rowsToWorkoutDefs', () => {
 
 	it('groups by exerciseOrder within a workout', () => {
 		const parsed = [
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'warmup' as const, percentage: 0.5, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: false } },
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 2, exerciseRole: 'secondary', liftId: 'squat', set: { setType: 'work' as const, percentage: 0.85, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: false } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'warmup' as const, percentage: 0.5, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: false } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 2, exerciseRole: 'secondary', liftId: 'squat', category: 'strength' as const, set: { setType: 'work' as const, percentage: 0.85, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: false } },
 		];
 		const defs = rowsToWorkoutDefs(parsed);
 		expect(defs).toHaveLength(1);
@@ -319,7 +372,7 @@ describe('rowsToWorkoutDefs', () => {
 
 	it('derives exercise display name from role + liftId when no liftNames', () => {
 		const parsed = [
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
 		];
 		const defs = rowsToWorkoutDefs(parsed);
 		expect(defs[0].templates[0].name).toBe('Primary: bench');
@@ -327,7 +380,7 @@ describe('rowsToWorkoutDefs', () => {
 
 	it('derives exercise display name from role + lift name when liftNames provided', () => {
 		const parsed = [
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
 		];
 		const liftNames = new Map([['bench', 'Bench Press']]);
 		const defs = rowsToWorkoutDefs(parsed, liftNames);
@@ -336,9 +389,9 @@ describe('rowsToWorkoutDefs', () => {
 
 	it('sorts exercises by exerciseOrder', () => {
 		const parsed = [
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 3, exerciseRole: 'assistance', liftId: 'curl', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 10, maxReps: 15, amrap: false } },
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 2, exerciseRole: 'secondary', liftId: 'squat', set: { setType: 'work' as const, percentage: 0.85, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: false } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 3, exerciseRole: 'assistance', liftId: 'curl', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 10, maxReps: 15, amrap: false } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 2, exerciseRole: 'secondary', liftId: 'squat', category: 'strength' as const, set: { setType: 'work' as const, percentage: 0.85, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: false } },
 		];
 		const defs = rowsToWorkoutDefs(parsed);
 		expect(defs[0].templates[0].liftId).toBe('bench');
@@ -348,12 +401,27 @@ describe('rowsToWorkoutDefs', () => {
 
 	it('preserves workout order from row order', () => {
 		const parsed = [
-			{ workoutId: 'C', workoutName: 'WC', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'press', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
-			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'C', workoutName: 'WC', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'press', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
 		];
 		const defs = rowsToWorkoutDefs(parsed);
 		expect(defs[0].id).toBe('C');
 		expect(defs[1].id).toBe('A');
+	});
+
+	it('handles cardio marker rows as template-less definitions', () => {
+		const parsed = [
+			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
+			{ workoutId: 'run', workoutName: 'Easy Run', category: 'cardio' as const, cardio: true as const },
+		];
+		const defs = rowsToWorkoutDefs(parsed);
+		expect(defs).toHaveLength(2);
+		expect(defs[0].id).toBe('A');
+		expect(defs[0].category).toBe('strength');
+		expect(defs[0].templates).toHaveLength(1);
+		expect(defs[1].id).toBe('run');
+		expect(defs[1].category).toBe('cardio');
+		expect(defs[1].templates).toHaveLength(0);
 	});
 });
 

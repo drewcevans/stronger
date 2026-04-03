@@ -1,4 +1,5 @@
 export type {
+	ActivityType,
 	ComputedExercise,
 	ComputedSet,
 	ExerciseTemplate,
