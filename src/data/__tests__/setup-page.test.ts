@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { roundToNearest } from '../../model/index.js';
-import { defaultLiftConfigs } from '../sample-workouts.js';
+import type { LiftConfig } from '../../model/index.js';
+import exercisesJson from '../../../lib/exercises.json';
+
+/** Lift configs sourced from the JSON library — same source as SetupPage. */
+const libraryDefaults: LiftConfig[] = exercisesJson as LiftConfig[];
 
 /** Backoff weight = 85% of top-set, rounded to the lift's rounding factor. */
 function deriveBackoff(topSetWeight: number, roundingFactor: number): number {
@@ -43,16 +47,16 @@ describe('setup page logic', () => {
 	});
 
 	describe('barbell lift defaults', () => {
-		it('defaultLiftConfigs includes all four barbell lifts', () => {
+		it('JSON library includes all four barbell lifts', () => {
 			for (const id of BARBELL_LIFT_IDS) {
-				const found = defaultLiftConfigs.find((c) => c.id === id);
+				const found = libraryDefaults.find((c) => c.id === id);
 				expect(found).toBeDefined();
 			}
 		});
 
 		it('each barbell lift default backoff matches 85% derivation', () => {
 			for (const id of BARBELL_LIFT_IDS) {
-				const config = defaultLiftConfigs.find((c) => c.id === id)!;
+				const config = libraryDefaults.find((c) => c.id === id)!;
 				expect(config.backoffWeight).toBe(
 					deriveBackoff(config.topSetWeight, config.roundingFactor),
 				);
@@ -69,7 +73,7 @@ describe('setup page logic', () => {
 				deadlift: 315,
 			};
 
-			const configs = defaultLiftConfigs.map((c) => {
+			const configs = libraryDefaults.map((c) => {
 				if (!BARBELL_LIFT_IDS.includes(c.id)) return c;
 				const topSetWeight = userWeights[c.id] ?? c.topSetWeight;
 				const backoffWeight = deriveBackoff(topSetWeight, c.roundingFactor);
@@ -100,11 +104,11 @@ describe('setup page logic', () => {
 		});
 
 		it('preserves all 9 default lift configs in output', () => {
-			const configs = defaultLiftConfigs.map((c) => {
+			const configs = libraryDefaults.map((c) => {
 				if (!BARBELL_LIFT_IDS.includes(c.id)) return c;
 				return { ...c, topSetWeight: c.topSetWeight, backoffWeight: deriveBackoff(c.topSetWeight, c.roundingFactor) };
 			});
-			expect(configs).toHaveLength(defaultLiftConfigs.length);
+			expect(configs).toHaveLength(libraryDefaults.length);
 		});
 	});
 });

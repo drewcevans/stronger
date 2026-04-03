@@ -1,9 +1,18 @@
 import { useState, useCallback } from 'react';
 import type { LiftConfig } from '../model/index.js';
 import { roundToNearest } from '../model/index.js';
+import exercisesJson from '../../lib/exercises.json';
+
+/** All lift configs sourced from the JSON library. */
+const libraryDefaults: LiftConfig[] = exercisesJson as LiftConfig[];
 
 /** The four barbell lift IDs shown on the setup page. */
 const BARBELL_LIFT_IDS = ['squat', 'bench', 'press', 'deadlift'] as const;
+
+/** Barbell lifts pulled from the JSON library for display. */
+const barbellDefaults = libraryDefaults.filter((c) =>
+  (BARBELL_LIFT_IDS as readonly string[]).includes(c.id),
+);
 
 /** Backoff weight = 85% of top-set, rounded to the lift's rounding factor. */
 function deriveBackoff(topSetWeight: number, roundingFactor: number): number {
@@ -11,17 +20,11 @@ function deriveBackoff(topSetWeight: number, roundingFactor: number): number {
 }
 
 interface Props {
-  /** Full set of default lift configs (all lifts, not just barbell). */
-  defaults: LiftConfig[];
   /** Called with the final configs (all lifts) when the user confirms. */
   onConfirm: (configs: LiftConfig[]) => void;
 }
 
-export function SetupPage({ defaults, onConfirm }: Props) {
-  // Only the barbell lifts are editable — pull them from defaults
-  const barbellDefaults = defaults.filter((c) =>
-    (BARBELL_LIFT_IDS as readonly string[]).includes(c.id),
-  );
+export function SetupPage({ onConfirm }: Props) {
 
   // Local state: top-set weight per barbell lift
   const [weights, setWeights] = useState<Record<string, number>>(() => {
@@ -42,15 +45,15 @@ export function SetupPage({ defaults, onConfirm }: Props) {
 
   const handleConfirm = useCallback(() => {
     // Build the final configs: barbell lifts use user-entered weights,
-    // everything else uses the defaults unchanged.
-    const configs = defaults.map((c) => {
+    // everything else uses the library defaults unchanged.
+    const configs = libraryDefaults.map((c) => {
       if (!(BARBELL_LIFT_IDS as readonly string[]).includes(c.id)) return c;
       const topSetWeight = weights[c.id] ?? c.topSetWeight;
       const backoffWeight = deriveBackoff(topSetWeight, c.roundingFactor);
       return { ...c, topSetWeight, backoffWeight };
     });
     onConfirm(configs);
-  }, [defaults, weights, onConfirm]);
+  }, [weights, onConfirm]);
 
   return (
     <div className="setup-page">
