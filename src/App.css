@@ -800,10 +800,6 @@ body {
 	border-left-color: var(--color-weekend);
 }
 
-.calendar-day-weekend.calendar-day-today {
-	border-left-color: var(--color-weekend);
-}
-
 .calendar-day-header {
 	display: flex;
 	align-items: center;
