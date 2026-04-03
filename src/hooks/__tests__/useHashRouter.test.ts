@@ -40,6 +40,14 @@ describe('parseHash', () => {
     });
   });
 
+  it('parses the calendar route', () => {
+    expect(parseHash('#/calendar')).toEqual({ view: 'calendar' });
+  });
+
+  it('parses the calendar route without leading slash', () => {
+    expect(parseHash('#calendar')).toEqual({ view: 'calendar' });
+  });
+
   it('returns list for unknown routes', () => {
     expect(parseHash('#/settings')).toEqual({ view: 'list' });
     expect(parseHash('#/workout/')).toEqual({ view: 'list' });
@@ -72,11 +80,16 @@ describe('routeToHash', () => {
     );
   });
 
+  it('returns /calendar for calendar route', () => {
+    expect(routeToHash({ view: 'calendar' })).toBe('/calendar');
+  });
+
   it('round-trips through parseHash', () => {
     const routes: Route[] = [
       { view: 'list' },
       { view: 'workout', workoutId: 'bench-b' },
       { view: 'workout', workoutId: 'press-c' },
+      { view: 'calendar' },
     ];
     for (const route of routes) {
       const hash = '#' + routeToHash(route);

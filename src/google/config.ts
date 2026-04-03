@@ -24,3 +24,6 @@ export const WORKOUT_DEFS_TAB_NAME = 'Stronger - Workouts'
 
 /** Name of the tab that holds the workout log (completed set data). */
 export const LOG_TAB_NAME = 'Stronger - Log'
+
+/** Name of the tab that holds the workout schedule (date→workoutId mapping). */
+export const SCHEDULE_TAB_NAME = 'Stronger - Schedule'

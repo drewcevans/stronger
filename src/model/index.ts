@@ -5,6 +5,7 @@ export type {
 	LiftConfig,
 	PreviousSetData,
 	ProgressionProposal,
+	ScheduleEntry,
 	SetResult,
 	SetTemplate,
 	SetType,
