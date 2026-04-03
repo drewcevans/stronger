@@ -1,0 +1,83 @@
+[
+	{
+		"id": "bench",
+		"name": "Bench Press",
+		"topSetWeight": 200,
+		"backoffWeight": 170,
+		"increment": 2.5,
+		"minimumWeight": 95,
+		"roundingFactor": 5
+	},
+	{
+		"id": "squat",
+		"name": "Squat",
+		"topSetWeight": 300,
+		"backoffWeight": 255,
+		"increment": 5,
+		"minimumWeight": 95,
+		"roundingFactor": 5
+	},
+	{
+		"id": "press",
+		"name": "Press",
+		"topSetWeight": 140,
+		"backoffWeight": 120,
+		"increment": 2.5,
+		"minimumWeight": 65,
+		"roundingFactor": 2.5
+	},
+	{
+		"id": "deadlift",
+		"name": "Deadlift",
+		"topSetWeight": 350,
+		"backoffWeight": 300,
+		"increment": 5,
+		"minimumWeight": 135,
+		"roundingFactor": 5
+	},
+	{
+		"id": "skull-crusher",
+		"name": "Skull Crusher",
+		"topSetWeight": 60,
+		"backoffWeight": 51,
+		"increment": 2.5,
+		"minimumWeight": 20,
+		"roundingFactor": 2.5
+	},
+	{
+		"id": "chin-up",
+		"name": "Chin-up",
+		"topSetWeight": 0,
+		"backoffWeight": 0,
+		"increment": 5,
+		"minimumWeight": 0,
+		"roundingFactor": 5
+	},
+	{
+		"id": "bicep-curl",
+		"name": "Bicep Curl",
+		"topSetWeight": 30,
+		"backoffWeight": 25,
+		"increment": 2.5,
+		"minimumWeight": 10,
+		"roundingFactor": 2.5
+	},
+	{
+		"id": "lateral-raise",
+		"name": "Lateral Raise",
+		"topSetWeight": 15,
+		"backoffWeight": 12.5,
+		"increment": 2.5,
+		"minimumWeight": 5,
+		"roundingFactor": 2.5
+	},
+	{
+		"id": "dumbbell-row",
+		"name": "Dumbbell Row",
+		"topSetWeight": 60,
+		"backoffWeight": 50,
+		"increment": 5,
+		"minimumWeight": 20,
+		"roundingFactor": 5
+	}
+]
