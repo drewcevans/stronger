@@ -6,7 +6,9 @@
 		"backoffWeight": 170,
 		"increment": 2.5,
 		"minimumWeight": 95,
-		"roundingFactor": 5
+		"roundingFactor": 5,
+		"barWeight": 45,
+		"gear": "barbell"
 	},
 	{
 		"id": "squat",
@@ -15,7 +17,9 @@
 		"backoffWeight": 255,
 		"increment": 5,
 		"minimumWeight": 95,
-		"roundingFactor": 5
+		"roundingFactor": 5,
+		"barWeight": 45,
+		"gear": "barbell"
 	},
 	{
 		"id": "press",
@@ -24,7 +28,9 @@
 		"backoffWeight": 120,
 		"increment": 2.5,
 		"minimumWeight": 65,
-		"roundingFactor": 2.5
+		"roundingFactor": 2.5,
+		"barWeight": 45,
+		"gear": "barbell"
 	},
 	{
 		"id": "deadlift",
@@ -33,34 +39,42 @@
 		"backoffWeight": 300,
 		"increment": 5,
 		"minimumWeight": 135,
-		"roundingFactor": 5
+		"roundingFactor": 5,
+		"barWeight": 45,
+		"gear": "barbell"
 	},
 	{
 		"id": "skull-crusher",
 		"name": "Skull Crusher",
 		"topSetWeight": 60,
-		"backoffWeight": 51,
-		"increment": 2.5,
-		"minimumWeight": 20,
-		"roundingFactor": 2.5
+		"backoffWeight": 50,
+		"increment": 1,
+		"minimumWeight": 15,
+		"roundingFactor": 1,
+		"barWeight": 15,
+		"gear": "barbell"
 	},
 	{
 		"id": "chin-up",
 		"name": "Chin-up",
 		"topSetWeight": 0,
 		"backoffWeight": 0,
-		"increment": 5,
+		"increment": 0,
 		"minimumWeight": 0,
-		"roundingFactor": 5
+		"roundingFactor": 0,
+		"barWeight": 0,
+		"gear": "bodyweight"
 	},
 	{
-		"id": "bicep-curl",
-		"name": "Bicep Curl",
+		"id": "bicep-curl-ez",
+		"name": "Bicep Curl (EZ Bar)",
 		"topSetWeight": 30,
 		"backoffWeight": 25,
-		"increment": 2.5,
-		"minimumWeight": 10,
-		"roundingFactor": 2.5
+		"increment": 1,
+		"minimumWeight": 15,
+		"roundingFactor": 1,
+		"barWeight": 15,
+		"gear": "barbell"
 	},
 	{
 		"id": "lateral-raise",
@@ -69,15 +83,30 @@
 		"backoffWeight": 12.5,
 		"increment": 2.5,
 		"minimumWeight": 5,
-		"roundingFactor": 2.5
+		"roundingFactor": 2.5,
+		"barWeight": 5,
+		"gear": "dumbbell"
 	},
 	{
 		"id": "dumbbell-row",
 		"name": "Dumbbell Row",
 		"topSetWeight": 60,
 		"backoffWeight": 50,
-		"increment": 5,
-		"minimumWeight": 20,
-		"roundingFactor": 5
+		"increment": 2.5,
+		"minimumWeight": 25,
+		"roundingFactor": 2.5,
+		"barWeight": 5,
+		"gear": "dumbbell"
+	},
+	{
+		"id": "lunge",
+		"name": "Lunge",
+		"topSetWeight": 25,
+		"backoffWeight": 20,
+		"increment": 2.5,
+		"minimumWeight": 5,
+		"roundingFactor": 2.5,
+		"barWeight": 5,
+		"gear": "dumbbell"
 	}
 ]

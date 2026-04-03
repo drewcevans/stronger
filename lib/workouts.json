@@ -1,13 +1,13 @@
 [
 	{
-		"id": "A",
-		"name": "Workout A — Bench / Press",
+		"id": "rss-intermediate-b-bench",
+		"name": "RSS Bench (IntB)",
 		"templates": [
 			{
 				"liftId": "bench",
 				"name": "Primary: Bench Press",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
@@ -19,7 +19,7 @@
 				"liftId": "press",
 				"name": "Secondary: Press",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 5, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 3, "maxReps": 3, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 2, "maxReps": 2, "amrap": false },
@@ -38,14 +38,14 @@
 		]
 	},
 	{
-		"id": "B",
-		"name": "Workout B — Squat / Deadlift",
+		"id": "rss-intermediate-b-squat",
+		"name": "RSS Squat (IntB)",
 		"templates": [
 			{
 				"liftId": "squat",
 				"name": "Primary: Squat",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
@@ -74,14 +74,14 @@
 		]
 	},
 	{
-		"id": "C",
-		"name": "Workout C — Press / Bench",
+		"id": "rss-intermediate-b-press",
+		"name": "RSS Press (IntB)",
 		"templates": [
 			{
 				"liftId": "press",
 				"name": "Primary: Press",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
@@ -93,7 +93,7 @@
 				"liftId": "bench",
 				"name": "Secondary: Bench Press",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 5, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 3, "maxReps": 3, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 2, "maxReps": 2, "amrap": false },
@@ -121,8 +121,8 @@
 		]
 	},
 	{
-		"id": "D",
-		"name": "Workout D — Deadlift / Squat",
+		"id": "rss-intermediate-b-deadlift",
+		"name": "RSS Deadlift (IntB)",
 		"templates": [
 			{
 				"liftId": "deadlift",
@@ -139,7 +139,7 @@
 				"liftId": "squat",
 				"name": "Secondary: Squat",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "fixed", "weight": 45 }, "minReps": 10, "maxReps": 10, "amrap": false },
+					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.3375, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.4875, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 3, "maxReps": 3, "amrap": false },
 					{ "setType": "warmup", "percentage": 0.6375, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 2, "maxReps": 2, "amrap": false },

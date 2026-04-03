@@ -48,6 +48,10 @@ describe('encodeWeightBasis', () => {
 	it('encodes fixed with decimal', () => {
 		expect(encodeWeightBasis({ kind: 'fixed', weight: 22.5 })).toBe('fixed:22.5');
 	});
+
+	it('encodes barWeight', () => {
+		expect(encodeWeightBasis({ kind: 'barWeight' })).toBe('barWeight');
+	});
 });
 
 /* ------------------------------------------------------------------ */
@@ -78,6 +82,10 @@ describe('decodeWeightBasis', () => {
 		expect(decodeWeightBasis('fixed:22.5')).toEqual({ kind: 'fixed', weight: 22.5 });
 	});
 
+	it('decodes barWeight', () => {
+		expect(decodeWeightBasis('barWeight')).toEqual({ kind: 'barWeight' });
+	});
+
 	it('returns null for unknown format', () => {
 		expect(decodeWeightBasis('unknown')).toBeNull();
 	});
@@ -98,12 +106,13 @@ describe('decodeWeightBasis', () => {
 		expect(decodeWeightBasis('  topSet  ')).toEqual({ kind: 'topSet' });
 	});
 
-	it('round-trips all four variants', () => {
+	it('round-trips all five variants', () => {
 		const cases: WeightBasis[] = [
 			{ kind: 'topSet' },
 			{ kind: 'backoff' },
 			{ kind: 'crossReference', liftId: 'bench' },
 			{ kind: 'fixed', weight: 45 },
+			{ kind: 'barWeight' },
 		];
 		for (const wb of cases) {
 			expect(decodeWeightBasis(encodeWeightBasis(wb))).toEqual(wb);

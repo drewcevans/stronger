@@ -17,6 +17,9 @@
  * Per-lift configuration that controls how weights are calculated and
  * progressed. Every field maps to an editable cell in the spreadsheet.
  */
+/** Equipment type for an exercise. */
+export type GearType = 'barbell' | 'dumbbell' | 'band' | 'bodyweight' | 'other';
+
 export interface LiftConfig {
 	/** Stable identifier for cross-referencing between lifts. */
 	id: string;
@@ -28,10 +31,14 @@ export interface LiftConfig {
 	backoffWeight: number;
 	/** Weight added on successful progression (e.g. 2.5 or 5 lbs). */
 	increment: number;
-	/** Floor — no set will be programmed below this weight (lbs). */
+	/** Starting minimum — no set will be programmed below this weight (lbs). */
 	minimumWeight: number;
 	/** All calculated weights are rounded to the nearest multiple of this value. */
 	roundingFactor: number;
+	/** Minimum allowable weight for the exercise (e.g. empty bar = 45 lbs). */
+	barWeight: number;
+	/** Equipment type used for this exercise. */
+	gear: GearType;
 }
 
 // ---------------------------------------------------------------------------
@@ -50,12 +57,15 @@ export type SetType = 'warmup' | 'work' | 'backoff' | 'joker';
  *                      derives from primary press)
  * - `fixed`         → an absolute weight, not percentage-based (e.g. empty
  *                      bar warmup at 45 lbs)
+ * - `barWeight`     → the lift's configured bar weight (minimum allowable
+ *                      weight for the equipment)
  */
 export type WeightBasis =
 	| { kind: 'topSet' }
 	| { kind: 'backoff' }
 	| { kind: 'crossReference'; liftId: string }
-	| { kind: 'fixed'; weight: number };
+	| { kind: 'fixed'; weight: number }
+	| { kind: 'barWeight' };
 
 /** A single set within an exercise template. */
 export interface SetTemplate {

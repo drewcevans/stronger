@@ -16,9 +16,11 @@ describe('liftConfigToRow', () => {
 		increment: 2.5,
 		minimumWeight: 95,
 		roundingFactor: 5,
+		barWeight: 45,
+		gear: 'barbell',
 	};
 
-	it('serializes all seven fields in order', () => {
+	it('serializes all nine fields in order', () => {
 		const row = liftConfigToRow(config);
 		expect(row).toEqual([
 			'bench',
@@ -28,11 +30,13 @@ describe('liftConfigToRow', () => {
 			2.5,
 			95,
 			5,
+			45,
+			'barbell',
 		]);
 	});
 
-	it('returns exactly 7 columns', () => {
-		expect(liftConfigToRow(config)).toHaveLength(7);
+	it('returns exactly 9 columns', () => {
+		expect(liftConfigToRow(config)).toHaveLength(9);
 	});
 });
 
@@ -42,7 +46,7 @@ describe('liftConfigToRow', () => {
 
 describe('rowToLiftConfig', () => {
 	it('parses a string array back into a LiftConfig', () => {
-		const row = ['squat', 'Squat', '300', '255', '5', '95', '5'];
+		const row = ['squat', 'Squat', '300', '255', '5', '95', '5', '45', 'barbell'];
 		const config = rowToLiftConfig(row);
 		expect(config).toEqual({
 			id: 'squat',
@@ -52,11 +56,13 @@ describe('rowToLiftConfig', () => {
 			increment: 5,
 			minimumWeight: 95,
 			roundingFactor: 5,
+			barWeight: 45,
+			gear: 'barbell',
 		});
 	});
 
 	it('handles decimal values', () => {
-		const row = ['press', 'Press', '140', '120', '2.5', '65', '2.5'];
+		const row = ['press', 'Press', '140', '120', '2.5', '65', '2.5', '45', 'barbell'];
 		const config = rowToLiftConfig(row);
 		expect(config).not.toBeNull();
 		expect(config!.increment).toBe(2.5);
@@ -72,6 +78,8 @@ describe('rowToLiftConfig', () => {
 			increment: 5,
 			minimumWeight: 135,
 			roundingFactor: 5,
+			barWeight: 45,
+			gear: 'barbell',
 		};
 		const row = liftConfigToRow(original);
 		const parsed = rowToLiftConfig(row.map(String));
@@ -104,6 +112,25 @@ describe('rowToLiftConfig', () => {
 		const config = rowToLiftConfig(['bench', 'Bench', '200', '170', '0', '0', '0']);
 		expect(config).not.toBeNull();
 		expect(config!.increment).toBe(0);
+	});
+
+	it('defaults barWeight to 0 and gear to other when columns are absent', () => {
+		const config = rowToLiftConfig(['bench', 'Bench', '200', '170', '2.5', '95', '5']);
+		expect(config).not.toBeNull();
+		expect(config!.barWeight).toBe(0);
+		expect(config!.gear).toBe('other');
+	});
+
+	it('parses gear type case-insensitively', () => {
+		const config = rowToLiftConfig(['bench', 'Bench', '200', '170', '2.5', '95', '5', '45', 'Barbell']);
+		expect(config).not.toBeNull();
+		expect(config!.gear).toBe('barbell');
+	});
+
+	it('defaults unrecognized gear type to other', () => {
+		const config = rowToLiftConfig(['bench', 'Bench', '200', '170', '2.5', '95', '5', '45', 'kettlebell']);
+		expect(config).not.toBeNull();
+		expect(config!.gear).toBe('other');
 	});
 });
 

@@ -55,6 +55,9 @@ export function computeSetWeight(
 		case 'fixed':
 			return set.weightBasis.weight;
 
+		case 'barWeight':
+			return liftConfig.barWeight;
+
 		case 'topSet':
 			return computeWeight(
 				set.percentage,

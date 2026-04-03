@@ -29,6 +29,8 @@ const benchConfig: LiftConfig = {
 	increment: 2.5,
 	minimumWeight: 95,
 	roundingFactor: 5,
+	barWeight: 45,
+	gear: 'barbell',
 };
 
 const squatConfig: LiftConfig = {
@@ -39,6 +41,8 @@ const squatConfig: LiftConfig = {
 	increment: 5,
 	minimumWeight: 95,
 	roundingFactor: 5,
+	barWeight: 45,
+	gear: 'barbell',
 };
 
 const pressConfig: LiftConfig = {
@@ -49,6 +53,8 @@ const pressConfig: LiftConfig = {
 	increment: 2.5,
 	minimumWeight: 65,
 	roundingFactor: 2.5,
+	barWeight: 45,
+	gear: 'barbell',
 };
 
 const deadliftConfig: LiftConfig = {
@@ -59,6 +65,8 @@ const deadliftConfig: LiftConfig = {
 	increment: 5,
 	minimumWeight: 135,
 	roundingFactor: 5,
+	barWeight: 45,
+	gear: 'barbell',
 };
 
 const skullCrusherConfig: LiftConfig = {
@@ -69,6 +77,8 @@ const skullCrusherConfig: LiftConfig = {
 	increment: 2.5,
 	minimumWeight: 20,
 	roundingFactor: 2.5,
+	barWeight: 15,
+	gear: 'barbell',
 };
 
 // ---------------------------------------------------------------------------
@@ -150,6 +160,19 @@ describe('computeSetWeight', () => {
 			amrap: false,
 		};
 		expect(computeSetWeight(set, benchConfig, configs)).toBe(45);
+	});
+
+	it('computes a barWeight-based set from the lift config', () => {
+		const set: SetTemplate = {
+			setType: 'warmup',
+			percentage: 1.0,
+			weightBasis: { kind: 'barWeight' },
+			minReps: 10,
+			maxReps: 10,
+			amrap: false,
+		};
+		expect(computeSetWeight(set, benchConfig, configs)).toBe(45);
+		expect(computeSetWeight(set, skullCrusherConfig, configs)).toBe(15);
 	});
 
 	it('computes a topSet-based warmup', () => {
@@ -247,8 +270,8 @@ describe('computeSet', () => {
 	it('omits comment when undefined', () => {
 		const set: SetTemplate = {
 			setType: 'warmup',
-			percentage: 0,
-			weightBasis: { kind: 'fixed', weight: 45 },
+			percentage: 1.0,
+			weightBasis: { kind: 'barWeight' },
 			minReps: 10,
 			maxReps: 10,
 			amrap: false,
@@ -296,8 +319,8 @@ describe('computeExercise', () => {
 			sets: [
 				{
 					setType: 'warmup',
-					percentage: 0,
-					weightBasis: { kind: 'fixed', weight: 45 },
+					percentage: 1.0,
+					weightBasis: { kind: 'barWeight' },
 					minReps: 10,
 					maxReps: 10,
 					amrap: false,
@@ -406,8 +429,8 @@ describe('RSS Intermediate B scenarios', () => {
 			sets: [
 				{
 					setType: 'warmup',
-					percentage: 0,
-					weightBasis: { kind: 'fixed', weight: 45 },
+					percentage: 1.0,
+					weightBasis: { kind: 'barWeight' },
 					minReps: 10,
 					maxReps: 10,
 					amrap: false,

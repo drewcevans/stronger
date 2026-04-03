@@ -14,7 +14,7 @@ import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the config zone: header row + up to 20 lift rows. */
-const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A1:G21`
+const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A1:I21`
 
 /** A1 range for the log zone header (row 1 of the log tab). */
 const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:M1`
@@ -33,6 +33,8 @@ const CONFIG_HEADER: string[] = [
 	'increment',
 	'minimumWeight',
 	'roundingFactor',
+	'barWeight',
+	'gear',
 ]
 
 const LOG_HEADER: string[] = [
@@ -186,6 +188,8 @@ export function liftConfigToRow(
 		config.increment,
 		config.minimumWeight,
 		config.roundingFactor,
+		config.barWeight,
+		config.gear,
 	]
 }
 
@@ -199,6 +203,9 @@ function isValidWeight(n: number): boolean {
  * Returns `null` if the row is missing required fields or contains
  * non-numeric values where numbers are expected.
  */
+/** Valid gear type values. */
+const VALID_GEAR_TYPES = new Set(['barbell', 'dumbbell', 'band', 'bodyweight', 'other']);
+
 export function rowToLiftConfig(row: string[]): LiftConfig | null {
 	// Need at least id (col 0) and name (col 1) plus 5 numeric columns
 	if (!row || row.length < 7) return null;
@@ -235,7 +242,16 @@ export function rowToLiftConfig(row: string[]): LiftConfig | null {
 		return null;
 	}
 
-	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor };
+	// barWeight (col 7) — default to 0 if absent or blank (backward compat)
+	const rawBarWeight = (row[7] ?? '').trim();
+	const barWeight = rawBarWeight ? Number(rawBarWeight) : 0;
+	if (!isValidWeight(barWeight)) return null;
+
+	// gear (col 8) — default to 'other' if absent or unrecognized
+	const rawGear = (row[8] ?? '').trim().toLowerCase();
+	const gear = VALID_GEAR_TYPES.has(rawGear) ? rawGear as LiftConfig['gear'] : 'other';
+
+	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear };
 }
 
 /* ------------------------------------------------------------------ */
@@ -312,7 +328,7 @@ export async function writeConfigValues(
 	const rows = configs.map(liftConfigToRow)
 	const startRow = 2 // row 1 is the header
 	const endRow = startRow + rows.length - 1
-	const range = `'${TARGET_TAB_NAME}'!A${startRow}:G${endRow}`
+	const range = `'${TARGET_TAB_NAME}'!A${startRow}:I${endRow}`
 
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
@@ -426,6 +442,8 @@ export function encodeWeightBasis(wb: WeightBasis): string {
 			return 'topSet'
 		case 'backoff':
 			return 'backoff'
+		case 'barWeight':
+			return 'barWeight'
 		case 'crossReference':
 			return `crossReference:${wb.liftId}`
 		case 'fixed':
@@ -441,6 +459,7 @@ export function decodeWeightBasis(raw: string): WeightBasis | null {
 	const s = raw.trim()
 	if (s === 'topSet') return { kind: 'topSet' }
 	if (s === 'backoff') return { kind: 'backoff' }
+	if (s === 'barWeight') return { kind: 'barWeight' }
 	if (s.startsWith('crossReference:')) {
 		const liftId = s.slice('crossReference:'.length).trim()
 		return liftId ? { kind: 'crossReference', liftId } : null
