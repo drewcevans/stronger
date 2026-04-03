@@ -22,6 +22,13 @@ function formatDate(dateStr: string): { weekday: string; display: string } {
 	return { weekday, display };
 }
 
+/** Check if a date string falls on a weekend (Saturday or Sunday). */
+function isWeekend(dateStr: string): boolean {
+	const [y, m, d] = dateStr.split('-').map(Number);
+	const day = new Date(y, m - 1, d).getDay();
+	return day === 0 || day === 6;
+}
+
 /** Check if a date string is today. */
 function isToday(dateStr: string): boolean {
 	const now = new Date();
@@ -109,12 +116,13 @@ export function CalendarView({
 				{days.map((dateStr) => {
 					const { weekday, display } = formatDate(dateStr);
 					const today = isToday(dateStr);
+					const weekend = isWeekend(dateStr);
 					const assigned = scheduleMap.get(dateStr) ?? [];
 
 					return (
 						<div
 							key={dateStr}
-							className={`calendar-day${today ? ' calendar-day-today' : ''}`}
+							className={`calendar-day${today ? ' calendar-day-today' : ''}${weekend ? ' calendar-day-weekend' : ''}`}
 						>
 							<div className="calendar-day-header">
 								<div className="calendar-day-date">
