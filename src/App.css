@@ -15,6 +15,7 @@
 	--color-joker: #ffd600;
 	--color-completed: #2e7d32;
 	--color-border: #333;
+	--color-surface-alt: #232323;
 	--radius: 12px;
 }
 
@@ -767,7 +768,7 @@ body {
 }
 
 .calendar-day-weekend {
-	background: #232323;
+	background: var(--color-surface-alt);
 }
 
 .calendar-day-weekend .calendar-weekday {
