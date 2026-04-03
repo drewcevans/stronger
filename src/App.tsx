@@ -52,7 +52,8 @@ function App() {
     async (configs: LiftConfig[]) => {
       if (!spreadsheetId) return;
 
-      // Write the user's configs to the sheet
+      // Write the user's configs to the sheet (writeDefaultConfig writes
+      // the header row too, which is needed for a fresh config zone).
       await writeDefaultConfig(spreadsheetId, configs);
       setConfigs(configs);
 
