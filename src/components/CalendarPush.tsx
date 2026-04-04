@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Workout } from '../model/index.js';
+import type { Workout, ScheduleEntry } from '../model/index.js';
 import type { CalendarListEntry, CalendarPushResult, WeeklySlot } from '../google/index.js';
 import { listWritableCalendars, pushEventsToCalendar } from '../google/index.js';
-import { Upload, CheckCircle, AlertCircle, Loader, X } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, Loader, X, CalendarCheck } from 'lucide-react';
 
 interface CalendarPushProps {
   workouts: Workout[];
   onClose: () => void;
+  onUpdateSchedule: (entries: ScheduleEntry[]) => void;
 }
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -25,7 +26,7 @@ function nextMonday(): string {
 
 type PushStatus = 'idle' | 'pushing' | 'success' | 'error';
 
-export function CalendarPush({ workouts, onClose }: CalendarPushProps) {
+export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPushProps) {
   // Weekly day → workout mapping (7 entries, empty string = no workout)
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
   const [weeks, setWeeks] = useState(4);
@@ -83,6 +84,32 @@ export function CalendarPush({ workouts, onClose }: CalendarPushProps) {
   const hasSlots = daySlots.some((id) => id !== '');
   const canPush = hasSlots && selectedCalendarId && pushStatus !== 'pushing';
 
+  // Generate ScheduleEntry[] from the weekly planner
+  const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
+    const entries: ScheduleEntry[] = [];
+    const [sy, sm, sd] = startDate.split('-').map(Number);
+    const start = new Date(sy, sm - 1, sd);
+    for (let week = 0; week < weeks; week++) {
+      for (let day = 0; day < 7; day++) {
+        const wid = daySlots[day];
+        if (!wid) continue;
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + week * 7 + day);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        entries.push({ date: dateStr, workoutId: wid });
+      }
+    }
+    return entries;
+  }, [daySlots, startDate, weeks]);
+
+  const [scheduleUpdated, setScheduleUpdated] = useState(false);
+
+  const handleUpdateSchedule = useCallback(() => {
+    const entries = generateScheduleEntries();
+    onUpdateSchedule(entries);
+    setScheduleUpdated(true);
+    setTimeout(() => setScheduleUpdated(false), 2000);
+  }, [generateScheduleEntries, onUpdateSchedule]);
+
   const handlePush = useCallback(async () => {
     if (!canPush) return;
 
@@ -125,7 +152,7 @@ export function CalendarPush({ workouts, onClose }: CalendarPushProps) {
   return (
     <div className="calendar-push">
       <div className="calendar-push-header">
-        <h3>Push to Google Calendar</h3>
+        <h3>Planner</h3>
         <button className="calendar-push-close" onClick={onClose} aria-label="Close">
           <X size={18} />
         </button>
@@ -186,6 +213,31 @@ export function CalendarPush({ workouts, onClose }: CalendarPushProps) {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Update Schedule button */}
+      <button
+        className="calendar-push-btn"
+        onClick={handleUpdateSchedule}
+        disabled={!hasSlots}
+      >
+        {scheduleUpdated ? (
+          <>
+            <CheckCircle size={16} /> Updated
+          </>
+        ) : (
+          <>
+            <CalendarCheck size={16} /> Update Schedule
+          </>
+        )}
+      </button>
+
+      {/* Divider */}
+      <div className="calendar-push-divider" />
+
+      {/* Push to Google Calendar */}
+      <div className="calendar-push-section">
+        <label className="calendar-push-label">Push to Google Calendar</label>
       </div>
 
       {/* Calendar picker */}

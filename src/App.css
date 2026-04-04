@@ -1804,6 +1804,11 @@ body {
 	opacity: 0.85;
 }
 
+.calendar-push-divider {
+	border-top: 1px solid var(--color-border);
+	margin: 0.5rem 0;
+}
+
 .calendar-push-loading,
 .calendar-push-error {
 	display: flex;

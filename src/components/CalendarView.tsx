@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Activity, Dumbbell, History, Save, Check, Upload } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Activity, Dumbbell, History, Save, Check, CalendarCog } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
@@ -22,6 +22,7 @@ interface CalendarViewProps {
 		sessionWorkoutId: string,
 		sessionStartTime: string,
 	) => void;
+	onBulkSchedule: (entries: ScheduleEntry[]) => void;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -353,6 +354,7 @@ export function CalendarView({
 	onOpenWorkout,
 	onUpdateLogRows,
 	onDeleteSession,
+	onBulkSchedule,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
 	const [showPush, setShowPush] = useState(false);
@@ -514,7 +516,7 @@ export function CalendarView({
 						className="calendar-push-toggle-btn"
 						onClick={() => setShowPush(true)}
 					>
-						<Upload size={16} /> Push to Google Calendar
+						<CalendarCog size={16} /> Planner
 					</button>
 				</div>
 			)}
@@ -522,6 +524,7 @@ export function CalendarView({
 				<CalendarPush
 					workouts={workouts}
 					onClose={() => setShowPush(false)}
+					onUpdateSchedule={onBulkSchedule}
 				/>
 			)}
 

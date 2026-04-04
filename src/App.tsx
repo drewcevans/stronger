@@ -247,6 +247,20 @@ function App() {
     [schedule, spreadsheetId],
   );
 
+  const handleBulkSchedule = useCallback(
+    (entries: ScheduleEntry[]) => {
+      // Merge: remove existing entries for dates covered by the new plan, then add new ones
+      const newDates = new Set(entries.map((e) => e.date));
+      const kept = schedule.filter((e) => !newDates.has(e.date));
+      const updated = [...kept, ...entries];
+      setSchedule(updated);
+      if (spreadsheetId) {
+        void writeSchedule(spreadsheetId, updated);
+      }
+    },
+    [schedule, spreadsheetId],
+  );
+
   const handleScheduleRemove = useCallback(
     (date: string, workoutId: string) => {
       // Remove the first matching entry for this date+workoutId
@@ -616,6 +630,7 @@ function App() {
           onOpenWorkout={handleCalendarOpenWorkout}
           onUpdateLogRows={handleUpdateLogRows}
           onDeleteSession={handleDeleteSession}
+          onBulkSchedule={handleBulkSchedule}
         />
       </>
     );
