@@ -256,6 +256,20 @@ function App() {
     navigateTo({ view: 'editor' });
   }, [navigateTo]);
 
+  const handleToggleFavorite = useCallback(
+    (workoutId: string, favorite: boolean) => {
+      const updatedDefs = definitions.map((d) =>
+        d.id === workoutId ? { ...d, favorite } : d,
+      );
+      setDefinitions(updatedDefs);
+      setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
+      if (spreadsheetId) {
+        void writeWorkoutDefs(spreadsheetId, updatedDefs);
+      }
+    },
+    [definitions, configs, spreadsheetId],
+  );
+
   const handleEditorCancel = useCallback(() => {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
@@ -411,6 +425,7 @@ function App() {
         onSelect={handleSelectWorkout}
         onEdit={handleEditWorkout}
         onNew={handleNewWorkout}
+        onToggleFavorite={handleToggleFavorite}
       />
     </>
   );

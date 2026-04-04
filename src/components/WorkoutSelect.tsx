@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Workout } from '../model/index.js';
 import { Banner } from './Banner.js';
 import { LiftBadge } from './LiftBadge.js';
-import { Activity, Pencil, Plus } from 'lucide-react';
+import { Activity, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -10,9 +10,58 @@ interface WorkoutSelectProps {
 	onSelect: (workout: Workout) => void;
 	onEdit?: (workoutId: string) => void;
 	onNew?: () => void;
+	onToggleFavorite?: (workoutId: string, favorite: boolean) => void;
 }
 
-export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNew }: WorkoutSelectProps) {
+function WorkoutCard({
+	w,
+	onSelect,
+	onEdit,
+	onToggleFavorite,
+	cardio,
+}: {
+	w: Workout;
+	onSelect: (w: Workout) => void;
+	onEdit?: (id: string) => void;
+	onToggleFavorite?: (id: string, fav: boolean) => void;
+	cardio?: boolean;
+}) {
+	return (
+		<div className="workout-card-wrapper">
+			{onToggleFavorite && (
+				<button
+					className={`btn-fav-workout${w.favorite ? ' btn-fav-active' : ''}`}
+					aria-label={w.favorite ? `Remove ${w.name} from favorites` : `Add ${w.name} to favorites`}
+					onClick={() => onToggleFavorite(w.id, !w.favorite)}
+				>
+					<Star size={16} fill={w.favorite ? 'currentColor' : 'none'} />
+				</button>
+			)}
+			<button
+				className={`workout-card${cardio ? ' workout-card-cardio' : ''}`}
+				onClick={() => onSelect(w)}
+			>
+				{cardio ? (
+					<span className="cardio-badge"><Activity size={24} /></span>
+				) : (
+					<LiftBadge liftId={w.exercises[0]?.liftId ?? 'unknown'} size={48} />
+				)}
+				<span className="workout-name">{w.name}</span>
+			</button>
+			{onEdit && (
+				<button
+					className="btn-edit-workout"
+					aria-label={`Edit ${w.name}`}
+					onClick={() => onEdit(w.id)}
+				>
+					<Pencil size={16} />
+				</button>
+			)}
+		</div>
+	);
+}
+
+export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
 	const { favorites, others, cardio } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
@@ -25,7 +74,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 		return { favorites, others, cardio };
 	}, [workouts]);
 
-	const [moreId, setMoreId] = useState('');
+	const [moreOpen, setMoreOpen] = useState(false);
 
 	return (
 		<div className="workout-select">
@@ -38,42 +87,22 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 			) : (
 				<div className="workout-list">
 					{favorites.map((w) => (
-						<div key={w.id} className="workout-card-wrapper">
-							<button
-								className="workout-card"
-								onClick={() => onSelect(w)}
-							>
-								<LiftBadge liftId={w.exercises[0]?.liftId ?? 'unknown'} size={48} />
-								<span className="workout-name">{w.name}</span>
-							</button>
-							{onEdit && (
-								<button
-									className="btn-edit-workout"
-									aria-label={`Edit ${w.name}`}
-									onClick={() => onEdit(w.id)}
-								>
-									<Pencil size={16} />
-								</button>
-							)}
-						</div>
+						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
 					))}
 					{others.length > 0 && (
-						<select
-							className="workout-more-select"
-							value={moreId}
-							onChange={(e) => {
-								const w = others.find((o) => o.id === e.target.value);
-								if (w) {
-									onSelect(w);
-									setMoreId('');
-								}
-							}}
-						>
-							<option value="">More…</option>
-							{others.map((w) => (
-								<option key={w.id} value={w.id}>{w.name}</option>
+						<>
+							<button
+								className="btn-more-toggle"
+								onClick={() => setMoreOpen(!moreOpen)}
+								aria-expanded={moreOpen}
+							>
+								More…
+								<ChevronDown size={16} className={`more-chevron${moreOpen ? ' more-chevron-open' : ''}`} />
+							</button>
+							{moreOpen && others.map((w) => (
+								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
 							))}
-						</select>
+						</>
 					)}
 					{cardio.length > 0 && (favorites.length > 0 || others.length > 0) && (
 						<div className="category-divider">
@@ -81,26 +110,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 						</div>
 					)}
 					{cardio.map((w) => (
-						<div key={w.id} className="workout-card-wrapper">
-							<button
-								className="workout-card workout-card-cardio"
-								onClick={() => onSelect(w)}
-							>
-								<span className="cardio-badge">
-									<Activity size={24} />
-								</span>
-								<span className="workout-name">{w.name}</span>
-							</button>
-							{onEdit && (
-								<button
-									className="btn-edit-workout"
-									aria-label={`Edit ${w.name}`}
-									onClick={() => onEdit(w.id)}
-								>
-									<Pencil size={16} />
-								</button>
-							)}
-						</div>
+						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio />
 					))}
 					{onNew && (
 						<button className="btn-new-workout" onClick={onNew}>
