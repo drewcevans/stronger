@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
-import type { Workout } from '../model/index.js';
+import type { Workout, ScheduleEntry } from '../model/index.js';
+import type { ParsedLogRow } from '../google/index.js';
 import { Banner } from './Banner.js';
 import { MotivationalQuote } from './MotivationalQuote.js';
-import { Activity, BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
+import { Activity, BicepsFlexed, Check, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
 	missingLiftIds?: string[];
+	schedule?: ScheduleEntry[];
+	logRows?: ParsedLogRow[];
 	onSelect: (workout: Workout) => void;
 	onEdit?: (workoutId: string) => void;
 	onNew?: () => void;
@@ -61,7 +64,13 @@ function WorkoutCard({
 	);
 }
 
-export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
+/** Get today's date in YYYY-MM-DD format using local time. */
+function todayDateString(): string {
+	const d = new Date();
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
 	const { favorites, others } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
@@ -72,12 +81,58 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 		return { favorites, others };
 	}, [workouts]);
 
+	const today = useMemo(() => todayDateString(), []);
+
+	/** Workouts scheduled for today, with completion status. */
+	const todaysPlan = useMemo(() => {
+		if (!schedule) return [];
+		const todayEntries = schedule.filter((e) => e.date === today);
+		if (todayEntries.length === 0) return [];
+
+		const workoutMap = new Map(workouts.map((w) => [w.id, w]));
+
+		// Build a set of workoutIds that have log entries for today
+		const completedIds = new Set<string>();
+		if (logRows) {
+			for (const row of logRows) {
+				if (row.date === today) {
+					completedIds.add(row.workoutId);
+				}
+			}
+		}
+
+		return todayEntries
+			.map((e) => {
+				const workout = workoutMap.get(e.workoutId);
+				if (!workout) return null;
+				return { workout, done: completedIds.has(e.workoutId) };
+			})
+			.filter((x): x is { workout: Workout; done: boolean } => x !== null);
+	}, [schedule, logRows, workouts, today]);
+
 	const [moreOpen, setMoreOpen] = useState(false);
 
 	return (
 		<div className="workout-select">
 			<Banner />
 			<MotivationalQuote />
+			{todaysPlan.length > 0 && (
+				<div className="todays-plan">
+					<h3 className="todays-plan-heading">Today</h3>
+					<div className="workout-list">
+						{todaysPlan.map(({ workout: w, done }) => (
+							<div key={w.id} className="today-card-row">
+								<WorkoutCard w={w} onSelect={onSelect} cardio={w.category === 'cardio'} />
+								{done && (
+									<span className="today-done-badge" aria-label="Completed">
+										<Check size={16} />
+									</span>
+								)}
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 			{workouts.length === 0 ? (
 				<p className="auth-error">
 					No workouts available. Check that your sheet has valid lift
@@ -85,6 +140,9 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 				</p>
 			) : (
 				<div className="workout-list">
+					{favorites.length > 0 && (
+						<h3 className="section-heading">Favorites</h3>
+					)}
 					{favorites.map((w) => (
 						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio={w.category === 'cardio'} />
 					))}
