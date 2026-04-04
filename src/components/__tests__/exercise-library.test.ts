@@ -45,7 +45,7 @@ describe('isCardioExercise', () => {
 		expect(isCardioExercise(strengthExercise)).toBe(false);
 	});
 
-	it('returns true for a bodyweight exercise with all-zero weights', () => {
+	it('returns true for an exercise with category cardio', () => {
 		const cardioExercise: LiftConfig = {
 			id: 'running',
 			name: 'Running',
@@ -56,13 +56,12 @@ describe('isCardioExercise', () => {
 			roundingFactor: 0,
 			barWeight: 0,
 			gear: 'bodyweight',
+			category: 'cardio',
 		};
 		expect(isCardioExercise(cardioExercise)).toBe(true);
 	});
 
-	it('returns false for bodyweight exercise with non-zero weights (e.g. chin-ups)', () => {
-		// Chin-ups are bodyweight but have zero weights — they ARE considered cardio by this heuristic.
-		// This is acceptable since chin-ups with all zeros behave like cardio.
+	it('returns false for bodyweight exercise without category (e.g. chin-ups)', () => {
 		const chinUp: LiftConfig = {
 			id: 'chin-up',
 			name: 'Chin-up',
@@ -74,7 +73,7 @@ describe('isCardioExercise', () => {
 			barWeight: 0,
 			gear: 'bodyweight',
 		};
-		expect(isCardioExercise(chinUp)).toBe(true);
+		expect(isCardioExercise(chinUp)).toBe(false);
 	});
 
 	it('returns false for bodyweight with some non-zero weights', () => {

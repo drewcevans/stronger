@@ -54,6 +54,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 				roundingFactor: 0,
 				barWeight: 0,
 				gear: 'bodyweight',
+				category: 'cardio',
 			}
 			: {
 				id: effectiveId,

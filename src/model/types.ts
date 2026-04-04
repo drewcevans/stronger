@@ -39,6 +39,8 @@ export interface LiftConfig {
 	barWeight: number;
 	/** Equipment type used for this exercise. */
 	gear: GearType;
+	/** Exercise category — defaults to 'strength' when absent. */
+	category?: ActivityType;
 }
 
 // ---------------------------------------------------------------------------

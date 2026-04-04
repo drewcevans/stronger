@@ -1716,18 +1716,22 @@ body {
 
 .exercise-card-wrapper {
 	display: flex;
-	align-items: center;
-	gap: 0.25rem;
+	align-items: stretch;
+	gap: 0;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border-glow);
+	border-radius: var(--radius);
+	transition: background 0.15s;
 }
 
-.exercise-card {
+.exercise-library .exercise-card {
 	display: flex;
 	align-items: center;
 	gap: 1rem;
 	padding: 0.5rem 1rem;
 	background: var(--color-bg);
-	border: 1px solid var(--color-border-glow);
-	border-radius: var(--radius);
+	border: none;
+	border-radius: 0;
 	color: var(--color-text);
 	text-align: left;
 	cursor: pointer;
@@ -1738,11 +1742,15 @@ body {
 	width: 0;
 }
 
-.exercise-card:active {
+.exercise-card-wrapper .exercise-card:first-child {
+	border-radius: var(--radius) 0 0 var(--radius);
+}
+
+.exercise-library .exercise-card:active {
 	background: var(--color-surface-hover);
 }
 
-.exercise-card-cardio {
+.exercise-card-wrapper.exercise-card-cardio {
 	border-style: dashed;
 }
 
@@ -1753,7 +1761,7 @@ body {
 	min-width: 0;
 }
 
-.exercise-name {
+.exercise-library .exercise-name {
 	font-weight: 500;
 }
 
@@ -1766,15 +1774,14 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 2rem;
-	height: 2rem;
-	flex-shrink: 0;
-	padding: 0;
 	background: none;
 	border: none;
+	border-left: 1px solid var(--color-border);
 	color: var(--color-text-muted);
 	cursor: pointer;
-	border-radius: 6px;
+	padding: 0 0.625rem;
+	min-width: 40px;
+	border-radius: 0 var(--radius) var(--radius) 0;
 	transition: color 0.15s;
 	-webkit-tap-highlight-color: transparent;
 }

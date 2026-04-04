@@ -20,7 +20,7 @@ describe('liftConfigToRow', () => {
 		gear: 'barbell',
 	};
 
-	it('serializes all nine fields in order', () => {
+	it('serializes all ten fields in order', () => {
 		const row = liftConfigToRow(config);
 		expect(row).toEqual([
 			'bench',
@@ -32,11 +32,12 @@ describe('liftConfigToRow', () => {
 			5,
 			45,
 			'barbell',
+			'strength',
 		]);
 	});
 
-	it('returns exactly 9 columns', () => {
-		expect(liftConfigToRow(config)).toHaveLength(9);
+	it('returns exactly 10 columns', () => {
+		expect(liftConfigToRow(config)).toHaveLength(10);
 	});
 });
 

@@ -14,7 +14,7 @@ import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the config zone (open-ended rows). */
-const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A:I`
+const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A:J`
 
 /** A1 range for the log zone header (row 1 of the log tab). */
 const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:R1`
@@ -35,6 +35,7 @@ const CONFIG_HEADER: string[] = [
 	'roundingFactor',
 	'barWeight',
 	'gear',
+	'category',
 ]
 
 const LOG_HEADER: string[] = [
@@ -215,6 +216,7 @@ export function liftConfigToRow(
 		config.roundingFactor,
 		config.barWeight,
 		config.gear,
+		config.category ?? 'strength',
 	]
 }
 
@@ -276,7 +278,11 @@ export function rowToLiftConfig(row: string[]): LiftConfig | null {
 	const rawGear = (row[8] ?? '').trim().toLowerCase();
 	const gear = VALID_GEAR_TYPES.has(rawGear) ? rawGear as LiftConfig['gear'] : 'other';
 
-	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear };
+	// category (col 9) — default to 'strength' if absent or unrecognized
+	const rawCategory = (row[9] ?? '').trim().toLowerCase()
+	const category = rawCategory === 'cardio' ? 'cardio' as const : undefined
+
+	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear, ...(category ? { category } : {}) };
 }
 
 /* ------------------------------------------------------------------ */
