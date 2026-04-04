@@ -83,6 +83,7 @@ export function SetupPage({ onConfirm }: Props) {
                     min={0}
                     step={lift.roundingFactor}
                     value={topSet}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => handleWeightChange(lift.id, e.target.value)}
                   />
                   <span className="setup-unit">lbs</span>

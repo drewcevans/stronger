@@ -225,6 +225,7 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 												type="number"
 												className="field-input"
 												value={result.actualWeight}
+												onFocus={(e) => e.target.select()}
 												onChange={(e) =>
 													updateSet(
 														exerciseIdx,
@@ -272,6 +273,7 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 													type="number"
 													className="field-input"
 													value={result.actualReps}
+													onFocus={(e) => e.target.select()}
 													onChange={(e) =>
 														updateSet(
 															exerciseIdx,
