@@ -69,7 +69,15 @@ export function useHashRouter() {
   const [route, setRoute] = useState<Route>(() => parseHash());
 
   useEffect(() => {
-    const onHashChange = () => setRoute(parseHash());
+    const onHashChange = () => {
+      setRoute((prev) => {
+        const next = parseHash();
+        // Skip update if the route is logically the same — avoids
+        // redundant re-renders when navigateTo already called setRoute.
+        if (routeToHash(prev) === routeToHash(next)) return prev;
+        return next;
+      });
+    };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
