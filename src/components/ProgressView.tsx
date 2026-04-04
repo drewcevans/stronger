@@ -23,6 +23,16 @@ const RANGE_LABELS: Record<TimeRange, string> = {
   all: 'All',
 };
 
+/** The four main barbell lifts shown prominently at the top. */
+const BIG_FOUR = ['squat', 'bench', 'deadlift', 'press'] as const;
+
+const BIG_FOUR_LABELS: Record<string, string> = {
+  squat: 'Squat',
+  bench: 'Bench Press',
+  deadlift: 'Deadlift',
+  press: 'Press',
+};
+
 /* ------------------------------------------------------------------ */
 /*  SVG chart constants                                                */
 /* ------------------------------------------------------------------ */
@@ -37,21 +47,21 @@ const CHART_HEIGHT = 260;
 export function ProgressView({ logRows }: Props) {
   const lifts = useMemo(() => getLiftsWithData(logRows), [logRows]);
 
-  const [selectedLift, setSelectedLift] = useState<string>(lifts[0]?.liftId ?? '');
+  // Separate big-4 lifts (that have data) from the rest
+  const big4Set = new Set<string>(BIG_FOUR);
+  const big4Lifts = BIG_FOUR.filter((id) => lifts.some((l) => l.liftId === id));
+  const otherLifts = lifts.filter((l) => !big4Set.has(l.liftId));
+
+  const [selectedLift, setSelectedLift] = useState<string>(otherLifts[0]?.liftId ?? '');
   const [metric, setMetric] = useState<ProgressMetric>('volume');
   const [range, setRange] = useState<TimeRange>('3m');
 
-  const data = useMemo(
-    () => (selectedLift ? buildProgressData(logRows, selectedLift, metric, range) : []),
-    [logRows, selectedLift, metric, range],
-  );
-
-  // Auto-select the first lift if the current selection becomes invalid
+  // Auto-select the first "other" lift if the current selection becomes invalid
   useEffect(() => {
-    if (lifts.length > 0 && !lifts.some((l) => l.liftId === selectedLift)) {
-      setSelectedLift(lifts[0].liftId);
+    if (otherLifts.length > 0 && !otherLifts.some((l) => l.liftId === selectedLift)) {
+      setSelectedLift(otherLifts[0].liftId);
     }
-  }, [lifts, selectedLift]);
+  }, [otherLifts, selectedLift]);
 
   return (
     <div className="progress-view">
@@ -61,21 +71,6 @@ export function ProgressView({ logRows }: Props) {
         <p className="progress-empty">No logged strength data yet. Complete a workout to see progress charts.</p>
       ) : (
         <>
-          {/* Lift selector */}
-          <div className="progress-controls">
-            <select
-              className="progress-select"
-              value={selectedLift}
-              onChange={(e) => setSelectedLift(e.target.value)}
-            >
-              {lifts.map((l) => (
-                <option key={l.liftId} value={l.liftId}>
-                  {l.exerciseName}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Metric toggle */}
           <div className="progress-toggle-group">
             {(Object.keys(METRIC_LABELS) as ProgressMetric[]).map((m) => (
@@ -102,16 +97,111 @@ export function ProgressView({ logRows }: Props) {
             ))}
           </div>
 
-          {/* Chart */}
-          {data.length === 0 ? (
-            <p className="progress-empty">No data for this selection.</p>
-          ) : (
-            <ProgressChart data={data} metric={metric} />
+          {/* Big 4 charts */}
+          {big4Lifts.length > 0 && (
+            <div className="progress-big4">
+              {big4Lifts.map((liftId) => (
+                <Big4Chart
+                  key={liftId}
+                  liftId={liftId}
+                  label={BIG_FOUR_LABELS[liftId] ?? liftId}
+                  logRows={logRows}
+                  metric={metric}
+                  range={range}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Remaining exercises dropdown */}
+          {otherLifts.length > 0 && (
+            <>
+              <div className="progress-controls">
+                <select
+                  className="progress-select"
+                  value={selectedLift}
+                  onChange={(e) => setSelectedLift(e.target.value)}
+                >
+                  {otherLifts.map((l) => (
+                    <option key={l.liftId} value={l.liftId}>
+                      {l.exerciseName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <SelectedLiftChart
+                liftId={selectedLift}
+                logRows={logRows}
+                metric={metric}
+                range={range}
+              />
+            </>
           )}
         </>
       )}
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Big-4 lift chart wrapper                                           */
+/* ------------------------------------------------------------------ */
+
+function Big4Chart({
+  liftId,
+  label,
+  logRows,
+  metric,
+  range,
+}: {
+  liftId: string;
+  label: string;
+  logRows: ParsedLogRow[];
+  metric: ProgressMetric;
+  range: TimeRange;
+}) {
+  const data = useMemo(
+    () => buildProgressData(logRows, liftId, metric, range),
+    [logRows, liftId, metric, range],
+  );
+
+  return (
+    <div className="progress-big4-item">
+      <h3 className="progress-big4-label">{label}</h3>
+      {data.length === 0 ? (
+        <p className="progress-empty">No data yet.</p>
+      ) : (
+        <ProgressChart data={data} metric={metric} />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Selected-lift chart wrapper                                        */
+/* ------------------------------------------------------------------ */
+
+function SelectedLiftChart({
+  liftId,
+  logRows,
+  metric,
+  range,
+}: {
+  liftId: string;
+  logRows: ParsedLogRow[];
+  metric: ProgressMetric;
+  range: TimeRange;
+}) {
+  const data = useMemo(
+    () => (liftId ? buildProgressData(logRows, liftId, metric, range) : []),
+    [logRows, liftId, metric, range],
+  );
+
+  if (data.length === 0) {
+    return <p className="progress-empty">No data for this selection.</p>;
+  }
+  return <ProgressChart data={data} metric={metric} />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -162,7 +252,7 @@ function ProgressChart({
     }
   }
 
-  const yUnit = metric === 'volume' ? 'kg·reps' : 'kg';
+  const yUnit = metric === 'volume' ? 'lbs·reps' : 'lbs';
 
   return (
     <div className="progress-chart-container">
