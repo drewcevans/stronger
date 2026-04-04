@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Workout } from '../model/index.js';
 import { Banner } from './Banner.js';
+import { MotivationalQuote } from './MotivationalQuote.js';
 import { Activity, BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
 
 interface WorkoutSelectProps {
@@ -76,6 +77,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 	return (
 		<div className="workout-select">
 			<Banner />
+			<MotivationalQuote />
 			{workouts.length === 0 ? (
 				<p className="auth-error">
 					No workouts available. Check that your sheet has valid lift

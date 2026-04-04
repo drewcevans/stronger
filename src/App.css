@@ -92,6 +92,35 @@ body {
 	opacity: 0.5;
 }
 
+/* Motivational quote – neon cursive nightclub sign */
+.motivational-quote {
+	text-align: center;
+	margin-bottom: 1.5rem;
+	padding: 0 1rem;
+}
+
+.quote-text {
+	font-family: 'Pacifico', cursive;
+	font-size: 1.15rem;
+	line-height: 1.6;
+	color: var(--color-accent);
+	text-shadow:
+		0 0 7px var(--color-accent),
+		0 0 20px var(--color-accent),
+		0 0 42px color-mix(in srgb, var(--color-accent) 60%, transparent),
+		0 0 80px color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.quote-author {
+	font-family: 'Pacifico', cursive;
+	font-size: 0.85rem;
+	color: var(--color-primary);
+	margin-top: 0.35rem;
+	text-shadow:
+		0 0 7px var(--color-primary),
+		0 0 20px color-mix(in srgb, var(--color-primary) 50%, transparent);
+}
+
 .app-title {
 	font-size: 2rem;
 	font-weight: 700;
