@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Workout } from '../model/index.js';
 import { Banner } from './Banner.js';
-import { LiftBadge } from './LiftBadge.js';
-import { Activity, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
+import { Activity, BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -44,7 +43,7 @@ function WorkoutCard({
 				{cardio ? (
 					<span className="cardio-badge"><Activity size={24} /></span>
 				) : (
-					<LiftBadge liftId={w.exercises[0]?.liftId ?? 'unknown'} size={48} />
+					<span className="strength-badge"><BicepsFlexed size={24} /></span>
 				)}
 				<span className="workout-name">{w.name}</span>
 			</button>
