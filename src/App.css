@@ -507,8 +507,8 @@ body {
 	font-weight: 600;
 	border: none;
 	border-radius: var(--radius);
-	background: #1a1a1a;
-	color: var(--color-text);
+	background: var(--color-primary);
+	color: #000;
 	cursor: pointer;
 	min-height: 36px;
 	white-space: nowrap;
