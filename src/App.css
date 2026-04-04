@@ -3,19 +3,22 @@
    ========================================================================= */
 
 :root {
-	--color-bg: #000000;
-	--color-surface: #111;
-	--color-surface-hover: #1a1a1a;
+	--color-bg: #000;
+	--color-surface: #0a0a0a;
+	--color-surface-hover: #141414;
 	--color-text: #e0e0e0;
-	--color-text-muted: #888;
-	--color-primary: #4fc3f7;
-	--color-warmup: #ffa726;
-	--color-work: #66bb6a;
-	--color-backoff: #ab47bc;
-	--color-joker: #ffd600;
-	--color-completed: #2e7d32;
-	--color-border: #2a2a2a;
-	--color-surface-alt: #1c1c1c;
+	--color-text-muted: #666;
+	--color-primary: #00e5ff;
+	--color-accent: #ff2d7b;
+	--color-warmup: #ffab40;
+	--color-work: #00e676;
+	--color-backoff: #d500f9;
+	--color-joker: #ffea00;
+	--color-completed: #00e676;
+	--color-danger: #ff1744;
+	--color-border: #1a1a1a;
+	--color-border-glow: #00e5ff;
+	--color-surface-alt: #111;
 	--color-weekday: #00e5ff;
 	--color-weekend: #ff2d7b;
 	--radius: 12px;
@@ -111,8 +114,8 @@ body {
 	align-items: center;
 	gap: 1rem;
 	padding: 0.5rem 1rem;
-	background: #000;
-	border: 1px solid #00e5ff;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border-glow);
 	border-radius: var(--radius);
 	color: var(--color-text);
 	text-align: left;
@@ -174,7 +177,7 @@ body {
 	height: 3rem;
 	border-radius: 50%;
 	flex-shrink: 0;
-	background: rgba(79, 195, 247, 0.12);
+	background: rgba(0, 229, 255, 0.12);
 	color: var(--color-primary);
 }
 
@@ -258,18 +261,18 @@ body {
 }
 
 .role-primary {
-	background: #e8573d;
-	color: #fff;
+	background: #333;
+	color: #aaa;
 }
 
 .role-secondary {
-	background: #5b6abf;
-	color: #fff;
+	background: #282828;
+	color: #888;
 }
 
 .role-assistance {
-	background: var(--color-border);
-	color: var(--color-text-secondary);
+	background: #1e1e1e;
+	color: #666;
 }
 
 /* Set rows */
@@ -292,7 +295,7 @@ body {
 }
 
 .set-row.set-completed {
-	background: rgba(46, 125, 50, 0.15);
+	background: rgba(0, 230, 118, 0.12);
 	border-color: var(--color-completed);
 }
 
@@ -322,22 +325,22 @@ body {
 }
 
 .set-type-warmup {
-	background: rgba(255, 167, 38, 0.2);
+	background: rgba(255, 171, 64, 0.15);
 	color: var(--color-warmup);
 }
 
 .set-type-work {
-	background: rgba(102, 187, 106, 0.2);
+	background: rgba(0, 230, 118, 0.15);
 	color: var(--color-work);
 }
 
 .set-type-backoff {
-	background: rgba(171, 71, 188, 0.2);
+	background: rgba(213, 0, 249, 0.15);
 	color: var(--color-backoff);
 }
 
 .set-type-joker {
-	background: rgba(255, 214, 0, 0.2);
+	background: rgba(255, 234, 0, 0.15);
 	color: var(--color-joker);
 }
 
@@ -361,22 +364,22 @@ body {
 }
 
 .set-type-select.set-type-warmup {
-	background-color: rgba(255, 167, 38, 0.2);
+	background-color: rgba(255, 171, 64, 0.15);
 	color: var(--color-warmup);
 }
 
 .set-type-select.set-type-work {
-	background-color: rgba(102, 187, 106, 0.2);
+	background-color: rgba(0, 230, 118, 0.15);
 	color: var(--color-work);
 }
 
 .set-type-select.set-type-backoff {
-	background-color: rgba(171, 71, 188, 0.2);
+	background-color: rgba(213, 0, 249, 0.15);
 	color: var(--color-backoff);
 }
 
 .set-type-select.set-type-joker {
-	background-color: rgba(255, 214, 0, 0.2);
+	background-color: rgba(255, 234, 0, 0.15);
 	color: var(--color-joker);
 }
 
@@ -504,7 +507,7 @@ body {
 	font-weight: 600;
 	border: none;
 	border-radius: var(--radius);
-	background: #333;
+	background: #1a1a1a;
 	color: var(--color-text);
 	cursor: pointer;
 	min-height: 36px;
@@ -573,9 +576,9 @@ body {
 }
 
 .auth-error {
-	color: #ef5350;
+	color: var(--color-danger);
 	font-size: 0.875rem;
-	background: rgba(239, 83, 80, 0.1);
+	background: rgba(255, 23, 68, 0.1);
 	padding: 0.625rem 1rem;
 	border-radius: 8px;
 	max-width: 100%;
@@ -583,9 +586,9 @@ body {
 }
 
 .config-warning {
-	color: #ffa726;
+	color: var(--color-warmup);
 	font-size: 0.8125rem;
-	background: rgba(255, 167, 38, 0.1);
+	background: rgba(255, 171, 64, 0.1);
 	padding: 0.5rem 0.75rem;
 	border-radius: 8px;
 	margin-top: 1rem;
@@ -951,7 +954,7 @@ body {
 }
 
 .btn-calendar:active {
-	background: rgba(79, 195, 247, 0.1);
+	background: rgba(0, 229, 255, 0.1);
 }
 
 .calendar-view {
@@ -1015,7 +1018,7 @@ body {
 	font-weight: 600;
 	text-transform: uppercase;
 	color: var(--color-primary);
-	background: rgba(79, 195, 247, 0.15);
+	background: rgba(0, 229, 255, 0.15);
 	padding: 0.125rem 0.375rem;
 	border-radius: 4px;
 }
@@ -1037,7 +1040,7 @@ body {
 
 .calendar-add-btn:active {
 	color: var(--color-primary);
-	background: rgba(79, 195, 247, 0.1);
+	background: rgba(0, 229, 255, 0.1);
 }
 
 .calendar-workouts {
@@ -1095,7 +1098,7 @@ body {
 }
 
 .calendar-remove-btn:active {
-	color: #ef5350;
+	color: var(--color-danger);
 }
 
 /* Workout picker overlay */
@@ -1303,8 +1306,8 @@ body {
 }
 
 .btn-remove-exercise:active {
-	color: #ef5350;
-	background: rgba(239, 83, 80, 0.1);
+	color: var(--color-danger);
+	background: rgba(255, 23, 68, 0.1);
 }
 
 .editor-exercise-meta {
@@ -1465,7 +1468,7 @@ body {
 }
 
 .btn-remove-set:active {
-	color: #ef5350;
+	color: var(--color-danger);
 }
 
 .btn-add-exercise {
@@ -1487,7 +1490,7 @@ body {
 }
 
 .btn-add-exercise:active {
-	background: rgba(79, 195, 247, 0.1);
+	background: rgba(0, 229, 255, 0.1);
 }
 
 .editor-errors {
@@ -1495,9 +1498,9 @@ body {
 }
 
 .editor-error {
-	color: #ef5350;
+	color: var(--color-danger);
 	font-size: 0.8125rem;
-	background: rgba(239, 83, 80, 0.1);
+	background: rgba(255, 23, 68, 0.1);
 	padding: 0.375rem 0.75rem;
 	border-radius: 6px;
 	margin-bottom: 0.25rem;
@@ -1508,8 +1511,8 @@ body {
 	display: flex;
 	align-items: stretch;
 	gap: 0;
-	background: #000;
-	border: 1px solid #00e5ff;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border-glow);
 	border-radius: var(--radius);
 	transition: background 0.15s;
 }
@@ -1561,11 +1564,11 @@ body {
 }
 
 .btn-fav-workout:active {
-	color: #ff2d7b;
+	color: var(--color-accent);
 }
 
 .btn-fav-active {
-	color: #ff2d7b;
+	color: var(--color-accent);
 }
 
 .workout-card-wrapper .workout-card {
@@ -1595,7 +1598,7 @@ body {
 
 .btn-edit-workout:active {
 	color: var(--color-primary);
-	background: rgba(79, 195, 247, 0.1);
+	background: rgba(0, 229, 255, 0.1);
 }
 
 .btn-new-workout {
@@ -1617,5 +1620,5 @@ body {
 }
 
 .btn-new-workout:active {
-	background: rgba(79, 195, 247, 0.1);
+	background: rgba(0, 229, 255, 0.1);
 }
