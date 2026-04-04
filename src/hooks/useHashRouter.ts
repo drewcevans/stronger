@@ -5,7 +5,9 @@ export type Route =
   | { view: 'workout'; workoutId: string }
   | { view: 'cardio'; workoutId: string }
   | { view: 'calendar' }
-  | { view: 'editor'; workoutId?: string };
+  | { view: 'editor'; workoutId?: string }
+  | { view: 'exercises' }
+  | { view: 'exerciseEditor'; exerciseId?: string };
 
 /**
  * Parse the current `window.location.hash` into a Route.
@@ -15,6 +17,9 @@ export type Route =
  *   `#/workout/<id>`           → { view: 'workout', workoutId: id }
  *   `#/edit/new`               → { view: 'editor' }
  *   `#/edit/<id>`              → { view: 'editor', workoutId: id }
+ *   `#/exercises`              → { view: 'exercises' }
+ *   `#/exercise/new`           → { view: 'exerciseEditor' }
+ *   `#/exercise/<id>`          → { view: 'exerciseEditor', exerciseId: id }
  *   anything else              → { view: 'list' }
  */
 export function parseHash(hash: string = window.location.hash): Route {
@@ -22,6 +27,7 @@ export function parseHash(hash: string = window.location.hash): Route {
   if (!stripped) return { view: 'list' };
 
   if (stripped === 'calendar') return { view: 'calendar' };
+  if (stripped === 'exercises') return { view: 'exercises' };
 
   const cardioMatch = stripped.match(/^cardio\/([^/]+)$/);
   if (cardioMatch) return { view: 'cardio', workoutId: decodeURIComponent(cardioMatch[1]) };
@@ -29,6 +35,10 @@ export function parseHash(hash: string = window.location.hash): Route {
   if (stripped === 'edit/new') return { view: 'editor' };
   const editMatch = stripped.match(/^edit\/([^/]+)$/);
   if (editMatch) return { view: 'editor', workoutId: decodeURIComponent(editMatch[1]) };
+
+  if (stripped === 'exercise/new') return { view: 'exerciseEditor' };
+  const exerciseMatch = stripped.match(/^exercise\/([^/]+)$/);
+  if (exerciseMatch) return { view: 'exerciseEditor', exerciseId: decodeURIComponent(exerciseMatch[1]) };
 
   const match = stripped.match(/^workout\/([^/]+)$/);
   if (match) return { view: 'workout', workoutId: decodeURIComponent(match[1]) };
@@ -42,6 +52,8 @@ export function routeToHash(route: Route): string {
   if (route.view === 'cardio') return `/cardio/${encodeURIComponent(route.workoutId)}`;
   if (route.view === 'calendar') return '/calendar';
   if (route.view === 'editor') return route.workoutId ? `/edit/${encodeURIComponent(route.workoutId)}` : '/edit/new';
+  if (route.view === 'exercises') return '/exercises';
+  if (route.view === 'exerciseEditor') return route.exerciseId ? `/exercise/${encodeURIComponent(route.exerciseId)}` : '/exercise/new';
   return '/';
 }
 

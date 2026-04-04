@@ -76,6 +76,32 @@ describe('parseHash', () => {
     expect(parseHash('#/workout/a/b')).toEqual({ view: 'list' });
   });
 
+  it('parses the exercises list route', () => {
+    expect(parseHash('#/exercises')).toEqual({ view: 'exercises' });
+  });
+
+  it('parses the exercises list route without leading slash', () => {
+    expect(parseHash('#exercises')).toEqual({ view: 'exercises' });
+  });
+
+  it('parses the exercise editor new route', () => {
+    expect(parseHash('#/exercise/new')).toEqual({ view: 'exerciseEditor' });
+  });
+
+  it('parses the exercise editor edit route', () => {
+    expect(parseHash('#/exercise/bench')).toEqual({
+      view: 'exerciseEditor',
+      exerciseId: 'bench',
+    });
+  });
+
+  it('decodes percent-encoded exercise IDs', () => {
+    expect(parseHash('#/exercise/bench%20press')).toEqual({
+      view: 'exerciseEditor',
+      exerciseId: 'bench press',
+    });
+  });
+
   it('ignores trailing content after workout ID with extra slashes', () => {
     expect(parseHash('#/workout/squat-a/extra')).toEqual({ view: 'list' });
   });
@@ -122,6 +148,26 @@ describe('routeToHash', () => {
     );
   });
 
+  it('returns /exercises for exercises route', () => {
+    expect(routeToHash({ view: 'exercises' })).toBe('/exercises');
+  });
+
+  it('returns /exercise/new for exercise editor route without exerciseId', () => {
+    expect(routeToHash({ view: 'exerciseEditor' })).toBe('/exercise/new');
+  });
+
+  it('returns /exercise/<id> for exercise editor route with exerciseId', () => {
+    expect(routeToHash({ view: 'exerciseEditor', exerciseId: 'bench' })).toBe(
+      '/exercise/bench',
+    );
+  });
+
+  it('encodes special characters in exercise editor ID', () => {
+    expect(routeToHash({ view: 'exerciseEditor', exerciseId: 'my exercise' })).toBe(
+      '/exercise/my%20exercise',
+    );
+  });
+
   it('round-trips through parseHash', () => {
     const routes: Route[] = [
       { view: 'list' },
@@ -130,6 +176,9 @@ describe('routeToHash', () => {
       { view: 'calendar' },
       { view: 'editor' },
       { view: 'editor', workoutId: 'workout-a' },
+      { view: 'exercises' },
+      { view: 'exerciseEditor' },
+      { view: 'exerciseEditor', exerciseId: 'bench' },
     ];
     for (const route of routes) {
       const hash = '#' + routeToHash(route);

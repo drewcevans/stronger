@@ -340,8 +340,9 @@ export async function writeDefaultConfig(
 
 /**
  * Write updated lift config values back to the config zone.
- * Overwrites rows 2+ (below the header) with the supplied configs.
- * Used by the progression review to persist weight changes.
+ * Clears existing data (below header) first, then writes all rows.
+ * Used by the progression review to persist weight changes and by
+ * the exercise editor to add/update exercises.
  */
 export async function writeConfigValues(
 	spreadsheetId: string,
@@ -351,15 +352,22 @@ export async function writeConfigValues(
 	if (!gapi) throw new Error('gapi not loaded')
 
 	const rows = configs.map(liftConfigToRow)
-	const startRow = 2 // row 1 is the header
-	const endRow = startRow + rows.length - 1
-	const range = `'${TARGET_TAB_NAME}'!A${startRow}:I${endRow}`
+	const allRows: (string | number)[][] = [
+		CONFIG_HEADER,
+		...rows,
+	]
+
+	// Clear existing data then write fresh (handles row count changes)
+	await gapi.client.sheets.spreadsheets.values.clear({
+		spreadsheetId,
+		range: CONFIG_RANGE,
+	})
 
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
-		range,
+		range: CONFIG_RANGE,
 		valueInputOption: 'RAW',
-		resource: { values: rows },
+		resource: { values: allRows },
 	})
 }
 
