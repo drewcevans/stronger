@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { ParsedLogRow } from '../google/sheets.js';
 import type { ProgressMetric, TimeRange } from '../model/progress.js';
 import {
@@ -47,9 +47,11 @@ export function ProgressView({ logRows }: Props) {
   );
 
   // Auto-select the first lift if the current selection becomes invalid
-  if (selectedLift && !lifts.some((l) => l.liftId === selectedLift) && lifts.length > 0) {
-    setSelectedLift(lifts[0].liftId);
-  }
+  useEffect(() => {
+    if (lifts.length > 0 && !lifts.some((l) => l.liftId === selectedLift)) {
+      setSelectedLift(lifts[0].liftId);
+    }
+  }, [lifts, selectedLift]);
 
   return (
     <div className="progress-view">
