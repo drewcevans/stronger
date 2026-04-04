@@ -17,13 +17,13 @@ import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A:I`
 
 /** A1 range for the log zone header (row 1 of the log tab). */
-const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:M1`
+const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:R1`
 
 /** A1 range used for appending log data (row 2 onward). */
-const LOG_APPEND_RANGE = `'${LOG_TAB_NAME}'!A2:M2`
+const LOG_APPEND_RANGE = `'${LOG_TAB_NAME}'!A2:R2`
 
 /** A1 range for reading all log data (row 2 onward, open-ended). */
-const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:M`
+const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:R`
 
 const CONFIG_HEADER: string[] = [
 	'id',
