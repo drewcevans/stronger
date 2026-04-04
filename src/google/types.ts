@@ -75,6 +75,11 @@ export interface GapiClient {
 	setToken: (token: { access_token: string } | null) => void
 	sheets: {
 		spreadsheets: {
+			create: (params: {
+				resource: {
+					properties: { title: string }
+				}
+			}) => Promise<SpreadsheetsGetResponse>
 			get: (params: {
 				spreadsheetId: string
 			}) => Promise<SpreadsheetsGetResponse>

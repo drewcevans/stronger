@@ -110,6 +110,26 @@ export async function createStrongerTab(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Spreadsheet creation                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Create a brand-new Google Spreadsheet with the given title.
+ * Returns the new spreadsheet's ID.
+ */
+export async function createSpreadsheet(title: string): Promise<string> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.create({
+		resource: {
+			properties: { title },
+		},
+	})
+	return response.result.spreadsheetId
+}
+
+/* ------------------------------------------------------------------ */
 /*  Combined connect flow                                              */
 /* ------------------------------------------------------------------ */
 
