@@ -51,6 +51,11 @@ const LOG_HEADER: string[] = [
 	'actualWeight',
 	'actualReps',
 	'completed',
+	'category',
+	'duration',
+	'distance',
+	'elevation',
+	'cardioWeight',
 ]
 
 /* ------------------------------------------------------------------ */
@@ -369,7 +374,7 @@ export interface LogContext {
 	workoutId: string
 }
 
-/** Build a single log row for one set. */
+/** Build a single log row for one set (strength). */
 export function buildLogRow(
 	ctx: LogContext,
 	exerciseName: string,
@@ -393,6 +398,40 @@ export function buildLogRow(
 		result.actualWeight,
 		result.actualReps,
 		result.completed ? 'TRUE' : 'FALSE',
+		'strength',
+		'', '', '', '',
+	]
+}
+
+export interface CardioLogData {
+	duration?: number
+	distance?: number
+	elevation?: number
+	weight?: number
+}
+
+/** Build a single log row for a cardio workout. */
+export function buildCardioLogRow(
+	ctx: LogContext,
+	workoutName: string,
+	data: CardioLogData,
+): (string | number | boolean)[] {
+	return [
+		ctx.date,
+		ctx.startTime,
+		ctx.endTime,
+		ctx.workoutId,
+		workoutName,
+		'',
+		1,
+		'cardio',
+		0, 0, 0, 0,
+		'TRUE',
+		'cardio',
+		data.duration ?? '',
+		data.distance ?? '',
+		data.elevation ?? '',
+		data.weight ?? '',
 	]
 }
 
@@ -870,7 +909,7 @@ export async function writeWorkoutDefs(
 /*  Log zone – read & parse                                            */
 /* ------------------------------------------------------------------ */
 
-/** A parsed log row representing one completed set. */
+/** A parsed log row representing one completed set or cardio entry. */
 export interface ParsedLogRow {
 	date: string
 	startTime: string
@@ -885,6 +924,11 @@ export interface ParsedLogRow {
 	actualWeight: number
 	actualReps: number
 	completed: boolean
+	category: 'strength' | 'cardio'
+	duration?: number
+	distance?: number
+	elevation?: number
+	cardioWeight?: number
 }
 
 /**
@@ -908,7 +952,45 @@ export function parseLogRow(row: string[]): ParsedLogRow | null {
 	const rawActualReps = (row[11] ?? '').trim()
 	const rawCompleted = (row[12] ?? '').trim().toUpperCase()
 
+	// New columns (may be absent in old rows)
+	const rawCategory = (row[13] ?? '').trim().toLowerCase()
+	const rawDuration = (row[14] ?? '').trim()
+	const rawDistance = (row[15] ?? '').trim()
+	const rawElevation = (row[16] ?? '').trim()
+	const rawCardioWeight = (row[17] ?? '').trim()
+
+	const category: 'strength' | 'cardio' = rawCategory === 'cardio' ? 'cardio' : 'strength'
+
 	if (!date || !startTime || !workoutId || !exerciseName) return null
+
+	// Cardio rows don't need valid set numbers or actual weight/reps
+	if (category === 'cardio') {
+		const duration = rawDuration ? Number(rawDuration) : undefined
+		const distance = rawDistance ? Number(rawDistance) : undefined
+		const elevation = rawElevation ? Number(rawElevation) : undefined
+		const cardioWeight = rawCardioWeight ? Number(rawCardioWeight) : undefined
+
+		return {
+			date,
+			startTime,
+			endTime,
+			workoutId,
+			exerciseName,
+			liftId,
+			setNumber: 1,
+			setType: 'cardio',
+			plannedWeight: 0,
+			plannedReps: 0,
+			actualWeight: 0,
+			actualReps: 0,
+			completed: true,
+			category,
+			...(duration !== undefined && Number.isFinite(duration) ? { duration } : {}),
+			...(distance !== undefined && Number.isFinite(distance) ? { distance } : {}),
+			...(elevation !== undefined && Number.isFinite(elevation) ? { elevation } : {}),
+			...(cardioWeight !== undefined && Number.isFinite(cardioWeight) ? { cardioWeight } : {}),
+		}
+	}
 
 	const setNumber = Number(rawSetNumber)
 	const plannedWeight = Number(rawPlannedWeight)
@@ -933,6 +1015,7 @@ export function parseLogRow(row: string[]): ParsedLogRow | null {
 		actualWeight,
 		actualReps,
 		completed: rawCompleted === 'TRUE',
+		category,
 	}
 }
 

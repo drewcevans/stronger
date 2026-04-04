@@ -161,7 +161,7 @@ describe('buildLogRow', () => {
 		actualSetType: 'work',
 	};
 
-	it('returns a row with all 13 columns', () => {
+	it('returns a row with all 18 columns', () => {
 		const row = buildLogRow(
 			ctx,
 			'Primary: Bench Press',
@@ -171,7 +171,7 @@ describe('buildLogRow', () => {
 			planned,
 			result,
 		);
-		expect(row).toHaveLength(13);
+		expect(row).toHaveLength(18);
 	});
 
 	it('populates columns in the correct order', () => {
@@ -198,6 +198,8 @@ describe('buildLogRow', () => {
 			170,
 			7,
 			'TRUE',
+			'strength',
+			'', '', '', '',
 		]);
 	});
 

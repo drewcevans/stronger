@@ -19,6 +19,7 @@ export {
 	writeConfigValues,
 	appendLogRows,
 	buildLogRow,
+	buildCardioLogRow,
 	liftConfigToRow,
 	rowToLiftConfig,
 	encodeWeightBasis,
@@ -43,6 +44,6 @@ export {
 	readSchedule,
 	writeSchedule,
 } from './sheets.ts'
-export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
+export type { SheetInfo, LogContext, ParsedLogRow, CardioLogData } from './sheets.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
 export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'

@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs } from './google/index.js';
+import { appendLogRows, buildLogRow, buildCardioLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
+import type { CardioLogData } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
+import { CardioView } from './components/CardioView.js';
 import { WorkoutEditor } from './components/WorkoutEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView } from './components/CalendarView.js';
@@ -105,8 +107,12 @@ function App() {
   );
 
   const handleSelectWorkout = useCallback((workout: Workout) => {
-    // Cardio items don't have a workout execution view
-    if (workout.category === 'cardio') return;
+    if (workout.category === 'cardio') {
+      setStartTime(new Date().toISOString());
+      setActiveWorkout(workout);
+      navigateTo({ view: 'cardio', workoutId: workout.id });
+      return;
+    }
     setStartTime(new Date().toISOString());
     setActiveWorkout(workout);
     setPreviousSets(null);
@@ -149,6 +155,19 @@ function App() {
       navigateTo({ view: 'list' });
     },
     [spreadsheetId, startTime, configs, definitions, navigateTo],
+  );
+
+  const handleCardioFinish = useCallback(
+    (workout: Workout, data: CardioLogData) => {
+      const endTime = new Date().toISOString();
+      if (spreadsheetId && startTime) {
+        void logCardioResult(spreadsheetId, workout, data, startTime, endTime);
+      }
+      setActiveWorkout(null);
+      setStartTime(null);
+      navigateTo({ view: 'list' });
+    },
+    [spreadsheetId, startTime, navigateTo],
   );
 
   const handleProgressionConfirm = useCallback(
@@ -231,8 +250,7 @@ function App() {
   const handleCalendarOpenWorkout = useCallback(
     (workoutId: string) => {
       const match = workouts.find((w) => w.id === workoutId);
-      // Only open the workout execution view for strength workouts
-      if (match && match.category !== 'cardio') {
+      if (match) {
         handleSelectWorkout(match);
       }
     },
@@ -297,7 +315,7 @@ function App() {
   // check if the URL contains a workout ID and auto-select it.
   useEffect(() => {
     if (!sheetConnected || workouts.length === 0) return;
-    if (route.view !== 'workout') return;
+    if (route.view !== 'workout' && route.view !== 'cardio') return;
     // Already showing the right workout — nothing to do
     if (activeWorkout?.id === route.workoutId) return;
 
@@ -352,6 +370,15 @@ function App() {
   }
 
   if (activeWorkout) {
+    if (activeWorkout.category === 'cardio') {
+      return (
+        <CardioView
+          workout={activeWorkout}
+          onBack={handleBack}
+          onFinish={handleCardioFinish}
+        />
+      );
+    }
     return (
       <WorkoutView
         workout={activeWorkout}
@@ -477,4 +504,18 @@ async function logWorkoutResults(
   }
 
   await appendLogRows(sheetId, rows);
+}
+
+async function logCardioResult(
+  sheetId: string,
+  workout: Workout,
+  data: CardioLogData,
+  startTime: string,
+  endTime: string,
+): Promise<void> {
+  const now = new Date(endTime);
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const ctx = { date, startTime, endTime, workoutId: workout.id };
+  const row = buildCardioLogRow(ctx, workout.name, data);
+  await appendLogRows(sheetId, [row]);
 }
