@@ -13,6 +13,7 @@ import { ExerciseLibrary } from './components/ExerciseLibrary.js';
 import { ExerciseEditor } from './components/ExerciseEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView } from './components/CalendarView.js';
+import { ProgressView } from './components/ProgressView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
@@ -313,6 +314,10 @@ function App() {
     navigateTo({ view: 'exercises' });
   }, [navigateTo]);
 
+  const handleOpenProgress = useCallback(() => {
+    navigateTo({ view: 'progress' });
+  }, [navigateTo]);
+
   // Editor handlers
   const handleEditWorkout = useCallback((workoutId: string) => {
     navigateTo({ view: 'editor', workoutId });
@@ -498,6 +503,7 @@ function App() {
           onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
         />
         <ExerciseEditor
           existing={editConfig}
@@ -518,6 +524,7 @@ function App() {
           onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
         />
         <ExerciseLibrary
           configs={configs}
@@ -540,6 +547,7 @@ function App() {
           onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
         />
         <WorkoutEditor
           existing={editDef}
@@ -561,6 +569,7 @@ function App() {
           onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
         />
         <CalendarView
           workouts={workouts}
@@ -571,6 +580,22 @@ function App() {
           onOpenWorkout={handleCalendarOpenWorkout}
           onUpdateLogRows={handleUpdateLogRows}
         />
+      </>
+    );
+  }
+
+  if (route.view === 'progress') {
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
+        />
+        <ProgressView logRows={logRows} />
       </>
     );
   }
@@ -589,6 +614,7 @@ function App() {
         onGoToList={handleGoToList}
         onOpenCalendar={handleOpenCalendar}
         onOpenExercises={handleOpenExercises}
+        onOpenProgress={handleOpenProgress}
       />
       <WorkoutSelect
         workouts={workouts}

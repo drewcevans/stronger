@@ -24,7 +24,7 @@ import {
 	createLogTab,
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
-import { Dumbbell, Calendar, LogOut, Library } from 'lucide-react'
+import { Dumbbell, Calendar, LogOut, Library, TrendingUp } from 'lucide-react'
 
 type Phase =
 	| 'loading' // loading Google scripts
@@ -40,10 +40,11 @@ interface Props {
 	onNeedsSetup?: (spreadsheetId: string) => void
 	onOpenCalendar?: () => void
 	onOpenExercises?: () => void
+	onOpenProgress?: () => void
 	onGoToList?: () => void
 }
 
-export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onOpenExercises, onGoToList }: Props) {
+export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onOpenExercises, onOpenProgress, onGoToList }: Props) {
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
@@ -323,6 +324,11 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 				{onOpenExercises && (
 					<button className="btn-toolbar" onClick={onOpenExercises} title="Exercises">
 						<Library size={20} />
+					</button>
+				)}
+				{onOpenProgress && (
+					<button className="btn-toolbar" onClick={onOpenProgress} title="Progress">
+						<TrendingUp size={20} />
 					</button>
 				)}
 			</div>

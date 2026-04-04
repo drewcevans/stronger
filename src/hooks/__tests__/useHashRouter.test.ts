@@ -84,6 +84,14 @@ describe('parseHash', () => {
     expect(parseHash('#exercises')).toEqual({ view: 'exercises' });
   });
 
+  it('parses the progress route', () => {
+    expect(parseHash('#/progress')).toEqual({ view: 'progress' });
+  });
+
+  it('parses the progress route without leading slash', () => {
+    expect(parseHash('#progress')).toEqual({ view: 'progress' });
+  });
+
   it('parses the exercise editor new route', () => {
     expect(parseHash('#/exercise/new')).toEqual({ view: 'exerciseEditor' });
   });
@@ -152,6 +160,10 @@ describe('routeToHash', () => {
     expect(routeToHash({ view: 'exercises' })).toBe('/exercises');
   });
 
+  it('returns /progress for progress route', () => {
+    expect(routeToHash({ view: 'progress' })).toBe('/progress');
+  });
+
   it('returns /exercise/new for exercise editor route without exerciseId', () => {
     expect(routeToHash({ view: 'exerciseEditor' })).toBe('/exercise/new');
   });
@@ -177,6 +189,7 @@ describe('routeToHash', () => {
       { view: 'editor' },
       { view: 'editor', workoutId: 'workout-a' },
       { view: 'exercises' },
+      { view: 'progress' },
       { view: 'exerciseEditor' },
       { view: 'exerciseEditor', exerciseId: 'bench' },
     ];

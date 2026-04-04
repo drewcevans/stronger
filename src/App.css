@@ -2231,3 +2231,125 @@ body {
 	color: var(--color-primary);
 	background: rgba(0, 229, 255, 0.08);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Progress Charts                                                    */
+/* ------------------------------------------------------------------ */
+
+.progress-view {
+	padding: 0 0.5rem 2rem;
+}
+
+.progress-title {
+	color: var(--color-primary);
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 0.75rem 0;
+	letter-spacing: 0.03em;
+}
+
+.progress-empty {
+	color: var(--color-text-muted);
+	font-size: 0.9rem;
+	text-align: center;
+	padding: 2rem 1rem;
+}
+
+.progress-controls {
+	margin-bottom: 0.75rem;
+}
+
+.progress-select {
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	font-size: 0.9rem;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+}
+
+.progress-select:focus {
+	outline: none;
+	border-color: var(--color-primary);
+}
+
+.progress-toggle-group {
+	display: flex;
+	gap: 0.25rem;
+	margin-bottom: 0.75rem;
+}
+
+.progress-toggle {
+	flex: 1;
+	padding: 0.4rem 0.25rem;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	background: var(--color-surface);
+	color: var(--color-text-muted);
+	font-size: 0.8rem;
+	cursor: pointer;
+	transition: all 0.15s;
+	text-align: center;
+}
+
+.progress-toggle.active {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+	background: rgba(0, 229, 255, 0.08);
+}
+
+.progress-chart-container {
+	position: relative;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	padding: 0.5rem 0.25rem 0.25rem;
+	margin-top: 0.5rem;
+}
+
+.progress-chart {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.progress-grid-line {
+	stroke: var(--color-border);
+	stroke-width: 0.5;
+}
+
+.progress-axis-label {
+	fill: var(--color-text-muted);
+	font-size: 9px;
+	font-family: inherit;
+}
+
+.progress-line {
+	fill: none;
+	stroke: var(--color-primary);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.progress-area {
+	fill: rgba(0, 229, 255, 0.08);
+}
+
+.progress-dot {
+	fill: var(--color-primary);
+}
+
+.progress-unit {
+	position: absolute;
+	top: 0.4rem;
+	right: 0.5rem;
+	font-size: 0.7rem;
+	color: var(--color-text-muted);
+}
