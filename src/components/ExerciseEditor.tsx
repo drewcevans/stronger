@@ -99,7 +99,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						placeholder="e.g. Bench Press"
-						disabled={!isNew && !isCardio}
+						disabled={!isNew}
 						autoFocus={isNew}
 					/>
 					{nameConflict && (

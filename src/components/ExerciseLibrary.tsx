@@ -24,14 +24,13 @@ export const DEFAULT_STRENGTH_CONFIG: Omit<LiftConfig, 'id' | 'name'> = {
 /** Check whether a LiftConfig represents a cardio exercise (all weight fields zero). */
 export function isCardioExercise(config: LiftConfig): boolean {
 	return (
-		config.gear === 'cardio' as string ||
-		(config.topSetWeight === 0 &&
-			config.backoffWeight === 0 &&
-			config.increment === 0 &&
-			config.minimumWeight === 0 &&
-			config.roundingFactor === 0 &&
-			config.barWeight === 0 &&
-			config.gear === 'bodyweight')
+		config.topSetWeight === 0 &&
+		config.backoffWeight === 0 &&
+		config.increment === 0 &&
+		config.minimumWeight === 0 &&
+		config.roundingFactor === 0 &&
+		config.barWeight === 0 &&
+		config.gear === 'bodyweight'
 	);
 }
 
