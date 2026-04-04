@@ -111,15 +111,6 @@ body {
 		0 0 80px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
-.quote-author {
-	font-family: 'Pacifico', cursive;
-	font-size: 0.85rem;
-	color: var(--color-primary);
-	margin-top: 0.35rem;
-	text-shadow:
-		0 0 7px var(--color-primary),
-		0 0 20px color-mix(in srgb, var(--color-primary) 50%, transparent);
-}
 
 .app-title {
 	font-size: 2rem;
