@@ -93,7 +93,7 @@ export interface LogSession {
  * Group parsed log rows by (date, workoutId, startTime) to produce sessions.
  * Returns a map of date → LogSession[].
  */
-export function groupLogByDate(logRows: ParsedLogRow[]): Map<string, LogSession[]> {
+export function groupLogByDate(logRows: ParsedLogRow[], workoutNames?: Map<string, string>): Map<string, LogSession[]> {
 	const sessionMap = new Map<string, LogSession>();
 	for (const row of logRows) {
 		const key = `${row.date}|${row.workoutId}|${row.startTime}`;
@@ -101,7 +101,7 @@ export function groupLogByDate(logRows: ParsedLogRow[]): Map<string, LogSession[
 		if (!session) {
 			session = {
 				key: { date: row.date, workoutId: row.workoutId, startTime: row.startTime },
-				workoutName: row.exerciseName,
+				workoutName: workoutNames?.get(row.workoutId) ?? row.workoutId,
 				category: row.category,
 				rows: [],
 			};
@@ -300,7 +300,7 @@ function SessionDetail({
 											<select
 												className="session-detail-set-type-input"
 												value={row.setType}
-												onChange={(e) => updateRow(idx, { setType: e.target.value })}
+												onChange={(e) => updateRow(idx, { setType: e.target.value as SetType })}
 											>
 												{SET_TYPES.map((t) => (
 													<option key={t} value={t}>{t}</option>
@@ -367,9 +367,6 @@ export function CalendarView({
 		return map;
 	}, [schedule]);
 
-	// Build log sessions grouped by date
-	const logByDate = useMemo(() => groupLogByDate(logRows), [logRows]);
-
 	// Build a map of workoutId → workout name for display
 	const workoutNames = useMemo(() => {
 		const map = new Map<string, string>();
@@ -378,6 +375,9 @@ export function CalendarView({
 		}
 		return map;
 	}, [workouts]);
+
+	// Build log sessions grouped by date, using workout names for display
+	const logByDate = useMemo(() => groupLogByDate(logRows, workoutNames), [logRows, workoutNames]);
 
 	// Build a set of cardio workout IDs for quick lookup
 	const cardioIds = useMemo(() => {

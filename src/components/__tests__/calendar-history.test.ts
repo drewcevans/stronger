@@ -84,6 +84,27 @@ describe('groupLogByDate', () => {
 		const sessions = result.get('2026-04-01')!;
 		expect(sessions[0].category).toBe('cardio');
 	});
+
+	it('uses workoutNames map for session display name when provided', () => {
+		const rows: ParsedLogRow[] = [
+			makeLogRow({ workoutId: 'workout-a' }),
+		];
+		const names = new Map([['workout-a', 'Workout A – Upper']]);
+
+		const result = groupLogByDate(rows, names);
+		const sessions = result.get('2026-04-01')!;
+		expect(sessions[0].workoutName).toBe('Workout A – Upper');
+	});
+
+	it('falls back to workoutId when workoutNames is not provided', () => {
+		const rows: ParsedLogRow[] = [
+			makeLogRow({ workoutId: 'workout-a' }),
+		];
+
+		const result = groupLogByDate(rows);
+		const sessions = result.get('2026-04-01')!;
+		expect(sessions[0].workoutName).toBe('workout-a');
+	});
 });
 
 describe('buildDayInfos', () => {
