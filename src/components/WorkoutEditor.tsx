@@ -251,6 +251,9 @@ export function WorkoutEditor({
 				case 'backoff':
 					wb = { kind: 'backoff' };
 					break;
+				case 'barWeight':
+					wb = { kind: 'barWeight' };
+					break;
 				case 'crossReference': {
 					const refLiftId = extraValue || lifts[0]?.id;
 					if (!refLiftId) return; // no lifts available
@@ -452,8 +455,7 @@ export function WorkoutEditor({
 												}}
 											>
 												<option value="topSet">Top set</option>
-												<option value="backoff">Backoff</option>
-												<option value="crossReference">Cross-ref</option>
+												<option value="backoff">Backoff</option>										<option value="barWeight">Bar weight</option>												<option value="crossReference">Cross-ref</option>
 												<option value="fixed">Fixed</option>
 											</select>
 											{set.weightBasis.kind === 'crossReference' && (
