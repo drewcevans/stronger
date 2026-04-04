@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import type { Workout, ScheduleEntry } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
+import type { LogSession } from './CalendarView.js';
+import { groupLogByDate } from './CalendarView.js';
 import { Banner } from './Banner.js';
 import { MotivationalQuote } from './MotivationalQuote.js';
-import { Activity, BicepsFlexed, Check, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
+import { Activity, BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -11,6 +13,7 @@ interface WorkoutSelectProps {
 	schedule?: ScheduleEntry[];
 	logRows?: ParsedLogRow[];
 	onSelect: (workout: Workout) => void;
+	onViewSession?: (session: LogSession) => void;
 	onEdit?: (workoutId: string) => void;
 	onNew?: () => void;
 	onToggleFavorite?: (workoutId: string, favorite: boolean) => void;
@@ -22,12 +25,14 @@ function WorkoutCard({
 	onEdit,
 	onToggleFavorite,
 	cardio,
+	done,
 }: {
 	w: Workout;
 	onSelect: (w: Workout) => void;
 	onEdit?: (id: string) => void;
 	onToggleFavorite?: (id: string, fav: boolean) => void;
 	cardio?: boolean;
+	done?: boolean;
 }) {
 	return (
 		<div className="workout-card-wrapper">
@@ -41,7 +46,7 @@ function WorkoutCard({
 				</button>
 			)}
 			<button
-				className={`workout-card${cardio ? ' workout-card-cardio' : ''}`}
+				className={`workout-card${cardio ? ' workout-card-cardio' : ''}${done ? ' workout-card-done' : ''}`}
 				onClick={() => onSelect(w)}
 			>
 				{cardio ? (
@@ -70,7 +75,7 @@ function todayDateString(): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
+export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onViewSession, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
 	const { favorites, others } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
@@ -110,6 +115,31 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 			.filter((x): x is { workout: Workout; done: boolean } => x !== null);
 	}, [schedule, logRows, workouts, today]);
 
+	/** Build a map of today's sessions for completed workouts. */
+	const todaySessions = useMemo(() => {
+		if (!logRows) return new Map<string, LogSession>();
+		const workoutNames = new Map(workouts.map((w) => [w.id, w.name]));
+		const byDate = groupLogByDate(logRows, workoutNames);
+		const todayList = byDate.get(today) ?? [];
+		const map = new Map<string, LogSession>();
+		for (const session of todayList) {
+			// Keep the latest session per workoutId
+			map.set(session.key.workoutId, session);
+		}
+		return map;
+	}, [logRows, workouts, today]);
+
+	const handleTodayCardClick = (workout: Workout, done: boolean) => {
+		if (done && onViewSession) {
+			const session = todaySessions.get(workout.id);
+			if (session) {
+				onViewSession(session);
+				return;
+			}
+		}
+		onSelect(workout);
+	};
+
 	const [moreOpen, setMoreOpen] = useState(false);
 
 	return (
@@ -118,17 +148,15 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 			<MotivationalQuote />
 			{todaysPlan.length > 0 && (
 				<div className="todays-plan">
-					<h3 className="todays-plan-heading">Today</h3>
 					<div className="workout-list">
 						{todaysPlan.map(({ workout: w, done }) => (
-							<div key={w.id} className="today-card-row">
-								<WorkoutCard w={w} onSelect={onSelect} cardio={w.category === 'cardio'} />
-								{done && (
-									<span className="today-done-badge" aria-label="Completed">
-										<Check size={16} />
-									</span>
-								)}
-							</div>
+							<WorkoutCard
+								key={w.id}
+								w={w}
+								onSelect={() => handleTodayCardClick(w, done)}
+								cardio={w.category === 'cardio'}
+								done={done}
+							/>
 						))}
 					</div>
 				</div>
@@ -140,9 +168,6 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 				</p>
 			) : (
 				<div className="workout-list">
-					{favorites.length > 0 && (
-						<h3 className="section-heading">Favorites</h3>
-					)}
 					{favorites.map((w) => (
 						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio={w.category === 'cardio'} />
 					))}

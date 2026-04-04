@@ -12,7 +12,8 @@ import { WorkoutEditor } from './components/WorkoutEditor.js';
 import { ExerciseLibrary } from './components/ExerciseLibrary.js';
 import { ExerciseEditor } from './components/ExerciseEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
-import { CalendarView } from './components/CalendarView.js';
+import { CalendarView, SessionDetail } from './components/CalendarView.js';
+import type { LogSession } from './components/CalendarView.js';
 import { ProgressView } from './components/ProgressView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
@@ -33,6 +34,7 @@ function App() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [logRows, setLogRows] = useState<ParsedLogRow[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
 
   const handleConnected = useCallback(
     (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[]) => {
@@ -318,6 +320,23 @@ function App() {
     },
     [spreadsheetId],
   );
+
+  const handleViewSession = useCallback((session: LogSession) => {
+    setViewingSession(session);
+  }, []);
+
+  const handleViewSessionSave = useCallback(
+    (updatedRows: ParsedLogRow[]) => {
+      if (!viewingSession) return;
+      const { date, workoutId, startTime } = viewingSession.key;
+      handleUpdateLogRows(date, workoutId, startTime, updatedRows);
+    },
+    [viewingSession, handleUpdateLogRows],
+  );
+
+  const handleViewSessionClose = useCallback(() => {
+    setViewingSession(null);
+  }, []);
 
   const handleGoToList = useCallback(() => {
     navigateTo({ view: 'list' });
@@ -624,6 +643,30 @@ function App() {
     definitions.flatMap((d) => d.templates.map((t) => t.liftId))
   )].filter((id) => !configIds.has(id));
 
+  // Build workout names map for SessionDetail
+  const workoutNames = new Map<string, string>(workouts.map((w) => [w.id, w.name]));
+
+  if (viewingSession) {
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
+        />
+        <SessionDetail
+          session={viewingSession}
+          workoutNames={workoutNames}
+          onSave={handleViewSessionSave}
+          onClose={handleViewSessionClose}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <GoogleAuth
@@ -640,6 +683,7 @@ function App() {
         schedule={schedule}
         logRows={logRows}
         onSelect={handleSelectWorkout}
+        onViewSession={handleViewSession}
         onEdit={handleEditWorkout}
         onNew={handleNewWorkout}
         onToggleFavorite={handleToggleFavorite}

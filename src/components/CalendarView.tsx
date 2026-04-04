@@ -25,7 +25,7 @@ interface CalendarViewProps {
 }
 
 /** Format a YYYY-MM-DD string for display. */
-function formatDate(dateStr: string): { weekday: string; display: string } {
+export function formatDate(dateStr: string): { weekday: string; display: string } {
 	const [y, m, d] = dateStr.split('-').map(Number);
 	const date = new Date(y, m - 1, d);
 	const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -151,7 +151,7 @@ export function buildDayInfos(
 const SET_TYPES: SetType[] = ['warmup', 'work', 'backoff', 'joker'];
 
 /** Detail/edit view for a single past workout session. */
-function SessionDetail({
+export function SessionDetail({
 	session,
 	workoutNames,
 	onSave,
