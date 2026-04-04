@@ -35,7 +35,7 @@ function WorkoutCard({
 	done?: boolean;
 }) {
 	return (
-		<div className="workout-card-wrapper">
+		<div className={`workout-card-wrapper${done ? ' workout-card-wrapper-done' : ''}`}>
 			{onToggleFavorite && (
 				<button
 					className={`btn-fav-workout${w.favorite ? ' btn-fav-active' : ''}`}

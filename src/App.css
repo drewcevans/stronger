@@ -125,8 +125,8 @@ body {
 
 /* Today's plan section */
 .todays-plan {
-	margin-top: 1.5rem;
-	margin-bottom: 3rem;
+	margin-top: 3rem;
+	margin-bottom: 6rem;
 }
 
 .today-card-row {
@@ -166,7 +166,7 @@ body {
 }
 
 .workout-card-done {
-	border-color: #00c853;
+	border-color: var(--color-completed);
 }
 
 .lift-badge {
@@ -2237,6 +2237,16 @@ body {
 /* When there's no fav button (no onToggleFavorite), restore left radius */
 .workout-card-wrapper .workout-card:first-child {
 	border-radius: var(--radius) 0 0 var(--radius);
+}
+
+/* When there's no edit button, restore right radius */
+.workout-card-wrapper .workout-card:last-child {
+	border-top-right-radius: var(--radius);
+	border-bottom-right-radius: var(--radius);
+}
+
+.workout-card-wrapper-done {
+	border-color: var(--color-completed);
 }
 
 .btn-edit-workout {
