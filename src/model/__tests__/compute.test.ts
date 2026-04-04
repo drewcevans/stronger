@@ -307,6 +307,7 @@ describe('computeExercise', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'missing',
 			name: 'Ghost Lift',
+			role: 'primary',
 			sets: [],
 		};
 		expect(computeExercise(template, configs)).toBeNull();
@@ -315,7 +316,8 @@ describe('computeExercise', () => {
 	it('computes a full primary bench press exercise', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'bench',
-			name: 'Primary: Bench Press',
+			name: 'Bench Press',
+			role: 'primary',
 			sets: [
 				{
 					setType: 'warmup',
@@ -373,7 +375,7 @@ describe('computeExercise', () => {
 		const result = computeExercise(template, configs);
 		expect(result).not.toBeNull();
 		expect(result!.liftId).toBe('bench');
-		expect(result!.name).toBe('Primary: Bench Press');
+		expect(result!.name).toBe('Bench Press');
 		expect(result!.sets).toHaveLength(6);
 
 		// Bar warmup — fixed 45
@@ -425,7 +427,8 @@ describe('RSS Intermediate B scenarios', () => {
 		// Working weight = 85% of Workout C primary Press top set = 85% of 140 = 119 → 120 (rounded to 5)
 		const secondaryPressTemplate: ExerciseTemplate = {
 			liftId: 'bench', // secondary press in Workout A uses bench config for rounding/min
-			name: 'Secondary: Press',
+			name: 'Press',
+			role: 'secondary',
 			sets: [
 				{
 					setType: 'warmup',
@@ -482,7 +485,8 @@ describe('RSS Intermediate B scenarios', () => {
 	it('assistance exercise (skull crusher) uses own independent weights', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'skull-crusher',
-			name: 'Assistance: Skull Crusher',
+			name: 'Skull Crusher',
+			role: 'assistance',
 			sets: [
 				{
 					setType: 'work',
@@ -525,7 +529,8 @@ describe('RSS Intermediate B scenarios', () => {
 
 		const template: ExerciseTemplate = {
 			liftId: 'lateral-raise',
-			name: 'Assistance: Lateral Raise',
+			name: 'Lateral Raise',
+			role: 'assistance',
 			sets: [
 				{
 					setType: 'work',
@@ -569,7 +574,8 @@ describe('RSS Intermediate B scenarios', () => {
 	it('deadlift primary has no bar warmup (starts at 45%)', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'deadlift',
-			name: 'Primary: Deadlift',
+			name: 'Deadlift',
+			role: 'primary',
 			sets: [
 				{
 					setType: 'warmup',

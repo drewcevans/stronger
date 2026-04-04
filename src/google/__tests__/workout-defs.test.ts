@@ -131,7 +131,8 @@ describe('workoutDefsToRows', () => {
 		templates: [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{
 						setType: 'work',
@@ -384,7 +385,7 @@ describe('rowsToWorkoutDefs', () => {
 			{ workoutId: 'A', workoutName: 'WA', exerciseOrder: 1, exerciseRole: 'primary', liftId: 'bench', category: 'strength' as const, set: { setType: 'work' as const, percentage: 1.0, weightBasis: { kind: 'topSet' } as const, minReps: 5, maxReps: 5, amrap: true } },
 		];
 		const defs = rowsToWorkoutDefs(parsed);
-		expect(defs[0].templates[0].name).toBe('Primary: bench');
+		expect(defs[0].templates[0].name).toBe('bench');
 	});
 
 	it('derives exercise display name from role + lift name when liftNames provided', () => {
@@ -393,7 +394,7 @@ describe('rowsToWorkoutDefs', () => {
 		];
 		const liftNames = new Map([['bench', 'Bench Press']]);
 		const defs = rowsToWorkoutDefs(parsed, liftNames);
-		expect(defs[0].templates[0].name).toBe('Primary: Bench Press');
+		expect(defs[0].templates[0].name).toBe('Bench Press');
 	});
 
 	it('sorts exercises by exerciseOrder', () => {

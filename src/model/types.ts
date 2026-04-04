@@ -88,6 +88,9 @@ export interface SetTemplate {
 	comment?: string;
 }
 
+/** Role of an exercise within a workout (e.g. primary lift vs. accessory). */
+export type ExerciseRole = 'primary' | 'secondary' | 'assistance';
+
 /**
  * The ordered list of sets for a single exercise in a workout.
  * Combined with a LiftConfig it fully determines every set weight.
@@ -95,8 +98,10 @@ export interface SetTemplate {
 export interface ExerciseTemplate {
 	/** References a LiftConfig.id — the lift whose config governs this exercise. */
 	liftId: string;
-	/** Display name (e.g. "Primary: Bench Press"). */
+	/** Display name (e.g. "Bench Press"). */
 	name: string;
+	/** Role within the workout. */
+	role: ExerciseRole;
 	/** Ordered set list. */
 	sets: SetTemplate[];
 }
@@ -122,6 +127,8 @@ export interface ComputedExercise {
 	liftId: string;
 	/** Display name. */
 	name: string;
+	/** Role within the workout. */
+	role: ExerciseRole;
 	/** Ordered computed sets. */
 	sets: ComputedSet[];
 }

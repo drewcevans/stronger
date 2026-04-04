@@ -140,6 +140,7 @@ export function computeExercise(
 	return {
 		liftId: template.liftId,
 		name: template.name,
+		role: template.role,
 		sets,
 	};
 }

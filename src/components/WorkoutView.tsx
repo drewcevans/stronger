@@ -160,7 +160,10 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 				const allSets = [...exercise.sets, ...addedSets[exerciseIdx]];
 				return (
 				<section key={exerciseIdx} className="exercise-card">
-					<h2 className="exercise-name">{exercise.name}</h2>
+					<h2 className="exercise-name">
+						<span className={`role-tag role-${exercise.role}`}>{exercise.role}</span>
+						{exercise.name}
+					</h2>
 					<div className="sets-list">
 						{allSets.map((set, setIdx) => {
 							const result = results[exerciseIdx][setIdx];

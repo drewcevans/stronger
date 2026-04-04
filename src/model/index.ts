@@ -2,6 +2,7 @@ export type {
 	ActivityType,
 	ComputedExercise,
 	ComputedSet,
+	ExerciseRole,
 	ExerciseTemplate,
 	LiftConfig,
 	PreviousSetData,

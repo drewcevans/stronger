@@ -241,6 +241,34 @@ body {
 	padding: 0.5rem 0;
 	border-bottom: 1px solid var(--color-border);
 	margin-bottom: 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.role-tag {
+	font-size: 0.65rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 0.15rem 0.4rem;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.role-primary {
+	background: var(--color-accent);
+	color: #fff;
+}
+
+.role-secondary {
+	background: #5b6abf;
+	color: #fff;
+}
+
+.role-assistance {
+	background: var(--color-border);
+	color: var(--color-text-secondary);
 }
 
 /* Set rows */

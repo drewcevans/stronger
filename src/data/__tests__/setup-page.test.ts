@@ -100,7 +100,7 @@ describe('setup page logic', () => {
 			// Accessory lifts should keep defaults
 			const skullCrusher = configs.find((c) => c.id === 'skull-crusher')!;
 			expect(skullCrusher.topSetWeight).toBe(60);
-			expect(skullCrusher.backoffWeight).toBe(51);
+			expect(skullCrusher.backoffWeight).toBe(50);
 		});
 
 		it('preserves all 9 default lift configs in output', () => {

@@ -56,7 +56,8 @@ describe('isCrossReferenceOnly', () => {
 	it('returns true when all work/backoff sets use crossReference', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'press',
-			name: 'Secondary: Press',
+			name: 'Press',
+			role: 'secondary',
 			sets: [
 				{
 					setType: 'warmup',
@@ -90,7 +91,8 @@ describe('isCrossReferenceOnly', () => {
 	it('returns false when work sets use topSet basis', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'bench',
-			name: 'Primary: Bench Press',
+			name: 'Bench Press',
+			role: 'primary',
 			sets: [
 				{
 					setType: 'work',
@@ -117,6 +119,7 @@ describe('isCrossReferenceOnly', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'bench',
 			name: 'Warmup Only',
+			role: 'primary',
 			sets: [
 				{
 					setType: 'warmup',
@@ -135,6 +138,7 @@ describe('isCrossReferenceOnly', () => {
 		const template: ExerciseTemplate = {
 			liftId: 'bench',
 			name: 'Mixed',
+			role: 'primary',
 			sets: [
 				{
 					setType: 'work',
@@ -169,7 +173,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
 					{ setType: 'backoff', weight: 170, minReps: 5, maxReps: 8, amrap: true },
@@ -179,7 +184,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
 					{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'backoff' }, minReps: 5, maxReps: 8, amrap: true },
@@ -207,7 +213,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
 					{ setType: 'backoff', weight: 170, minReps: 5, maxReps: 8, amrap: true },
@@ -217,7 +224,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
 					{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'backoff' }, minReps: 5, maxReps: 8, amrap: true },
@@ -243,7 +251,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
 					{ setType: 'backoff', weight: 170, minReps: 5, maxReps: 8, amrap: true },
@@ -253,7 +262,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
 					{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'backoff' }, minReps: 5, maxReps: 8, amrap: true },
@@ -279,14 +289,16 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
 				],
 			},
 			{
 				liftId: 'press',
-				name: 'Secondary: Press',
+				name: 'Press',
+				role: 'secondary',
 				sets: [
 					{ setType: 'work', weight: 120, minReps: 5, maxReps: 8, amrap: false },
 				],
@@ -295,14 +307,16 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
 				],
 			},
 			{
 				liftId: 'press',
-				name: 'Secondary: Press',
+				name: 'Press',
+				role: 'secondary',
 				sets: [
 					{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: false },
 				],
@@ -323,14 +337,16 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'skull-crusher',
-				name: 'Assistance: Skull Crusher (Exercise 1)',
+				name: 'Skull Crusher',
+				role: 'assistance',
 				sets: [
 					{ setType: 'work', weight: 60, minReps: 8, maxReps: 8, amrap: false },
 				],
 			},
 			{
 				liftId: 'skull-crusher',
-				name: 'Assistance: Skull Crusher (Exercise 2)',
+				name: 'Skull Crusher',
+				role: 'assistance',
 				sets: [
 					{ setType: 'work', weight: 60, minReps: 8, maxReps: 8, amrap: false },
 				],
@@ -339,14 +355,16 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'skull-crusher',
-				name: 'Assistance: Skull Crusher (Exercise 1)',
+				name: 'Skull Crusher',
+				role: 'assistance',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: false },
 				],
 			},
 			{
 				liftId: 'skull-crusher',
-				name: 'Assistance: Skull Crusher (Exercise 2)',
+				name: 'Skull Crusher',
+				role: 'assistance',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: false },
 				],
@@ -366,7 +384,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
 				],
@@ -375,7 +394,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
 				],
@@ -395,7 +415,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'warmup', weight: 95, minReps: 5, maxReps: 5, amrap: false },
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
@@ -405,7 +426,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'warmup', percentage: 0.45, weightBasis: { kind: 'topSet' }, minReps: 5, maxReps: 5, amrap: false },
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
@@ -429,7 +451,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
 				],
@@ -438,7 +461,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
 				],
@@ -458,7 +482,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'press',
-				name: 'Secondary: Press',
+				name: 'Press',
+				role: 'secondary',
 				sets: [
 					{ setType: 'work', weight: 120, minReps: 5, maxReps: 8, amrap: false },
 				],
@@ -467,7 +492,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'press',
-				name: 'Secondary: Press',
+				name: 'Press',
+				role: 'secondary',
 				sets: [
 					{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: false },
 				],
@@ -485,7 +511,8 @@ describe('computeProgression', () => {
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'warmup', weight: 45, minReps: 10, maxReps: 10, amrap: false },
 					{ setType: 'warmup', weight: 95, minReps: 5, maxReps: 5, amrap: false },
@@ -497,7 +524,8 @@ describe('computeProgression', () => {
 			},
 			{
 				liftId: 'press',
-				name: 'Secondary: Press',
+				name: 'Press',
+				role: 'secondary',
 				sets: [
 					{ setType: 'warmup', weight: 45, minReps: 10, maxReps: 10, amrap: false },
 					{ setType: 'work', weight: 120, minReps: 5, maxReps: 8, amrap: false },
@@ -506,7 +534,8 @@ describe('computeProgression', () => {
 			},
 			{
 				liftId: 'skull-crusher',
-				name: 'Assistance: Skull Crusher',
+				name: 'Skull Crusher',
+				role: 'assistance',
 				sets: [
 					{ setType: 'work', weight: 60, minReps: 8, maxReps: 8, amrap: false },
 					{ setType: 'backoff', weight: 50, minReps: 8, maxReps: 8, amrap: true },
@@ -516,7 +545,8 @@ describe('computeProgression', () => {
 		const templates: ExerciseTemplate[] = [
 			{
 				liftId: 'bench',
-				name: 'Primary: Bench Press',
+				name: 'Bench Press',
+				role: 'primary',
 				sets: [
 					{ setType: 'warmup', percentage: 1.0, weightBasis: { kind: 'fixed', weight: 45 }, minReps: 10, maxReps: 10, amrap: false },
 					{ setType: 'warmup', percentage: 0.45, weightBasis: { kind: 'topSet' }, minReps: 5, maxReps: 5, amrap: false },
@@ -528,7 +558,8 @@ describe('computeProgression', () => {
 			},
 			{
 				liftId: 'press',
-				name: 'Secondary: Press',
+				name: 'Press',
+				role: 'secondary',
 				sets: [
 					{ setType: 'warmup', percentage: 1.0, weightBasis: { kind: 'fixed', weight: 45 }, minReps: 10, maxReps: 10, amrap: false },
 					{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'crossReference', liftId: 'press' }, minReps: 5, maxReps: 8, amrap: false },
@@ -537,7 +568,8 @@ describe('computeProgression', () => {
 			},
 			{
 				liftId: 'skull-crusher',
-				name: 'Assistance: Skull Crusher',
+				name: 'Skull Crusher',
+				role: 'assistance',
 				sets: [
 					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: false },
 					{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'backoff' }, minReps: 8, maxReps: 8, amrap: true },

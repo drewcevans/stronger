@@ -5,34 +5,170 @@
 		"templates": [
 			{
 				"liftId": "bench",
-				"name": "Primary: Bench Press",
+				"name": "Bench Press",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": false, "comment": "Min 3 reps. If 5 reps completed, increase by 2.5 lbs next week" },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "If 8 reps completed, increase backoff weight by 2.5 lbs next week" }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 5,
+						"amrap": false,
+						"comment": "Min 3 reps. If 5 reps completed, increase by 2.5 lbs next week"
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": true,
+						"comment": "If 8 reps completed, increase backoff weight by 2.5 lbs next week"
+					}
 				]
 			},
 			{
 				"liftId": "press",
-				"name": "Secondary: Press",
+				"name": "Press",
+				"role": "secondary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 0.85, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 8, "amrap": false },
-					{ "setType": "backoff", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "press" }, "minReps": 5, "maxReps": 8, "amrap": true }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.3825,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "press"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.5525,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "press"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.7225,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "press"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "press"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": false
+					},
+					{
+						"setType": "backoff",
+						"percentage": 0.7225,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "press"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": true
+					}
 				]
 			},
 			{
 				"liftId": "skull-crusher",
-				"name": "Assistance: Skull Crusher",
+				"name": "Skull Crusher",
+				"role": "assistance",
 				"sets": [
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": true
+					}
 				]
 			}
 		]
@@ -43,32 +179,149 @@
 		"templates": [
 			{
 				"liftId": "squat",
-				"name": "Primary: Squat",
+				"name": "Squat",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": false, "comment": "Min 3 reps. If 5 reps completed, increase top set weight next week" },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "If 8 reps completed, increase backoff weight next week" }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 5,
+						"amrap": false,
+						"comment": "Min 3 reps. If 5 reps completed, increase top set weight next week"
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": true,
+						"comment": "If 8 reps completed, increase backoff weight next week"
+					}
 				]
 			},
 			{
 				"liftId": "deadlift",
-				"name": "Secondary: Deadlift",
+				"name": "Deadlift",
+				"role": "secondary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 0.85, "weightBasis": { "kind": "crossReference", "liftId": "deadlift" }, "minReps": 5, "maxReps": 5, "amrap": false }
+					{
+						"setType": "warmup",
+						"percentage": 0.3825,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "deadlift"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.5525,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "deadlift"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.7225,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "deadlift"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "deadlift"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					}
 				]
 			},
 			{
 				"liftId": "chin-up",
-				"name": "Assistance: Chin-up",
+				"name": "Chin-up",
+				"role": "assistance",
 				"sets": [
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": false
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": true
+					}
 				]
 			}
 		]
@@ -79,43 +332,208 @@
 		"templates": [
 			{
 				"liftId": "press",
-				"name": "Primary: Press",
+				"name": "Press",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": false, "comment": "Min 3 reps. If 5 reps completed, increase top set weight next week" },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "If 8 reps completed, increase backoff weight next week" }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 5,
+						"amrap": false,
+						"comment": "Min 3 reps. If 5 reps completed, increase top set weight next week"
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": true,
+						"comment": "If 8 reps completed, increase backoff weight next week"
+					}
 				]
 			},
 			{
 				"liftId": "bench",
-				"name": "Secondary: Bench Press",
+				"name": "Bench Press",
+				"role": "secondary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.3825, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.5525, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 0.85, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 8, "amrap": false },
-					{ "setType": "backoff", "percentage": 0.7225, "weightBasis": { "kind": "crossReference", "liftId": "bench" }, "minReps": 5, "maxReps": 8, "amrap": true }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.3825,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "bench"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.5525,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "bench"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.7225,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "bench"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "bench"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": false
+					},
+					{
+						"setType": "backoff",
+						"percentage": 0.7225,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "bench"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": true
+					}
 				]
 			},
 			{
-				"liftId": "bicep-curl",
-				"name": "Assistance: Bicep Curl",
+				"liftId": "bicep-curl-ez",
+				"name": "Bicep Curl (EZ Bar)",
+				"role": "assistance",
 				"sets": [
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": false
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": true
+					}
 				]
 			},
 			{
 				"liftId": "lateral-raise",
-				"name": "Assistance: Lateral Raise",
+				"name": "Lateral Raise",
+				"role": "assistance",
 				"sets": [
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 10, "maxReps": 15, "amrap": false, "comment": "Do not increase weight until 15 reps on all sets" },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 10, "maxReps": 15, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 10, "maxReps": 15, "amrap": false }
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 10,
+						"maxReps": 15,
+						"amrap": false,
+						"comment": "Do not increase weight until 15 reps on all sets"
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 10,
+						"maxReps": 15,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 10,
+						"maxReps": 15,
+						"amrap": false
+					}
 				]
 			}
 		]
@@ -126,34 +544,171 @@
 		"templates": [
 			{
 				"liftId": "deadlift",
-				"name": "Primary: Deadlift",
+				"name": "Deadlift",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 5, "amrap": false, "comment": "Min 3 reps. If 5 reps completed, increase top set weight next week" },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 5, "maxReps": 8, "amrap": true, "comment": "Optional if 5 reps of work complete. If 8 reps completed, increase backoff weight next week" }
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 5,
+						"amrap": false,
+						"comment": "Min 3 reps. If 5 reps completed, increase top set weight next week"
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 5,
+						"maxReps": 8,
+						"amrap": true,
+						"comment": "Optional if 5 reps of work complete. If 8 reps completed, increase backoff weight next week"
+					}
 				]
 			},
 			{
 				"liftId": "squat",
-				"name": "Secondary: Squat",
+				"name": "Squat",
+				"role": "secondary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.3375, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.4875, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.6375, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 0.75, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 0.75, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 0.75, "weightBasis": { "kind": "crossReference", "liftId": "squat" }, "minReps": 5, "maxReps": 5, "amrap": false }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.3375,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "squat"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.4875,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "squat"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.6375,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "squat"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 0.75,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "squat"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 0.75,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "squat"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 0.75,
+						"weightBasis": {
+							"kind": "crossReference",
+							"liftId": "squat"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					}
 				]
 			},
 			{
 				"liftId": "dumbbell-row",
-				"name": "Assistance: Dumbbell Row",
+				"name": "Dumbbell Row",
+				"role": "assistance",
 				"sets": [
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 8, "maxReps": 8, "amrap": false },
-					{ "setType": "backoff", "percentage": 1.0, "weightBasis": { "kind": "backoff" }, "minReps": 8, "maxReps": 8, "amrap": true }
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": false
+					},
+					{
+						"setType": "backoff",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "backoff"
+						},
+						"minReps": 8,
+						"maxReps": 8,
+						"amrap": true
+					}
 				]
 			}
 		]
@@ -164,15 +719,79 @@
 		"templates": [
 			{
 				"liftId": "bench",
-				"name": "Primary: Bench Press",
+				"name": "Bench Press",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					}
 				]
 			}
 		]
@@ -183,15 +802,79 @@
 		"templates": [
 			{
 				"liftId": "squat",
-				"name": "Primary: Squat",
+				"name": "Squat",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					}
 				]
 			}
 		]
@@ -202,15 +885,79 @@
 		"templates": [
 			{
 				"liftId": "press",
-				"name": "Primary: Press",
+				"name": "Press",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					}
 				]
 			}
 		]
@@ -221,13 +968,59 @@
 		"templates": [
 			{
 				"liftId": "deadlift",
-				"name": "Primary: Deadlift",
+				"name": "Deadlift",
+				"role": "primary",
 				"sets": [
-					{ "setType": "warmup", "percentage": 1.0, "weightBasis": { "kind": "barWeight" }, "minReps": 10, "maxReps": 10, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.45, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.65, "weightBasis": { "kind": "topSet" }, "minReps": 3, "maxReps": 3, "amrap": false },
-					{ "setType": "warmup", "percentage": 0.85, "weightBasis": { "kind": "topSet" }, "minReps": 2, "maxReps": 2, "amrap": false },
-					{ "setType": "work", "percentage": 1.0, "weightBasis": { "kind": "topSet" }, "minReps": 5, "maxReps": 5, "amrap": false }
+					{
+						"setType": "warmup",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "barWeight"
+						},
+						"minReps": 10,
+						"maxReps": 10,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.45,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.65,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 3,
+						"maxReps": 3,
+						"amrap": false
+					},
+					{
+						"setType": "warmup",
+						"percentage": 0.85,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 2,
+						"maxReps": 2,
+						"amrap": false
+					},
+					{
+						"setType": "work",
+						"percentage": 1.0,
+						"weightBasis": {
+							"kind": "topSet"
+						},
+						"minReps": 5,
+						"maxReps": 5,
+						"amrap": false
+					}
 				]
 			}
 		]

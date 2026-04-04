@@ -1,11 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
-import type { SetTemplate, WeightBasis, SetType, LiftConfig } from '../model/index.js';
+import type { SetTemplate, WeightBasis, SetType, LiftConfig, ExerciseRole } from '../model/index.js';
 import type { WorkoutDefinition } from '../data/sample-workouts.js';
 import type { ActivityType } from '../model/types.js';
-
-/** Valid exercise roles within a workout definition. */
-type ExerciseRole = 'primary' | 'secondary' | 'assistance';
 
 /** Local state for an exercise being edited. */
 export interface EditableExercise {
@@ -53,14 +50,6 @@ function roleLabel(role: ExerciseRole): string {
 	}
 }
 
-/** Infer the exercise role from the display name prefix. */
-function inferRole(name: string): ExerciseRole {
-	const lower = name.toLowerCase();
-	if (lower.startsWith('primary')) return 'primary';
-	if (lower.startsWith('secondary')) return 'secondary';
-	return 'assistance';
-}
-
 /** Generate a kebab-case ID from a workout name. */
 export function nameToId(name: string): string {
 	return name
@@ -89,7 +78,7 @@ export function toEditable(def: WorkoutDefinition): EditableWorkout {
 		category: def.category ?? 'strength',
 		exercises: def.templates.map((t) => ({
 			liftId: t.liftId,
-			role: inferRole(t.name),
+			role: t.role,
 			sets: t.sets.map((s) => ({ ...s })),
 		})),
 	};
@@ -104,10 +93,10 @@ export function fromEditable(e: EditableWorkout, configs: LiftConfig[]): Workout
 		category: e.category,
 		templates: e.exercises.map((ex) => {
 			const liftName = liftMap.get(ex.liftId) ?? ex.liftId;
-			const label = roleLabel(ex.role);
 			return {
 				liftId: ex.liftId,
-				name: `${label}: ${liftName}`,
+				name: liftName,
+				role: ex.role,
 				sets: ex.sets,
 			};
 		}),

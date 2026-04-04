@@ -6,9 +6,9 @@ import {
 } from '../sample-workouts.ts';
 
 describe('buildWorkoutsFromConfigs', () => {
-	it('produces 4 workouts from default configs', () => {
+	it('produces 8 workouts from default configs', () => {
 		const workouts = buildWorkoutsFromConfigs(defaultLiftConfigs);
-		expect(workouts).toHaveLength(4);
+		expect(workouts).toHaveLength(8);
 	});
 
 	it('uses workout definitions for ids and names', () => {
@@ -88,8 +88,8 @@ describe('buildWorkoutsFromConfigs', () => {
 			{ id: 'ruck', name: 'Ruck March', category: 'cardio' as const, templates: [] },
 		];
 		const workouts = buildWorkoutsFromConfigs(defaultLiftConfigs, defs);
-		// 4 strength + 2 cardio
-		expect(workouts).toHaveLength(6);
+		// 8 strength + 2 cardio
+		expect(workouts).toHaveLength(10);
 		const cardioWorkouts = workouts.filter((w) => w.category === 'cardio');
 		expect(cardioWorkouts).toHaveLength(2);
 		expect(cardioWorkouts[0].id).toBe('run');

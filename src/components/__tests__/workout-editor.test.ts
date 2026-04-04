@@ -47,7 +47,8 @@ describe('toEditable', () => {
 			templates: [
 				{
 					liftId: 'bench',
-					name: 'Primary: Bench Press',
+					name: 'Bench Press',
+					role: 'primary',
 					sets: [
 						{
 							setType: 'work',
@@ -73,24 +74,27 @@ describe('toEditable', () => {
 		expect(result.exercises[0].sets[0].comment).toBe('Test');
 	});
 
-	it('infers role from exercise name prefix', () => {
+	it('reads role directly from template', () => {
 		const def: WorkoutDefinition = {
 			id: 'A',
 			name: 'Workout A',
 			templates: [
 				{
 					liftId: 'bench',
-					name: 'Secondary: Bench Press',
+					name: 'Bench Press',
+					role: 'secondary',
 					sets: [{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 5, maxReps: 5, amrap: false }],
 				},
 				{
 					liftId: 'curl',
-					name: 'Assistance: Bicep Curl',
+					name: 'Bicep Curl',
+					role: 'assistance',
 					sets: [{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: false }],
 				},
 				{
 					liftId: 'squat',
-					name: 'Custom Name',
+					name: 'Squat',
+					role: 'primary',
 					sets: [{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 5, maxReps: 5, amrap: false }],
 				},
 			],
@@ -98,7 +102,7 @@ describe('toEditable', () => {
 		const result = toEditable(def);
 		expect(result.exercises[0].role).toBe('secondary');
 		expect(result.exercises[1].role).toBe('assistance');
-		expect(result.exercises[2].role).toBe('assistance'); // default fallback
+		expect(result.exercises[2].role).toBe('primary');
 	});
 
 	it('defaults category to strength when omitted', () => {
@@ -155,7 +159,8 @@ describe('fromEditable', () => {
 		expect(result.category).toBe('strength');
 		expect(result.templates).toHaveLength(1);
 		expect(result.templates[0].liftId).toBe('bench');
-		expect(result.templates[0].name).toBe('Primary: Bench Press');
+		expect(result.templates[0].name).toBe('Bench Press');
+		expect(result.templates[0].role).toBe('primary');
 		expect(result.templates[0].sets).toHaveLength(1);
 	});
 
@@ -169,7 +174,8 @@ describe('fromEditable', () => {
 			],
 		};
 		const result = fromEditable(editable, configs);
-		expect(result.templates[0].name).toBe('Secondary: Squat');
+		expect(result.templates[0].name).toBe('Squat');
+		expect(result.templates[0].role).toBe('secondary');
 	});
 
 	it('falls back to liftId when lift name not found in configs', () => {
@@ -182,7 +188,8 @@ describe('fromEditable', () => {
 			],
 		};
 		const result = fromEditable(editable, configs);
-		expect(result.templates[0].name).toBe('Assistance: unknown-lift');
+		expect(result.templates[0].name).toBe('unknown-lift');
+		expect(result.templates[0].role).toBe('assistance');
 	});
 
 	it('converts a cardio workout', () => {
@@ -205,7 +212,8 @@ describe('fromEditable', () => {
 			templates: [
 				{
 					liftId: 'bench',
-					name: 'Primary: Bench Press',
+					name: 'Bench Press',
+					role: 'primary',
 					sets: [
 						{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true, comment: 'If 5 reps, increase' },
 					],

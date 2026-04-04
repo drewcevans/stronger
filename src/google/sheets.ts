@@ -6,7 +6,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, WeightBasis, PreviousSetData, ScheduleEntry, ActivityType } from '../model/types.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, ActivityType } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -491,8 +491,8 @@ export function decodeWeightBasis(raw: string): WeightBasis | null {
 	return null
 }
 
-/** Valid exercise roles within a workout definition. */
-type ExerciseRole = 'primary' | 'secondary' | 'assistance'
+/** Valid exercise roles for validation. */
+const VALID_ROLES = new Set<ExerciseRole>(['primary', 'secondary', 'assistance'])
 
 /**
  * Build the flat spreadsheet rows from a {@link WorkoutDefinition} array.
@@ -525,13 +525,12 @@ export function workoutDefsToRows(
 			for (let ei = 0; ei < def.templates.length; ei++) {
 				const tpl = def.templates[ei]
 				const exerciseOrder = ei + 1
-				const role = inferExerciseRole(tpl.name)
 				for (const set of tpl.sets) {
 					rows.push([
 						def.id,
 						def.name,
 						exerciseOrder,
-						role,
+						tpl.role,
 						tpl.liftId,
 						set.setType,
 						set.percentage,
@@ -550,14 +549,11 @@ export function workoutDefsToRows(
 }
 
 /**
- * Extract an exercise role from a display name like "Primary: Bench Press".
- * Falls back to 'assistance' when the name doesn't start with a recognised prefix.
+ * Parse an exercise role string, defaulting to 'assistance' for unrecognized values.
  */
-function inferExerciseRole(name: string): ExerciseRole {
-	const lower = name.toLowerCase()
-	if (lower.startsWith('primary')) return 'primary'
-	if (lower.startsWith('secondary')) return 'secondary'
-	return 'assistance'
+function parseExerciseRole(raw: string): ExerciseRole {
+	const lower = raw.toLowerCase().trim() as ExerciseRole
+	return VALID_ROLES.has(lower) ? lower : 'assistance'
 }
 
 /* ------------------------------------------------------------------ */
@@ -715,13 +711,13 @@ export function rowsToWorkoutDefs(
 		for (const eo of exerciseOrderSet) {
 			const exRows = exerciseMap.get(eo)!
 			const first = exRows[0]
-			// Derive display name from role + lift name
-			const liftName = liftNames?.get(first.liftId) ?? first.liftId
-			const roleLabel = first.exerciseRole.charAt(0).toUpperCase() + first.exerciseRole.slice(1)
-			const name = `${roleLabel}: ${liftName}`
+			// Use lift name as the display name (role is a separate field)
+			const name = liftNames?.get(first.liftId) ?? first.liftId
+			const role = parseExerciseRole(first.exerciseRole)
 			templates.push({
 				liftId: first.liftId,
 				name,
+				role,
 				sets: exRows.map((r) => r.set),
 			})
 		}

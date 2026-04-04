@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { sampleWorkouts } from '../sample-workouts.js';
 
 describe('sampleWorkouts', () => {
-	it('provides exactly 4 workouts (A–D)', () => {
-		expect(sampleWorkouts).toHaveLength(4);
+	it('provides exactly 8 workouts', () => {
+		expect(sampleWorkouts).toHaveLength(8);
 		expect(sampleWorkouts.map((w) => w.id)).toEqual([
-			'A',
-			'B',
-			'C',
-			'D',
+			'rss-int-b-bench',
+			'rss-int-b-squat',
+			'rss-int-b-press',
+			'rss-int-b-deadlift',
+			'basic-bench',
+			'basic-squat',
+			'basic-press',
+			'basic-deadlift',
 		]);
 	});
 
@@ -18,8 +22,9 @@ describe('sampleWorkouts', () => {
 		}
 	});
 
-	it('each workout contains at least 2 exercises', () => {
-		for (const workout of sampleWorkouts) {
+	it('each RSS workout contains at least 2 exercises', () => {
+		const rssWorkouts = sampleWorkouts.filter((w) => w.id.startsWith('rss-'));
+		for (const workout of rssWorkouts) {
 			expect(workout.exercises.length).toBeGreaterThanOrEqual(2);
 		}
 	});
@@ -53,14 +58,14 @@ describe('sampleWorkouts', () => {
 		}
 	});
 
-	it('workout A has bench press as the primary lift', () => {
-		const a = sampleWorkouts[0];
+	it('workout rss-int-b-bench has bench press as the primary lift', () => {
+		const a = sampleWorkouts.find((w) => w.id === 'rss-int-b-bench')!;
 		expect(a.exercises[0].name).toContain('Bench Press');
 		expect(a.exercises[0].liftId).toBe('bench');
 	});
 
-	it('workout B has squat as the primary lift', () => {
-		const b = sampleWorkouts[1];
+	it('workout rss-int-b-squat has squat as the primary lift', () => {
+		const b = sampleWorkouts.find((w) => w.id === 'rss-int-b-squat')!;
 		expect(b.exercises[0].name).toContain('Squat');
 		expect(b.exercises[0].liftId).toBe('squat');
 	});
