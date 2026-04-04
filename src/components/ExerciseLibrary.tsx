@@ -21,17 +21,9 @@ export const DEFAULT_STRENGTH_CONFIG: Omit<LiftConfig, 'id' | 'name'> = {
 	gear: 'barbell' as GearType,
 };
 
-/** Check whether a LiftConfig represents a cardio exercise (all weight fields zero). */
+/** Check whether a LiftConfig represents a cardio exercise. */
 export function isCardioExercise(config: LiftConfig): boolean {
-	return (
-		config.topSetWeight === 0 &&
-		config.backoffWeight === 0 &&
-		config.increment === 0 &&
-		config.minimumWeight === 0 &&
-		config.roundingFactor === 0 &&
-		config.barWeight === 0 &&
-		config.gear === 'bodyweight'
-	);
+	return config.category === 'cardio';
 }
 
 interface ExerciseLibraryProps {
@@ -50,9 +42,9 @@ function ExerciseCard({
 	cardio: boolean;
 }) {
 	return (
-		<div className="exercise-card-wrapper">
+		<div className={`exercise-card-wrapper${cardio ? ' exercise-card-cardio' : ''}`}>
 			<button
-				className={`exercise-card${cardio ? ' exercise-card-cardio' : ''}`}
+				className="exercise-card"
 				onClick={() => onEdit(config.id)}
 			>
 				{cardio ? (
