@@ -254,10 +254,11 @@ body {
 	padding: 0.15rem 0.4rem;
 	border-radius: 4px;
 	white-space: nowrap;
+	margin-left: auto;
 }
 
 .role-primary {
-	background: var(--color-accent);
+	background: #e8573d;
 	color: #fff;
 }
 

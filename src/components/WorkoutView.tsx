@@ -161,8 +161,8 @@ export function WorkoutView({ workout, previousSets, onBack, onFinish }: Workout
 				return (
 				<section key={exerciseIdx} className="exercise-card">
 					<h2 className="exercise-name">
-						<span className={`role-tag role-${exercise.role}`}>{exercise.role}</span>
 						{exercise.name}
+						<span className={`role-tag role-${exercise.role}`}>{exercise.role}</span>
 					</h2>
 					<div className="sets-list">
 						{allSets.map((set, setIdx) => {
