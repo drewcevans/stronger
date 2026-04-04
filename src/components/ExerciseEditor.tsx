@@ -142,6 +142,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 								min="0"
 								step="any"
 								value={topSetWeight}
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => setTopSetWeight(Number(e.target.value) || 0)}
 							/>
 						</label>
@@ -154,6 +155,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 								min="0"
 								step="any"
 								value={backoffWeight}
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => setBackoffWeight(Number(e.target.value) || 0)}
 							/>
 						</label>
@@ -166,6 +168,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 								min="0"
 								step="any"
 								value={increment}
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => setIncrement(Number(e.target.value) || 0)}
 							/>
 						</label>
@@ -178,6 +181,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 								min="0"
 								step="any"
 								value={minimumWeight}
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => setMinimumWeight(Number(e.target.value) || 0)}
 							/>
 						</label>
@@ -190,6 +194,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 								min="0"
 								step="any"
 								value={roundingFactor}
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => setRoundingFactor(Number(e.target.value) || 0)}
 							/>
 						</label>
@@ -202,6 +207,7 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 								min="0"
 								step="any"
 								value={barWeight}
+								onFocus={(e) => e.target.select()}
 								onChange={(e) => setBarWeight(Number(e.target.value) || 0)}
 							/>
 						</label>

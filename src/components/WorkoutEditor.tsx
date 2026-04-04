@@ -438,6 +438,7 @@ export function WorkoutEditor({
 											value={set.weightBasis.kind === 'barWeight' || set.weightBasis.kind === 'fixed' ? '' : Math.round(set.percentage * 100)}
 											placeholder={set.weightBasis.kind === 'barWeight' || set.weightBasis.kind === 'fixed' ? '—' : ''}
 											disabled={set.weightBasis.kind === 'barWeight' || set.weightBasis.kind === 'fixed'}
+											onFocus={(e) => e.target.select()}
 											onChange={(e) =>
 												updateSet(exerciseIdx, setIdx, {
 													percentage: (Number(e.target.value) || 0) / 100,
@@ -493,6 +494,7 @@ export function WorkoutEditor({
 													className="editor-basis-extra-input"
 													value={set.weightBasis.weight}
 													placeholder="lbs"
+													onFocus={(e) => e.target.select()}
 													onChange={(e) =>
 														updateWeightBasis(
 															exerciseIdx,
@@ -509,6 +511,7 @@ export function WorkoutEditor({
 											inputMode="numeric"
 											className="editor-rep-input"
 											value={set.minReps}
+											onFocus={(e) => e.target.select()}
 											onChange={(e) =>
 												updateSet(exerciseIdx, setIdx, {
 													minReps: Number(e.target.value) || 0,
@@ -520,6 +523,7 @@ export function WorkoutEditor({
 											inputMode="numeric"
 											className="editor-rep-input"
 											value={set.maxReps}
+											onFocus={(e) => e.target.select()}
 											onChange={(e) =>
 												updateSet(exerciseIdx, setIdx, {
 													maxReps: Number(e.target.value) || 0,

@@ -108,6 +108,7 @@ export function ProgressionReview({
 										type="number"
 										className="progression-input"
 										value={edit.topSetWeight}
+										onFocus={(e) => e.target.select()}
 										onChange={(e) =>
 											updateWeight(
 												proposal.liftId,
@@ -172,6 +173,7 @@ export function ProgressionReview({
 										type="number"
 										className="progression-input"
 										value={edit.backoffWeight}
+										onFocus={(e) => e.target.select()}
 										onChange={(e) =>
 											updateWeight(
 												proposal.liftId,

@@ -55,6 +55,7 @@ export function CardioView({ workout, onBack, onFinish }: CardioViewProps) {
 							inputMode="decimal"
 							placeholder="—"
 							value={duration}
+							onFocus={(e) => e.target.select()}
 							onChange={(e) => setDuration(e.target.value)}
 						/>
 						<span className="cardio-unit">min</span>
@@ -69,6 +70,7 @@ export function CardioView({ workout, onBack, onFinish }: CardioViewProps) {
 							inputMode="decimal"
 							placeholder="—"
 							value={distance}
+							onFocus={(e) => e.target.select()}
 							onChange={(e) => setDistance(e.target.value)}
 						/>
 						<span className="cardio-unit">mi</span>
@@ -83,6 +85,7 @@ export function CardioView({ workout, onBack, onFinish }: CardioViewProps) {
 							inputMode="decimal"
 							placeholder="—"
 							value={elevation}
+							onFocus={(e) => e.target.select()}
 							onChange={(e) => setElevation(e.target.value)}
 						/>
 						<span className="cardio-unit">ft</span>
@@ -97,6 +100,7 @@ export function CardioView({ workout, onBack, onFinish }: CardioViewProps) {
 							inputMode="decimal"
 							placeholder="—"
 							value={weight}
+							onFocus={(e) => e.target.select()}
 							onChange={(e) => setWeight(e.target.value)}
 						/>
 						<span className="cardio-unit">lb</span>
