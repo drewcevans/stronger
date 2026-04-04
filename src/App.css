@@ -125,25 +125,8 @@ body {
 
 /* Today's plan section */
 .todays-plan {
-	margin-bottom: 2.5rem;
-}
-
-.todays-plan-heading {
-	font-size: 0.85rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.12em;
-	color: var(--color-text-muted);
-	margin: 0 0 0.75rem;
-}
-
-.section-heading {
-	font-size: 0.85rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.12em;
-	color: var(--color-text-muted);
-	margin: 0;
+	margin-top: 1.5rem;
+	margin-bottom: 3rem;
 }
 
 .today-card-row {
@@ -154,18 +137,6 @@ body {
 
 .today-card-row .workout-card {
 	flex: 1;
-}
-
-.today-done-badge {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 2rem;
-	height: 2rem;
-	border-radius: 50%;
-	background: var(--color-primary);
-	color: var(--color-bg);
-	flex-shrink: 0;
 }
 
 .workout-list {
@@ -192,6 +163,10 @@ body {
 
 .workout-card:active {
 	background: var(--color-surface-hover);
+}
+
+.workout-card-done {
+	border-color: #00c853;
 }
 
 .lift-badge {
