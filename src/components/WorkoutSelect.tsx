@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Workout } from '../model/index.js';
 import { Banner } from './Banner.js';
 import { LiftBadge } from './LiftBadge.js';
@@ -13,15 +13,19 @@ interface WorkoutSelectProps {
 }
 
 export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNew }: WorkoutSelectProps) {
-	const { strength, cardio } = useMemo(() => {
-		const strength: Workout[] = [];
+	const { favorites, others, cardio } = useMemo(() => {
+		const favorites: Workout[] = [];
+		const others: Workout[] = [];
 		const cardio: Workout[] = [];
 		for (const w of workouts) {
 			if (w.category === 'cardio') cardio.push(w);
-			else strength.push(w);
+			else if (w.favorite) favorites.push(w);
+			else others.push(w);
 		}
-		return { strength, cardio };
+		return { favorites, others, cardio };
 	}, [workouts]);
+
+	const [moreId, setMoreId] = useState('');
 
 	return (
 		<div className="workout-select">
@@ -33,7 +37,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 				</p>
 			) : (
 				<div className="workout-list">
-					{strength.map((w) => (
+					{favorites.map((w) => (
 						<div key={w.id} className="workout-card-wrapper">
 							<button
 								className="workout-card"
@@ -53,7 +57,25 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 							)}
 						</div>
 					))}
-					{cardio.length > 0 && strength.length > 0 && (
+					{others.length > 0 && (
+						<select
+							className="workout-more-select"
+							value={moreId}
+							onChange={(e) => {
+								const w = others.find((o) => o.id === e.target.value);
+								if (w) {
+									onSelect(w);
+									setMoreId('');
+								}
+							}}
+						>
+							<option value="">More…</option>
+							{others.map((w) => (
+								<option key={w.id} value={w.id}>{w.name}</option>
+							))}
+						</select>
+					)}
+					{cardio.length > 0 && (favorites.length > 0 || others.length > 0) && (
 						<div className="category-divider">
 							<span className="category-divider-label">Cardio</span>
 						</div>

@@ -27,6 +27,8 @@ export interface WorkoutDefinition {
 	name: string;
 	/** Activity category; defaults to 'strength' when omitted. */
 	category?: ActivityType;
+	/** Whether this workout appears in the favorites list; defaults to false. */
+	favorite?: boolean;
 	templates: ExerciseTemplate[];
 }
 
@@ -62,6 +64,7 @@ export function buildWorkoutsFromConfigs(
 				id: def.id,
 				name: def.name,
 				category,
+				favorite: def.favorite ?? false,
 				exercises,
 			};
 		})

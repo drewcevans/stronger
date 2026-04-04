@@ -148,6 +148,8 @@ export interface Workout {
 	name: string;
 	/** Broad category — strength workouts have sets/reps, cardio entries do not. */
 	category: ActivityType;
+	/** Whether this workout appears in the favorites list. */
+	favorite: boolean;
 	/** Ordered list of exercises for this workout. */
 	exercises: ComputedExercise[];
 }

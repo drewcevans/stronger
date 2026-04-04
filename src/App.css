@@ -1514,6 +1514,22 @@ body {
 	transition: background 0.15s;
 }
 
+.workout-more-select {
+	width: 100%;
+	padding: 0.75rem 1rem;
+	font-size: 1rem;
+	background: var(--color-surface);
+	color: var(--color-text-muted);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.75rem center;
+	cursor: pointer;
+}
+
 .workout-card-wrapper .workout-card {
 	flex: 1;
 	border: none;

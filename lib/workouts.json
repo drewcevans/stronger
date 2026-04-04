@@ -57,7 +57,7 @@
 						"minReps": 3,
 						"maxReps": 5,
 						"amrap": false,
-						"comment": "Min 3 reps. If 5 reps completed, increase by 2.5 lbs next week"
+						"comment": "Min 3 reps. If 5 reps completed, increase top set weight next week"
 					},
 					{
 						"setType": "backoff",
@@ -68,7 +68,7 @@
 						"minReps": 5,
 						"maxReps": 8,
 						"amrap": true,
-						"comment": "If 8 reps completed, increase backoff weight by 2.5 lbs next week"
+						"comment": "If 8 reps completed, increase backoff weight next week"
 					}
 				]
 			},
@@ -171,7 +171,8 @@
 					}
 				]
 			}
-		]
+		],
+		"favorite": true
 	},
 	{
 		"id": "rss-int-b-squat",
@@ -324,7 +325,8 @@
 					}
 				]
 			}
-		]
+		],
+		"favorite": true
 	},
 	{
 		"id": "rss-int-b-press",
@@ -536,7 +538,8 @@
 					}
 				]
 			}
-		]
+		],
+		"favorite": true
 	},
 	{
 		"id": "rss-int-b-deadlift",
@@ -711,7 +714,8 @@
 					}
 				]
 			}
-		]
+		],
+		"favorite": true
 	},
 	{
 		"id": "basic-bench",

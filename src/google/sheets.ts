@@ -520,6 +520,7 @@ export function workoutDefsToRows(
 				'',  // amrap
 				'',  // comment
 				category,
+				def.favorite ? 'TRUE' : 'FALSE',
 			])
 		} else {
 			for (let ei = 0; ei < def.templates.length; ei++) {
@@ -540,6 +541,7 @@ export function workoutDefsToRows(
 						set.amrap ? 'TRUE' : 'FALSE',
 						set.comment ?? '',
 						category,
+						def.favorite ? 'TRUE' : 'FALSE',
 					])
 				}
 			}
@@ -567,6 +569,7 @@ interface WorkoutDefRow {
 	exerciseRole: string
 	liftId: string
 	category: ActivityType
+	favorite: boolean
 	set: SetTemplate
 }
 
@@ -575,6 +578,7 @@ interface WorkoutDefCardioRow {
 	workoutId: string
 	workoutName: string
 	category: ActivityType
+	favorite: boolean
 	cardio: true
 }
 
@@ -604,12 +608,15 @@ export function parseWorkoutDefRow(row: string[]): ParsedDefRow | null {
 	const rawCategory = (row[12] ?? '').trim().toLowerCase()
 	const category: ActivityType = rawCategory === 'cardio' ? 'cardio' : 'strength'
 
+	// Detect favorite from column 14 (index 13) — default to false
+	const favorite = (row[13] ?? '').trim().toUpperCase() === 'TRUE'
+
 	// If the exerciseOrder column is empty, this is a cardio marker row
 	const rawOrder = (row[2] ?? '').trim()
 	if (!rawOrder) {
 		// Only allow cardio activities to have no exercise data
 		if (category !== 'cardio') return null
-		return { workoutId, workoutName, category, cardio: true }
+		return { workoutId, workoutName, category, favorite, cardio: true }
 	}
 
 	// Full strength row — validate all fields
@@ -657,7 +664,7 @@ export function parseWorkoutDefRow(row: string[]): ParsedDefRow | null {
 		...(comment ? { comment } : {}),
 	}
 
-	return { workoutId, workoutName, exerciseOrder, exerciseRole, liftId, category, set }
+	return { workoutId, workoutName, exerciseOrder, exerciseRole, liftId, category, favorite, set }
 }
 
 /**
@@ -672,11 +679,11 @@ export function rowsToWorkoutDefs(
 ): WorkoutDefinition[] {
 	// Group by workoutId, preserving row order for stable workout ordering
 	const workoutOrder: string[] = []
-	const workoutMap = new Map<string, { name: string; category: ActivityType; rows: WorkoutDefRow[] }>()
+	const workoutMap = new Map<string, { name: string; category: ActivityType; favorite: boolean; rows: WorkoutDefRow[] }>()
 	for (const r of rows) {
 		if (!workoutMap.has(r.workoutId)) {
 			workoutOrder.push(r.workoutId)
-			workoutMap.set(r.workoutId, { name: r.workoutName, category: r.category, rows: [] })
+			workoutMap.set(r.workoutId, { name: r.workoutName, category: r.category, favorite: r.favorite, rows: [] })
 		}
 		if (!isCardioMarkerRow(r)) {
 			workoutMap.get(r.workoutId)!.rows.push(r)
@@ -689,7 +696,7 @@ export function rowsToWorkoutDefs(
 
 		// Cardio entries with no set rows → template-less definition
 		if (entry.rows.length === 0) {
-			defs.push({ id: wid, name: entry.name, category: entry.category, templates: [] })
+			defs.push({ id: wid, name: entry.name, category: entry.category, favorite: entry.favorite, templates: [] })
 			continue
 		}
 
@@ -722,7 +729,7 @@ export function rowsToWorkoutDefs(
 			})
 		}
 
-		defs.push({ id: wid, name: entry.name, category: entry.category, templates })
+		defs.push({ id: wid, name: entry.name, category: entry.category, favorite: entry.favorite, templates })
 	}
 
 	return defs
