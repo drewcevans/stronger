@@ -165,7 +165,12 @@ export function WorkoutEditor({
 	}, []);
 
 	const updateCategory = useCallback((category: ActivityType) => {
-		setWorkout((prev) => ({ ...prev, category }));
+		setWorkout((prev) => ({
+			...prev,
+			category,
+			// Clear exercises when switching to cardio — they aren't used
+			exercises: category === 'cardio' ? [] : prev.exercises,
+		}));
 	}, []);
 
 	// --- Exercise-level updates ---

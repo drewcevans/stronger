@@ -351,6 +351,9 @@ function App() {
 
   // Deep-link resolution: when auth completes and workouts are loaded,
   // check if the URL contains a workout ID and auto-select it.
+  // Sets state directly instead of calling handleSelectWorkout to avoid
+  // a redundant navigateTo → hashchange → setRoute cycle that causes
+  // extra renders and can make the app appear hung.
   useEffect(() => {
     if (!sheetConnected || workouts.length === 0) return;
     if (route.view !== 'workout' && route.view !== 'cardio') return;
@@ -359,12 +362,26 @@ function App() {
 
     const match = workouts.find((w) => w.id === route.workoutId);
     if (match) {
-      handleSelectWorkout(match);
+      setStartTime(new Date().toISOString());
+      setActiveWorkout(match);
+      // For strength workouts, load previous session data
+      if (match.category !== 'cardio') {
+        setPreviousSets(null);
+        if (spreadsheetId) {
+          void loadPreviousSets(spreadsheetId, match.id);
+        }
+      }
+      // Fix the URL if the route view doesn't match the workout category
+      // (e.g. #/workout/running for a cardio workout → #/cardio/running)
+      const expectedView = match.category === 'cardio' ? 'cardio' : 'workout';
+      if (route.view !== expectedView) {
+        replaceTo({ view: expectedView, workoutId: match.id } as { view: 'workout' | 'cardio'; workoutId: string });
+      }
     } else {
       // Invalid workout ID — redirect to list
       replaceTo({ view: 'list' });
     }
-  }, [sheetConnected, workouts, route, activeWorkout?.id, handleSelectWorkout, replaceTo]);
+  }, [sheetConnected, workouts, route, activeWorkout?.id, spreadsheetId, loadPreviousSets, replaceTo]);
 
   // Sync state when the user presses the browser back button:
   // if the URL changed to list while a workout is active, clear it.
