@@ -111,8 +111,8 @@ body {
 	align-items: center;
 	gap: 1rem;
 	padding: 0.5rem 1rem;
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
+	background: #000;
+	border: 1px solid #00e5ff;
 	border-radius: var(--radius);
 	color: var(--color-text);
 	text-align: left;
@@ -1508,8 +1508,8 @@ body {
 	display: flex;
 	align-items: stretch;
 	gap: 0;
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
+	background: #000;
+	border: 1px solid #00e5ff;
 	border-radius: var(--radius);
 	transition: background 0.15s;
 }
@@ -1561,11 +1561,11 @@ body {
 }
 
 .btn-fav-workout:active {
-	color: #ffd600;
+	color: #ff2d7b;
 }
 
 .btn-fav-active {
-	color: #ffd600;
+	color: #ff2d7b;
 }
 
 .workout-card-wrapper .workout-card {
