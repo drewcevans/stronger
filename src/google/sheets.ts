@@ -586,6 +586,83 @@ export async function updateLogRows(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Log zone – delete session                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Delete all log rows matching a session (date, workoutId, startTime).
+ *
+ * Finds the log tab's numeric sheetId, reads all raw rows to locate
+ * matching indices, then issues a batchUpdate with deleteDimension
+ * requests (processed in reverse order to keep indices stable).
+ */
+export async function deleteLogSession(
+	spreadsheetId: string,
+	sessionDate: string,
+	sessionWorkoutId: string,
+	sessionStartTime: string,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	// Get the numeric sheetId for the log tab
+	const metaResponse = await gapi.client.sheets.spreadsheets.get({
+		spreadsheetId,
+	})
+	const logSheet = (metaResponse.result.sheets ?? []).find(
+		(s) => s.properties.title === LOG_TAB_NAME,
+	)
+	if (!logSheet) return
+	const sheetId = logSheet.properties.sheetId
+
+	// Read all raw rows to find matching indices
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: LOG_READ_RANGE,
+	})
+
+	const rawRows = response.result.values
+	if (!rawRows || rawRows.length === 0) return
+
+	// Find raw row indices matching this session
+	const matchingIndices: number[] = []
+	for (let i = 0; i < rawRows.length; i++) {
+		const raw = rawRows[i]
+		const date = (raw[0] ?? '').trim()
+		const startTime = (raw[1] ?? '').trim()
+		const workoutId = (raw[3] ?? '').trim()
+		if (date === sessionDate && startTime === sessionStartTime && workoutId === sessionWorkoutId) {
+			matchingIndices.push(i)
+		}
+	}
+
+	if (matchingIndices.length === 0) return
+
+	// Build delete requests in reverse order (highest index first)
+	// so that earlier deletions don't shift later indices.
+	// Sheet row = rawIdx + 2 (header is row 1, data starts at row 2, both 1-indexed)
+	// deleteDimension uses 0-indexed: startIndex = sheetRow - 1
+	const requests = matchingIndices
+		.slice()
+		.sort((a, b) => b - a)
+		.map((rawIdx) => ({
+			deleteDimension: {
+				range: {
+					sheetId,
+					dimension: 'ROWS' as const,
+					startIndex: rawIdx + 1, // 0-indexed: row 2 in sheet = index 1
+					endIndex: rawIdx + 2,
+				},
+			},
+		}))
+
+	await gapi.client.sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		resource: { requests },
+	})
+}
+
+/* ------------------------------------------------------------------ */
 /*  Workout Defs tab – constants                                       */
 /* ------------------------------------------------------------------ */
 

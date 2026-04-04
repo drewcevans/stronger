@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, buildCardioLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows } from './google/index.js';
+import { appendLogRows, buildLogRow, buildCardioLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { CardioLogData, ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions } from './data/sample-workouts.js';
@@ -302,6 +302,23 @@ function App() {
     [spreadsheetId],
   );
 
+  const handleDeleteSession = useCallback(
+    (sessionDate: string, sessionWorkoutId: string, sessionStartTime: string) => {
+      // Remove matching rows from local state
+      setLogRows((prev) =>
+        prev.filter(
+          (r) =>
+            !(r.date === sessionDate && r.workoutId === sessionWorkoutId && r.startTime === sessionStartTime),
+        ),
+      );
+      // Fire-and-forget: delete from sheet
+      if (spreadsheetId) {
+        void deleteLogSession(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime);
+      }
+    },
+    [spreadsheetId],
+  );
+
   const handleGoToList = useCallback(() => {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
@@ -579,6 +596,7 @@ function App() {
           onRemove={handleScheduleRemove}
           onOpenWorkout={handleCalendarOpenWorkout}
           onUpdateLogRows={handleUpdateLogRows}
+          onDeleteSession={handleDeleteSession}
         />
       </>
     );
