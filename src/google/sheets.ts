@@ -13,8 +13,8 @@ import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-/** A1 range for the config zone: header row + up to 20 lift rows. */
-const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A1:I21`
+/** A1 range for the config zone (open-ended rows). */
+const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A:I`
 
 /** A1 range for the log zone header (row 1 of the log tab). */
 const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:M1`
@@ -22,8 +22,8 @@ const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:M1`
 /** A1 range used for appending log data (row 2 onward). */
 const LOG_APPEND_RANGE = `'${LOG_TAB_NAME}'!A2:M2`
 
-/** A1 range for reading all log data (row 2 onward, generous upper bound). */
-const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:M10000`
+/** A1 range for reading all log data (row 2 onward, open-ended). */
+const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:M`
 
 const CONFIG_HEADER: string[] = [
 	'id',
@@ -424,8 +424,8 @@ export async function appendLogRows(
 /*  Workout Defs tab – constants                                       */
 /* ------------------------------------------------------------------ */
 
-/** A1 range for the workout defs header + data rows (generous upper bound). */
-const WORKOUT_DEFS_RANGE = `'${WORKOUT_DEFS_TAB_NAME}'!A1:M500`
+/** A1 range for the workout defs tab (open-ended rows). */
+const WORKOUT_DEFS_RANGE = `'${WORKOUT_DEFS_TAB_NAME}'!A:N`
 
 const WORKOUT_DEFS_HEADER: string[] = [
 	'workoutId',
@@ -441,6 +441,7 @@ const WORKOUT_DEFS_HEADER: string[] = [
 	'amrap',
 	'comment',
 	'category',
+	'favorite',
 ]
 
 /* ------------------------------------------------------------------ */
