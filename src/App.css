@@ -95,8 +95,8 @@ body {
 /* Motivational quote – neon cursive nightclub sign */
 .motivational-quote {
 	text-align: center;
-	margin-bottom: 1.5rem;
-	padding: 0 1rem;
+	margin-bottom: 2.5rem;
+	padding: 1rem 1rem 0;
 }
 
 .quote-text {
@@ -121,6 +121,51 @@ body {
 .subtitle {
 	color: var(--color-text-muted);
 	margin-bottom: 1.5rem;
+}
+
+/* Today's plan section */
+.todays-plan {
+	margin-bottom: 2.5rem;
+}
+
+.todays-plan-heading {
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--color-text-muted);
+	margin: 0 0 0.75rem;
+}
+
+.section-heading {
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--color-text-muted);
+	margin: 0;
+}
+
+.today-card-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.today-card-row .workout-card {
+	flex: 1;
+}
+
+.today-done-badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 50%;
+	background: var(--color-primary);
+	color: var(--color-bg);
+	flex-shrink: 0;
 }
 
 .workout-list {

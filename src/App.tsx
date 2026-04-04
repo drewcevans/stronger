@@ -637,6 +637,8 @@ function App() {
       <WorkoutSelect
         workouts={workouts}
         missingLiftIds={missingLiftIds}
+        schedule={schedule}
+        logRows={logRows}
         onSelect={handleSelectWorkout}
         onEdit={handleEditWorkout}
         onNew={handleNewWorkout}
