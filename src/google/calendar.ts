@@ -60,7 +60,10 @@ export async function listWritableCalendars(): Promise<CalendarListEntry[]> {
 
 /**
  * Build a deep link URL for a workout.
- * Uses the current page origin + pathname as the base, or `baseUrl` if provided.
+ *
+ * In the browser, derives the base URL from `window.location.href`.
+ * An explicit `baseUrl` can be passed for testing environments where
+ * `window.location` is not available.
  */
 export function buildDeepLink(
 	workoutId: string,
