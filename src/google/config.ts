@@ -12,9 +12,19 @@ export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
 /** OAuth scope – read/write access to Google Sheets. */
 export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
 
+/** OAuth scope – full access to Google Calendar (list calendars + manage events). */
+export const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
+
+/** Combined OAuth scopes requested during sign-in. */
+export const OAUTH_SCOPES = `${SHEETS_SCOPE} ${CALENDAR_SCOPE}`
+
 /** Sheets API discovery document URL for gapi client initialization. */
 export const SHEETS_DISCOVERY_DOC =
 	'https://sheets.googleapis.com/$discovery/rest?version=v4'
+
+/** Calendar API discovery document URL for gapi client initialization. */
+export const CALENDAR_DISCOVERY_DOC =
+	'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
 
 /** Name of the tab the app targets for lift configurations. */
 export const TARGET_TAB_NAME = 'Stronger - Exercises'

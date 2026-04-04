@@ -1,6 +1,6 @@
 # Google OAuth Setup
 
-Stronger uses Google OAuth to read and write a Google Sheet on your behalf. You need to create a Google Cloud project with the Sheets API enabled and an OAuth 2.0 client ID.
+Stronger uses Google OAuth to read and write a Google Sheet on your behalf, and optionally push workout events to Google Calendar. You need to create a Google Cloud project with the Sheets and Calendar APIs enabled and an OAuth 2.0 client ID.
 
 ## 1. Create a Google Cloud project
 
@@ -9,11 +9,13 @@ Stronger uses Google OAuth to read and write a Google Sheet on your behalf. You 
 3. Name it something like `Stronger` and click **Create**.
 4. Make sure the new project is selected in the project selector.
 
-## 2. Enable the Google Sheets API
+## 2. Enable the Google Sheets API and Google Calendar API
 
 1. In the left sidebar go to **APIs & Services → Library** (or visit [the API library](https://console.cloud.google.com/apis/library)).
 2. Search for **Google Sheets API** and click on it.
 3. Click **Enable**.
+4. Go back to the API library, search for **Google Calendar API** and click on it.
+5. Click **Enable**.
 
 ## 3. Configure the OAuth consent screen
 
@@ -27,6 +29,7 @@ Stronger uses Google OAuth to read and write a Google Sheet on your behalf. You 
 5. On the **Scopes** step, click **Add or Remove Scopes** and add:
    ```
    https://www.googleapis.com/auth/spreadsheets
+   https://www.googleapis.com/auth/calendar
    ```
    Then click **Update** and **Save and Continue**.
 6. On the **Test users** step, click **Add Users** and add the Google account(s) you'll sign in with. While the app is in "Testing" mode only these accounts can authenticate.

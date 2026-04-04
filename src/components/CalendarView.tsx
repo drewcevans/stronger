@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Activity, Dumbbell, History, Save, Check } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Activity, Dumbbell, History, Save, Check, Upload } from 'lucide-react';
+import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
 	workouts: Workout[];
@@ -348,6 +349,7 @@ export function CalendarView({
 	onUpdateLogRows,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
+	const [showPush, setShowPush] = useState(false);
 	const [historyMode, setHistoryMode] = useState(false);
 	const [pastDays, setPastDays] = useState<string[]>([]);
 	const [activeSession, setActiveSession] = useState<LogSession | null>(null);
@@ -487,6 +489,23 @@ export function CalendarView({
 
 	return (
 		<div className="calendar-view">
+			{!showPush && (
+				<div className="calendar-push-toggle">
+					<button
+						className="calendar-push-toggle-btn"
+						onClick={() => setShowPush(true)}
+					>
+						<Upload size={16} /> Push to Google Calendar
+					</button>
+				</div>
+			)}
+			{showPush && (
+				<CalendarPush
+					workouts={workouts}
+					onClose={() => setShowPush(false)}
+				/>
+			)}
+
 			{/* History toggle button */}
 			<div className="calendar-history-toggle">
 				<button
