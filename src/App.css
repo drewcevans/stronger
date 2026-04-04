@@ -1189,6 +1189,45 @@ body {
 	color: var(--color-danger);
 }
 
+/* Delete session button (X on logged sessions) */
+.calendar-delete-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	padding: 0.25rem;
+	min-width: 28px;
+	min-height: 28px;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+
+.calendar-delete-btn:active {
+	color: var(--color-danger);
+}
+
+/* Confirm delete button */
+.calendar-delete-confirm-btn {
+	background: var(--color-danger);
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 0.25rem 0.625rem;
+	border-radius: 4px;
+	min-height: 28px;
+	flex-shrink: 0;
+	transition: opacity 0.15s;
+}
+
+.calendar-delete-confirm-btn:active {
+	opacity: 0.8;
+}
+
 /* Workout picker overlay */
 .calendar-picker {
 	margin-top: 0.5rem;

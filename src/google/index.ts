@@ -38,6 +38,7 @@ export {
 	findPreviousWorkoutSets,
 	readLogZone,
 	updateLogRows,
+	deleteLogSession,
 	parseScheduleRow,
 	scheduleEntryToRow,
 	verifyScheduleTab,

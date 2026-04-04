@@ -143,6 +143,14 @@ export interface SheetRequest {
 			title: string
 		}
 	}
+	deleteDimension?: {
+		range: {
+			sheetId: number
+			dimension: 'ROWS' | 'COLUMNS'
+			startIndex: number
+			endIndex: number
+		}
+	}
 }
 
 /* ------------------------------------------------------------------ */

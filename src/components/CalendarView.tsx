@@ -16,6 +16,11 @@ interface CalendarViewProps {
 		sessionStartTime: string,
 		updatedRows: ParsedLogRow[],
 	) => void;
+	onDeleteSession: (
+		sessionDate: string,
+		sessionWorkoutId: string,
+		sessionStartTime: string,
+	) => void;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -346,11 +351,13 @@ export function CalendarView({
 	onRemove,
 	onOpenWorkout,
 	onUpdateLogRows,
+	onDeleteSession,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
 	const [historyMode, setHistoryMode] = useState(false);
 	const [pastDays, setPastDays] = useState<string[]>([]);
 	const [activeSession, setActiveSession] = useState<LogSession | null>(null);
+	const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
 	const historyTopRef = useRef<HTMLDivElement>(null);
 	const todayRef = useRef<HTMLDivElement>(null);
 
@@ -416,8 +423,8 @@ export function CalendarView({
 			setPastDays([]);
 		} else {
 			const today = todayStr();
-			// Load 28 days of history initially
-			setPastDays(generatePastDays(today, 28));
+			// Load 7 days of history initially
+			setPastDays(generatePastDays(today, 7));
 			setHistoryMode(true);
 		}
 	}, [historyMode]);
@@ -426,7 +433,7 @@ export function CalendarView({
 	const handleLoadMore = useCallback(() => {
 		if (pastDays.length === 0) return;
 		const oldest = pastDays[pastDays.length - 1];
-		const moreDays = generatePastDays(oldest, 28);
+		const moreDays = generatePastDays(oldest, 7);
 		setPastDays((prev) => [...prev, ...moreDays]);
 	}, [pastDays]);
 
@@ -473,6 +480,18 @@ export function CalendarView({
 		[activeSession, onUpdateLogRows],
 	);
 
+	const sessionKeyStr = useCallback((session: LogSession) =>
+		`${session.key.date}|${session.key.workoutId}|${session.key.startTime}`,
+	[]);
+
+	const handleDeleteSession = useCallback(
+		(session: LogSession) => {
+			onDeleteSession(session.key.date, session.key.workoutId, session.key.startTime);
+			setConfirmDeleteKey(null);
+		},
+		[onDeleteSession],
+	);
+
 	// If a session detail is open, show it instead of the calendar
 	if (activeSession) {
 		return (
@@ -516,6 +535,13 @@ export function CalendarView({
 
 					// Deduplicate: collect all workout IDs that appear (scheduled + logged)
 					const loggedWorkoutIds = new Set(dayInfo.sessions.map((s) => s.key.workoutId));
+					// Map workoutId → session for quick lookup (use first matching session)
+					const sessionByWorkoutId = new Map<string, LogSession>();
+					for (const s of dayInfo.sessions) {
+						if (!sessionByWorkoutId.has(s.key.workoutId)) {
+							sessionByWorkoutId.set(s.key.workoutId, s);
+						}
+					}
 
 					return (
 						<div
@@ -540,25 +566,32 @@ export function CalendarView({
 								)}
 							</div>
 
-							{/* Scheduled workouts (not yet logged) */}
+							{/* Scheduled workouts */}
 							{dayInfo.scheduled.length > 0 && (
 								<div className="calendar-workouts">
 									{dayInfo.scheduled.map((wid, idx) => {
 										const isCardio = cardioIds.has(wid);
 										const hasLog = loggedWorkoutIds.has(wid);
+										const session = sessionByWorkoutId.get(wid);
+										const deleteKey = session ? sessionKeyStr(session) : null;
+										const isConfirming = deleteKey !== null && confirmDeleteKey === deleteKey;
 										return (
 											<div key={`sched-${wid}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
 												{hasLog && <span className="calendar-completed-bar" />}
-												{isCardio ? (
-													<span className="calendar-workout-link calendar-workout-link-cardio">
-														<Activity size={14} />
+												{hasLog && session ? (
+													<button
+														className="calendar-workout-link"
+														onClick={() => handleOpenSession(session)}
+													>
+														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
-													</span>
+														<ChevronRight size={14} />
+													</button>
 												) : isPast ? (
 													<span className="calendar-workout-link">
-														<Dumbbell size={14} />
+														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -568,14 +601,31 @@ export function CalendarView({
 														className="calendar-workout-link calendar-workout-link-strength"
 														onClick={() => onOpenWorkout(wid)}
 													>
-														<Dumbbell size={14} />
+														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
 														<ChevronRight size={14} />
 													</button>
 												)}
-												{!isPast && (
+												{hasLog && session && !isConfirming && (
+													<button
+														className="calendar-delete-btn"
+														onClick={() => setConfirmDeleteKey(deleteKey)}
+														aria-label={`Delete session ${workoutNames.get(wid) ?? wid}`}
+													>
+														<X size={14} />
+													</button>
+												)}
+												{isConfirming && session && (
+													<button
+														className="calendar-delete-confirm-btn"
+														onClick={() => handleDeleteSession(session)}
+													>
+														Delete
+													</button>
+												)}
+												{!isPast && !hasLog && (
 													<button
 														className="calendar-remove-btn"
 														onClick={() => onRemove(dayInfo.date, wid)}
@@ -598,6 +648,8 @@ export function CalendarView({
 										.map((session, idx) => {
 											const isCardio = session.category === 'cardio';
 											const name = workoutNames.get(session.key.workoutId) ?? session.workoutName;
+											const deleteKey = sessionKeyStr(session);
+											const isConfirming = confirmDeleteKey === deleteKey;
 											return (
 												<div key={`log-${session.key.workoutId}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
 													<span className="calendar-completed-bar" />
@@ -609,27 +661,26 @@ export function CalendarView({
 														<span className="calendar-workout-name">{name}</span>
 														<ChevronRight size={14} />
 													</button>
+													{!isConfirming && (
+														<button
+															className="calendar-delete-btn"
+															onClick={() => setConfirmDeleteKey(deleteKey)}
+															aria-label={`Delete session ${name}`}
+														>
+															<X size={14} />
+														</button>
+													)}
+													{isConfirming && (
+														<button
+															className="calendar-delete-confirm-btn"
+															onClick={() => handleDeleteSession(session)}
+														>
+															Delete
+														</button>
+													)}
 												</div>
 											);
 										})}
-								</div>
-							)}
-
-							{/* For scheduled+logged items, make them clickable to view session detail */}
-							{dayInfo.sessions.filter((s) => dayInfo.scheduled.includes(s.key.workoutId)).length > 0 && dayInfo.scheduled.length > 0 && (
-								<div className="calendar-history-sessions">
-									{dayInfo.sessions
-										.filter((s) => dayInfo.scheduled.includes(s.key.workoutId))
-										.map((session, idx) => (
-											<button
-												key={`sess-${session.key.workoutId}-${idx}`}
-												className="calendar-session-link"
-												onClick={() => handleOpenSession(session)}
-											>
-												View session
-												<ChevronRight size={14} />
-											</button>
-										))}
 								</div>
 							)}
 
