@@ -85,12 +85,13 @@ export function toEditable(def: WorkoutDefinition): EditableWorkout {
 }
 
 /** Convert the local editable format back to a WorkoutDefinition. */
-export function fromEditable(e: EditableWorkout, configs: LiftConfig[]): WorkoutDefinition {
+export function fromEditable(e: EditableWorkout, configs: LiftConfig[], existing?: WorkoutDefinition): WorkoutDefinition {
 	const liftMap = new Map(configs.map((c) => [c.id, c.name]));
 	return {
 		id: e.id,
 		name: e.name,
 		category: e.category,
+		favorite: existing?.favorite,
 		templates: e.exercises.map((ex) => {
 			const liftName = liftMap.get(ex.liftId) ?? ex.liftId;
 			return {
@@ -279,9 +280,10 @@ export function WorkoutEditor({
 		const def = fromEditable(
 			{ ...workout, id: effectiveId },
 			configs,
+			existing,
 		);
 		onSave(def);
-	}, [isValid, saving, workout, effectiveId, configs, onSave]);
+	}, [isValid, saving, workout, effectiveId, configs, existing, onSave]);
 
 	return (
 		<div className="workout-editor">
@@ -425,11 +427,12 @@ export function WorkoutEditor({
 											))}
 										</select>
 										<input
-											type="number"
+											type="text"
+											inputMode="decimal"
 											className="editor-pct-input"
-											value={Math.round(set.percentage * 100)}
-											min={0}
-											max={200}
+											value={set.weightBasis.kind === 'barWeight' || set.weightBasis.kind === 'fixed' ? '' : Math.round(set.percentage * 100)}
+											placeholder={set.weightBasis.kind === 'barWeight' || set.weightBasis.kind === 'fixed' ? '—' : ''}
+											disabled={set.weightBasis.kind === 'barWeight' || set.weightBasis.kind === 'fixed'}
 											onChange={(e) =>
 												updateSet(exerciseIdx, setIdx, {
 													percentage: (Number(e.target.value) || 0) / 100,
@@ -480,11 +483,11 @@ export function WorkoutEditor({
 											)}
 											{set.weightBasis.kind === 'fixed' && (
 												<input
-													type="number"
+													type="text"
+													inputMode="decimal"
 													className="editor-basis-extra-input"
 													value={set.weightBasis.weight}
 													placeholder="lbs"
-													min={0}
 													onChange={(e) =>
 														updateWeightBasis(
 															exerciseIdx,
@@ -497,10 +500,10 @@ export function WorkoutEditor({
 											)}
 										</div>
 										<input
-											type="number"
+											type="text"
+											inputMode="numeric"
 											className="editor-rep-input"
 											value={set.minReps}
-											min={0}
 											onChange={(e) =>
 												updateSet(exerciseIdx, setIdx, {
 													minReps: Number(e.target.value) || 0,
@@ -508,10 +511,10 @@ export function WorkoutEditor({
 											}
 										/>
 										<input
-											type="number"
+											type="text"
+											inputMode="numeric"
 											className="editor-rep-input"
 											value={set.maxReps}
-											min={0}
 											onChange={(e) =>
 												updateSet(exerciseIdx, setIdx, {
 													maxReps: Number(e.target.value) || 0,
