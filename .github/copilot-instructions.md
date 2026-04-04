@@ -23,3 +23,4 @@
 - Ask questions, reason about the problem, and suggest an approach before diving in. You don't need permission for every decision — just the things a reasonable engineer would want feedback on.
 - Clearly explain your reasoning as you make decisions. Save it in the project spec or leave detailed notes in the PR.
 - If adopting a library, understand how it works before implementing. Don't assume it behaves like similar libraries — look at the code if needed.
+- For most requests I don't need to see and review the changes - just push it to main.
