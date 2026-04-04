@@ -507,6 +507,84 @@ describe('computeProgression', () => {
 		expect(proposals).toHaveLength(0);
 	});
 
+	it('uses actual completed weight as base when user adjusts weight during workout', () => {
+		// User was planned for 200 but lowered to 195 during the workout
+		const exercises: ComputedExercise[] = [
+			{
+				liftId: 'bench',
+				name: 'Bench Press',
+				role: 'primary',
+				sets: [
+					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
+					{ setType: 'backoff', weight: 170, minReps: 5, maxReps: 8, amrap: true },
+				],
+			},
+		];
+		const templates: ExerciseTemplate[] = [
+			{
+				liftId: 'bench',
+				name: 'Bench Press',
+				role: 'primary',
+				sets: [
+					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
+					{ setType: 'backoff', percentage: 1.0, weightBasis: { kind: 'backoff' }, minReps: 5, maxReps: 8, amrap: true },
+				],
+			},
+		];
+		const results: SetResult[][] = [
+			[
+				// User lowered work weight from 200 → 195 and hit the target
+				{ actualWeight: 195, actualReps: 5, completed: true, actualSetType: 'work' },
+				// User lowered backoff weight from 170 → 165 and hit the target
+				{ actualWeight: 165, actualReps: 8, completed: true, actualSetType: 'backoff' },
+			],
+		];
+
+		const proposals = computeProgression(exercises, results, configs, templates);
+		expect(proposals).toHaveLength(1);
+		const p = proposals[0];
+		// Current should reflect what user actually lifted, not the config value
+		expect(p.currentTopSetWeight).toBe(195);
+		expect(p.currentBackoffWeight).toBe(165);
+		// Proposed should increment from the actual weight
+		expect(p.proposedTopSetWeight).toBe(197.5); // 195 + 2.5
+		expect(p.proposedBackoffWeight).toBe(167.5); // 165 + 2.5
+	});
+
+	it('back-calculates reference weight correctly from non-100% sets', () => {
+		// User has an 85% work set (no 100% set). Planned: 85% × 200 = 170
+		// User keeps the weight at 170 → effective reference = 170 / 0.85 = 200
+		const exercises: ComputedExercise[] = [
+			{
+				liftId: 'bench',
+				name: 'Bench Press',
+				role: 'primary',
+				sets: [
+					{ setType: 'work', weight: 170, minReps: 5, maxReps: 8, amrap: true },
+				],
+			},
+		];
+		const templates: ExerciseTemplate[] = [
+			{
+				liftId: 'bench',
+				name: 'Bench Press',
+				role: 'primary',
+				sets: [
+					{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'topSet' }, minReps: 5, maxReps: 8, amrap: true },
+				],
+			},
+		];
+		const results: SetResult[][] = [
+			[{ actualWeight: 170, actualReps: 8, completed: true, actualSetType: 'work' }],
+		];
+
+		const proposals = computeProgression(exercises, results, configs, templates);
+		expect(proposals).toHaveLength(1);
+		// 170 / 0.85 = 200, rounded to nearest 5 = 200
+		expect(proposals[0].currentTopSetWeight).toBe(200);
+		expect(proposals[0].proposedTopSetWeight).toBe(202.5);
+	});
+
 	it('handles a full Workout A scenario (bench primary + press secondary + skull crusher assistance)', () => {
 		const exercises: ComputedExercise[] = [
 			{
@@ -614,7 +692,9 @@ describe('computeProgression', () => {
 		expect(skullProposal!.topSetHit).toBe(true);
 		expect(skullProposal!.backoffHit).toBe(true);
 		expect(skullProposal!.proposedTopSetWeight).toBe(62.5);
-		expect(skullProposal!.proposedBackoffWeight).toBe(53.5);
+		// Config backoffWeight is 51 but rounds to 50 at rounding factor 2.5.
+		// Progression now uses the actual completed weight (50), not the config value.
+		expect(skullProposal!.proposedBackoffWeight).toBe(52.5);
 		expect(skullProposal!.roundingFactor).toBe(2.5);
 
 		// No proposal for press (all sets use crossReference)

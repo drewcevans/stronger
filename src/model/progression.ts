@@ -15,6 +15,7 @@ import type {
 	ProgressionProposal,
 	SetResult,
 } from './types.js';
+import { roundToNearest } from './compute.js';
 
 /**
  * Returns true if all work/backoff sets in the exercise use crossReference
@@ -57,6 +58,18 @@ export function computeProgression(
 		{ topSetHit: boolean; backoffHit: boolean }
 	>();
 
+	// Track the actual weight used on the highest-percentage completed set for
+	// each lift so we can derive the effective reference weight from what the
+	// user really lifted (not the planned config value).
+	const actualTopRef = new Map<
+		string,
+		{ actualWeight: number; percentage: number }
+	>();
+	const actualBackoffRef = new Map<
+		string,
+		{ actualWeight: number; percentage: number }
+	>();
+
 	for (let ei = 0; ei < exercises.length; ei++) {
 		const exercise = exercises[ei];
 		const template = templates[ei];
@@ -90,11 +103,26 @@ export function computeProgression(
 				templateSet.weightBasis.kind === 'topSet'
 			) {
 				if (hitTarget) signals.topSetHit = true;
+				// Prefer the highest-percentage set for back-calculating the reference
+				const prev = actualTopRef.get(liftId);
+				if (!prev || templateSet.percentage > prev.percentage) {
+					actualTopRef.set(liftId, {
+						actualWeight: result.actualWeight,
+						percentage: templateSet.percentage,
+					});
+				}
 			} else if (
 				actualType === 'backoff' &&
 				templateSet.weightBasis.kind === 'backoff'
 			) {
 				if (hitTarget) signals.backoffHit = true;
+				const prev = actualBackoffRef.get(liftId);
+				if (!prev || templateSet.percentage > prev.percentage) {
+					actualBackoffRef.set(liftId, {
+						actualWeight: result.actualWeight,
+						percentage: templateSet.percentage,
+					});
+				}
 			}
 		}
 	}
@@ -105,17 +133,39 @@ export function computeProgression(
 		const config = configMap.get(liftId);
 		if (!config) continue;
 
+		// Derive the effective reference weight from the actual weight the user
+		// completed, back-calculating through the set's percentage.  Falls back
+		// to the config value when no completed set was tracked (e.g. all sets
+		// were skipped / incomplete).
+		const topRef = actualTopRef.get(liftId);
+		const effectiveTopSetWeight =
+			topRef && topRef.percentage > 0
+				? roundToNearest(
+						topRef.actualWeight / topRef.percentage,
+						config.roundingFactor,
+					)
+				: config.topSetWeight;
+
+		const backRef = actualBackoffRef.get(liftId);
+		const effectiveBackoffWeight =
+			backRef && backRef.percentage > 0
+				? roundToNearest(
+						backRef.actualWeight / backRef.percentage,
+						config.roundingFactor,
+					)
+				: config.backoffWeight;
+
 		proposals.push({
 			liftId,
 			liftName: config.name,
-			currentTopSetWeight: config.topSetWeight,
-			currentBackoffWeight: config.backoffWeight,
+			currentTopSetWeight: effectiveTopSetWeight,
+			currentBackoffWeight: effectiveBackoffWeight,
 			proposedTopSetWeight: signals.topSetHit
-				? config.topSetWeight + config.increment
-				: config.topSetWeight,
+				? effectiveTopSetWeight + config.increment
+				: effectiveTopSetWeight,
 			proposedBackoffWeight: signals.backoffHit
-				? config.backoffWeight + config.increment
-				: config.backoffWeight,
+				? effectiveBackoffWeight + config.increment
+				: effectiveBackoffWeight,
 			increment: config.increment,
 			roundingFactor: config.roundingFactor,
 			topSetHit: signals.topSetHit,

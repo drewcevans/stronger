@@ -202,9 +202,9 @@ export interface ProgressionProposal {
 	liftId: string;
 	/** Human-readable lift name. */
 	liftName: string;
-	/** Current top-set weight from the config. */
+	/** Effective top-set reference weight derived from the user's actual completed weight. */
 	currentTopSetWeight: number;
-	/** Current backoff weight from the config. */
+	/** Effective backoff reference weight derived from the user's actual completed weight. */
 	currentBackoffWeight: number;
 	/** Proposed new top-set weight after progression. */
 	proposedTopSetWeight: number;
