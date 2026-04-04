@@ -62,16 +62,14 @@ function WorkoutCard({
 }
 
 export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
-	const { favorites, others, cardio } = useMemo(() => {
+	const { favorites, others } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
-		const cardio: Workout[] = [];
 		for (const w of workouts) {
-			if (w.category === 'cardio') cardio.push(w);
-			else if (w.favorite) favorites.push(w);
+			if (w.favorite) favorites.push(w);
 			else others.push(w);
 		}
-		return { favorites, others, cardio };
+		return { favorites, others };
 	}, [workouts]);
 
 	const [moreOpen, setMoreOpen] = useState(false);
@@ -87,7 +85,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 			) : (
 				<div className="workout-list">
 					{favorites.map((w) => (
-						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
+						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio={w.category === 'cardio'} />
 					))}
 					{others.length > 0 && (
 						<>
@@ -100,18 +98,10 @@ export function WorkoutSelect({ workouts, missingLiftIds, onSelect, onEdit, onNe
 								<ChevronDown size={16} className={`more-chevron${moreOpen ? ' more-chevron-open' : ''}`} />
 							</button>
 							{moreOpen && others.map((w) => (
-								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
+								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio={w.category === 'cardio'} />
 							))}
 						</>
 					)}
-					{cardio.length > 0 && (favorites.length > 0 || others.length > 0) && (
-						<div className="category-divider">
-							<span className="category-divider-label">Cardio</span>
-						</div>
-					)}
-					{cardio.map((w) => (
-						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio />
-					))}
 					{onNew && (
 						<button className="btn-new-workout" onClick={onNew}>
 							<Plus size={20} /> New Workout
