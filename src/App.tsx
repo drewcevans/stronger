@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, buildCardioLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs } from './google/index.js';
+import { appendLogRows, buildLogRow, buildCardioLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
-import type { CardioLogData } from './google/index.js';
+import type { CardioLogData, ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
@@ -30,6 +30,7 @@ function App() {
   const [definitions, setDefinitions] = useState<WorkoutDefinition[]>([]);
   const [progressionProposals, setProgressionProposals] = useState<ProgressionProposal[] | null>(null);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [logRows, setLogRows] = useState<ParsedLogRow[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
 
   const handleConnected = useCallback(
@@ -40,8 +41,9 @@ function App() {
       setSpreadsheetId(sheetId);
       setSheetConnected(true);
       setNeedsSetup(false);
-      // Fire-and-forget: load schedule data
+      // Fire-and-forget: load schedule and log data
       void loadScheduleData(sheetId);
+      void loadLogData(sheetId);
     },
     [],
   );
@@ -74,8 +76,9 @@ function App() {
       setWorkouts(builtWorkouts);
       setNeedsSetup(false);
 
-      // Fire-and-forget: load schedule data
+      // Fire-and-forget: load schedule and log data
       void loadScheduleData(spreadsheetId);
+      void loadLogData(spreadsheetId);
     },
     [spreadsheetId],
   );
@@ -91,6 +94,7 @@ function App() {
     setStartTime(null);
     setProgressionProposals(null);
     setSchedule([]);
+    setLogRows([]);
     setNeedsSetup(false);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
@@ -129,14 +133,14 @@ function App() {
     (workout: Workout, results: SetResult[][]) => {
       const endTime = new Date().toISOString();
       if (spreadsheetId && startTime) {
-        // Fire-and-forget: log results to the sheet
+        // Fire-and-forget: log results to the sheet, then reload log data
         void logWorkoutResults(
           spreadsheetId,
           workout,
           results,
           startTime,
           endTime,
-        );
+        ).then(() => void loadLogData(spreadsheetId));
       }
 
       // Compute progression proposals for the completed workout
@@ -163,7 +167,8 @@ function App() {
     (workout: Workout, data: CardioLogData) => {
       const endTime = new Date().toISOString();
       if (spreadsheetId && startTime) {
-        void logCardioResult(spreadsheetId, workout, data, startTime, endTime);
+        void logCardioResult(spreadsheetId, workout, data, startTime, endTime)
+          .then(() => void loadLogData(spreadsheetId));
       }
       setActiveWorkout(null);
       setStartTime(null);
@@ -219,6 +224,15 @@ function App() {
     }
   }, []);
 
+  const loadLogData = useCallback(async (sheetId: string) => {
+    try {
+      const rows = await readLogZone(sheetId);
+      setLogRows(rows);
+    } catch {
+      // Silently ignore — log data is optional for calendar history
+    }
+  }, []);
+
   const handleScheduleAssign = useCallback(
     (date: string, workoutId: string) => {
       const updated = [...schedule, { date, workoutId }];
@@ -257,6 +271,34 @@ function App() {
       }
     },
     [workouts, handleSelectWorkout],
+  );
+
+  const handleUpdateLogRows = useCallback(
+    (sessionDate: string, sessionWorkoutId: string, sessionStartTime: string, updatedRows: ParsedLogRow[]) => {
+      // Update local state
+      setLogRows((prev) => {
+        const next = [...prev];
+        for (const updated of updatedRows) {
+          const idx = next.findIndex(
+            (r) =>
+              r.date === sessionDate &&
+              r.workoutId === sessionWorkoutId &&
+              r.startTime === sessionStartTime &&
+              r.exerciseName === updated.exerciseName &&
+              r.setNumber === updated.setNumber,
+          );
+          if (idx >= 0) {
+            next[idx] = updated;
+          }
+        }
+        return next;
+      });
+      // Fire-and-forget: write to sheet
+      if (spreadsheetId) {
+        void updateLogRows(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime, updatedRows);
+      }
+    },
+    [spreadsheetId],
   );
 
   const handleGoToList = useCallback(() => {
@@ -523,9 +565,11 @@ function App() {
         <CalendarView
           workouts={workouts}
           schedule={schedule}
+          logRows={logRows}
           onAssign={handleScheduleAssign}
           onRemove={handleScheduleRemove}
           onOpenWorkout={handleCalendarOpenWorkout}
+          onUpdateLogRows={handleUpdateLogRows}
         />
       </>
     );

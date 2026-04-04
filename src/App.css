@@ -1287,6 +1287,329 @@ body {
 	min-height: 36px;
 }
 
+/* Calendar history mode */
+.calendar-history-toggle {
+	display: flex;
+	justify-content: flex-end;
+	margin-bottom: 0.75rem;
+}
+
+.calendar-history-btn {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	background: none;
+	border: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	cursor: pointer;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 0.5rem 0.75rem;
+	border-radius: 8px;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.calendar-history-btn-active {
+	color: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+.calendar-load-more {
+	display: flex;
+	justify-content: center;
+	margin-bottom: 0.75rem;
+}
+
+.calendar-load-more-btn {
+	background: none;
+	border: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	cursor: pointer;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	padding: 0.5rem 1rem;
+	border-radius: 8px;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.calendar-load-more-btn:active {
+	color: var(--color-primary);
+	border-color: var(--color-primary);
+}
+
+/* Green completion bar */
+.calendar-completed-bar {
+	width: 3px;
+	align-self: stretch;
+	min-height: 24px;
+	background: var(--color-completed);
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+/* Session view link */
+.calendar-history-sessions {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	margin-top: 0.25rem;
+}
+
+.calendar-session-link {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	background: none;
+	border: none;
+	color: var(--color-primary);
+	cursor: pointer;
+	font-size: 0.75rem;
+	font-weight: 500;
+	padding: 0.25rem 0.5rem;
+	opacity: 0.8;
+}
+
+.calendar-session-link:active {
+	opacity: 1;
+}
+
+/* Session detail view */
+.session-detail {
+	padding-bottom: 2rem;
+}
+
+.session-detail-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0;
+	margin-bottom: 1rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.session-detail-back {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	padding: 0.375rem;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 8px;
+}
+
+.session-detail-back:active {
+	color: var(--color-primary);
+}
+
+.session-detail-title {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.session-detail-name {
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+.session-detail-date {
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+.session-detail-save {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	padding: 0.375rem;
+	min-width: 36px;
+	min-height: 36px;
+	border-radius: 8px;
+	opacity: 0.4;
+}
+
+.session-detail-save-active {
+	color: var(--color-completed);
+	opacity: 1;
+}
+
+.session-detail-save-active:active {
+	background: rgba(0, 230, 118, 0.1);
+}
+
+/* Strength session detail */
+.session-detail-exercises {
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.session-detail-exercise {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 0.75rem;
+}
+
+.session-detail-exercise-name {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	margin-bottom: 0.5rem;
+}
+
+.session-detail-sets {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.session-detail-set-header {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	padding: 0 0.25rem 0.25rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.session-detail-set-row {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.375rem 0.25rem;
+	border-radius: 4px;
+}
+
+.session-detail-set-num {
+	width: 1.5rem;
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.session-detail-set-type {
+	width: 4.5rem;
+	flex-shrink: 0;
+}
+
+.session-detail-set-type-input {
+	width: 4.5rem;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border);
+	color: var(--color-text);
+	border-radius: 4px;
+	font-size: 0.75rem;
+	padding: 0.25rem;
+	cursor: pointer;
+}
+
+.session-detail-set-weight {
+	flex: 1;
+}
+
+.session-detail-set-weight-input {
+	width: 100%;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border);
+	color: var(--color-text);
+	border-radius: 4px;
+	font-size: 0.8125rem;
+	padding: 0.375rem;
+	text-align: center;
+}
+
+.session-detail-set-reps {
+	width: 3rem;
+	flex-shrink: 0;
+}
+
+.session-detail-set-reps-input {
+	width: 3rem;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border);
+	color: var(--color-text);
+	border-radius: 4px;
+	font-size: 0.8125rem;
+	padding: 0.375rem;
+	text-align: center;
+}
+
+.session-detail-set-done {
+	width: 2rem;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.session-detail-set-check {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	background: none;
+	border: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	border-radius: 4px;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.session-detail-set-checked {
+	background: rgba(0, 230, 118, 0.15);
+	border-color: var(--color-completed);
+	color: var(--color-completed);
+}
+
+/* Set type color accents */
+.session-detail-set-warmup { border-left: 3px solid var(--color-warmup); }
+.session-detail-set-work { border-left: 3px solid var(--color-work); }
+.session-detail-set-backoff { border-left: 3px solid var(--color-backoff); }
+.session-detail-set-joker { border-left: 3px solid var(--color-joker); }
+
+/* Cardio session detail */
+.session-detail-cardio {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 0.5rem 0;
+}
+
+.session-detail-cardio-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.session-detail-cardio-field label {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+}
+
+.session-detail-cardio-field input {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	color: var(--color-text);
+	border-radius: 8px;
+	font-size: 1rem;
+	padding: 0.75rem;
+}
+
 /* -----------------------------------------------------------------------
    Workout editor
    ----------------------------------------------------------------------- */
