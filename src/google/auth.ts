@@ -6,7 +6,7 @@
  * and exposes helpers for sign-in, sign-out, and token access.
  */
 
-import { GOOGLE_CLIENT_ID, SHEETS_DISCOVERY_DOC, SHEETS_SCOPE } from './config.ts'
+import { GOOGLE_CLIENT_ID, SHEETS_DISCOVERY_DOC, CALENDAR_DISCOVERY_DOC, OAUTH_SCOPES } from './config.ts'
 import { saveToken, loadToken, clearToken } from './storage.ts'
 import type { TokenClient, TokenResponse } from './types.ts'
 
@@ -46,14 +46,14 @@ export function loadGapi(): Promise<void> {
 
 let gapiInited = false
 
-/** Initialise the gapi client and load Sheets discovery doc. */
+/** Initialise the gapi client and load Sheets + Calendar discovery docs. */
 export async function initGapiClient(): Promise<void> {
 	if (gapiInited) return
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
 
 	await new Promise<void>((resolve) => gapi.load('client', resolve))
-	await gapi.client.init({ discoveryDocs: [SHEETS_DISCOVERY_DOC] })
+	await gapi.client.init({ discoveryDocs: [SHEETS_DISCOVERY_DOC, CALENDAR_DISCOVERY_DOC] })
 	gapiInited = true
 }
 
@@ -81,7 +81,7 @@ export function getTokenClient(
 
 	tokenClient = google.accounts.oauth2.initTokenClient({
 		client_id: GOOGLE_CLIENT_ID,
-		scope: SHEETS_SCOPE,
+		scope: OAUTH_SCOPES,
 		callback: onToken,
 	})
 	return tokenClient

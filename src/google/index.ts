@@ -45,5 +45,17 @@ export {
 	writeSchedule,
 } from './sheets.ts'
 export type { SheetInfo, LogContext, ParsedLogRow, CardioLogData } from './sheets.ts'
+export type { CalendarListEntry } from './types.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
 export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
+export {
+	listWritableCalendars,
+	buildDeepLink,
+	generateEventDates,
+	pushEventsToCalendar,
+} from './calendar.ts'
+export type {
+	WeeklySlot,
+	CalendarPushRequest,
+	CalendarPushResult,
+} from './calendar.ts'

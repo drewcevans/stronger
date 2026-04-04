@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { Workout, ScheduleEntry } from '../model/index.js';
-import { CalendarPlus, X, ChevronRight, Activity, Dumbbell } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, Activity, Dumbbell, Upload } from 'lucide-react';
+import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
 	workouts: Workout[];
@@ -57,6 +58,7 @@ export function CalendarView({
 	onOpenWorkout,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
+	const [showPush, setShowPush] = useState(false);
 
 	const days = useMemo(() => generateDays(28), []);
 
@@ -112,6 +114,22 @@ export function CalendarView({
 
 	return (
 		<div className="calendar-view">
+			{!showPush && (
+				<div className="calendar-push-toggle">
+					<button
+						className="calendar-push-toggle-btn"
+						onClick={() => setShowPush(true)}
+					>
+						<Upload size={16} /> Push to Google Calendar
+					</button>
+				</div>
+			)}
+			{showPush && (
+				<CalendarPush
+					workouts={workouts}
+					onClose={() => setShowPush(false)}
+				/>
+			)}
 			<div className="calendar-days">
 				{days.map((dateStr) => {
 					const { weekday, display } = formatDate(dateStr);

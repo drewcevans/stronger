@@ -112,6 +112,17 @@ export interface GapiClient {
 			}
 		}
 	}
+	calendar: {
+		calendarList: {
+			list: () => Promise<CalendarListResponse>
+		}
+		events: {
+			insert: (params: {
+				calendarId: string
+				resource: CalendarEventResource
+			}) => Promise<CalendarEventResponse>
+		}
+	}
 }
 
 export interface Gapi {
@@ -142,6 +153,37 @@ export interface SheetRequest {
 		properties: {
 			title: string
 		}
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/*  Calendar API types                                                 */
+/* ------------------------------------------------------------------ */
+
+export interface CalendarListEntry {
+	id: string
+	summary: string
+	primary?: boolean
+	accessRole: 'freeBusyReader' | 'reader' | 'writer' | 'owner'
+}
+
+export interface CalendarListResponse {
+	result: {
+		items: CalendarListEntry[]
+	}
+}
+
+export interface CalendarEventResource {
+	summary: string
+	description?: string
+	start: { date: string }
+	end: { date: string }
+}
+
+export interface CalendarEventResponse {
+	result: {
+		id: string
+		htmlLink: string
 	}
 }
 
