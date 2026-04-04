@@ -1,13 +1,21 @@
-import { useState, useMemo, useCallback } from 'react';
-import type { Workout, ScheduleEntry } from '../model/index.js';
-import { CalendarPlus, X, ChevronRight, Activity, Dumbbell } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import type { Workout, ScheduleEntry, SetType } from '../model/index.js';
+import type { ParsedLogRow } from '../google/index.js';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Activity, Dumbbell, History, Save, Check } from 'lucide-react';
 
 interface CalendarViewProps {
 	workouts: Workout[];
 	schedule: ScheduleEntry[];
+	logRows: ParsedLogRow[];
 	onAssign: (date: string, workoutId: string) => void;
 	onRemove: (date: string, workoutId: string) => void;
 	onOpenWorkout: (workoutId: string) => void;
+	onUpdateLogRows: (
+		sessionDate: string,
+		sessionWorkoutId: string,
+		sessionStartTime: string,
+		updatedRows: ParsedLogRow[],
+	) => void;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -29,15 +37,19 @@ function isWeekend(dateStr: string): boolean {
 	return day === 0 || day === 6;
 }
 
+/** Get today's YYYY-MM-DD string. */
+function todayStr(): string {
+	const now = new Date();
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
 /** Check if a date string is today. */
 function isToday(dateStr: string): boolean {
-	const now = new Date();
-	const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-	return dateStr === today;
+	return dateStr === todayStr();
 }
 
 /** Generate an array of YYYY-MM-DD strings starting from today for `count` days. */
-function generateDays(count: number): string[] {
+function generateFutureDays(count: number): string[] {
 	const days: string[] = [];
 	const now = new Date();
 	for (let i = 0; i < count; i++) {
@@ -49,16 +61,300 @@ function generateDays(count: number): string[] {
 	return days;
 }
 
+/** Generate an array of YYYY-MM-DD strings going backward from a reference date. */
+export function generatePastDays(beforeDate: string, count: number): string[] {
+	const [y, m, d] = beforeDate.split('-').map(Number);
+	const days: string[] = [];
+	for (let i = 1; i <= count; i++) {
+		const dt = new Date(y, m - 1, d - i);
+		days.push(
+			`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`,
+		);
+	}
+	return days;
+}
+
+/** Key for grouping log rows into sessions. */
+interface SessionKey {
+	date: string;
+	workoutId: string;
+	startTime: string;
+}
+
+/** A grouped workout session for a single (date, workoutId, startTime). */
+export interface LogSession {
+	key: SessionKey;
+	workoutName: string;
+	category: 'strength' | 'cardio';
+	rows: ParsedLogRow[];
+}
+
+/**
+ * Group parsed log rows by (date, workoutId, startTime) to produce sessions.
+ * Returns a map of date → LogSession[].
+ */
+export function groupLogByDate(logRows: ParsedLogRow[], workoutNames?: Map<string, string>): Map<string, LogSession[]> {
+	const sessionMap = new Map<string, LogSession>();
+	for (const row of logRows) {
+		const key = `${row.date}|${row.workoutId}|${row.startTime}`;
+		let session = sessionMap.get(key);
+		if (!session) {
+			session = {
+				key: { date: row.date, workoutId: row.workoutId, startTime: row.startTime },
+				workoutName: workoutNames?.get(row.workoutId) ?? row.workoutId,
+				category: row.category,
+				rows: [],
+			};
+			sessionMap.set(key, session);
+		}
+		session.rows.push(row);
+	}
+
+	// Group sessions by date
+	const dateMap = new Map<string, LogSession[]>();
+	for (const session of sessionMap.values()) {
+		const existing = dateMap.get(session.key.date) ?? [];
+		existing.push(session);
+		dateMap.set(session.key.date, existing);
+	}
+	return dateMap;
+}
+
+/**
+ * Merge schedule entries and log sessions for a list of dates.
+ * Returns per-date info: scheduled workouts and completed sessions.
+ */
+export interface DayInfo {
+	date: string;
+	scheduled: string[]; // workoutIds from schedule
+	sessions: LogSession[]; // completed workout sessions from log
+}
+
+export function buildDayInfos(
+	dates: string[],
+	scheduleMap: Map<string, string[]>,
+	logByDate: Map<string, LogSession[]>,
+): DayInfo[] {
+	return dates.map((date) => ({
+		date,
+		scheduled: scheduleMap.get(date) ?? [],
+		sessions: logByDate.get(date) ?? [],
+	}));
+}
+
+const SET_TYPES: SetType[] = ['warmup', 'work', 'backoff', 'joker'];
+
+/** Detail/edit view for a single past workout session. */
+function SessionDetail({
+	session,
+	workoutNames,
+	onSave,
+	onClose,
+}: {
+	session: LogSession;
+	workoutNames: Map<string, string>;
+	onSave: (updatedRows: ParsedLogRow[]) => void;
+	onClose: () => void;
+}) {
+	const [editRows, setEditRows] = useState<ParsedLogRow[]>(() =>
+		session.rows.map((r) => ({ ...r })),
+	);
+	const [saving, setSaving] = useState(false);
+	const [dirty, setDirty] = useState(false);
+
+	const { display } = formatDate(session.key.date);
+	const name = workoutNames.get(session.key.workoutId) ?? session.workoutName;
+
+	const updateRow = useCallback((index: number, patch: Partial<ParsedLogRow>) => {
+		setEditRows((prev) => {
+			const next = [...prev];
+			next[index] = { ...next[index], ...patch };
+			return next;
+		});
+		setDirty(true);
+	}, []);
+
+	const handleSave = useCallback(async () => {
+		setSaving(true);
+		onSave(editRows);
+		// Brief delay for visual feedback
+		await new Promise((r) => setTimeout(r, 300));
+		setSaving(false);
+		setDirty(false);
+	}, [editRows, onSave]);
+
+	if (session.category === 'cardio') {
+		// Cardio session: single row with duration, distance, elevation, weight
+		const row = editRows[0];
+		return (
+			<div className="session-detail">
+				<div className="session-detail-header">
+					<button className="session-detail-back" onClick={onClose}>
+						<ChevronLeft size={20} />
+					</button>
+					<div className="session-detail-title">
+						<span className="session-detail-name">{name}</span>
+						<span className="session-detail-date">{display}</span>
+					</div>
+					<button
+						className={`session-detail-save${dirty ? ' session-detail-save-active' : ''}`}
+						onClick={handleSave}
+						disabled={!dirty || saving}
+					>
+						{saving ? <Check size={18} /> : <Save size={18} />}
+					</button>
+				</div>
+
+				<div className="session-detail-cardio">
+					<div className="session-detail-cardio-field">
+						<label>Duration (min)</label>
+						<input
+							type="number"
+							inputMode="decimal"
+							value={row.duration ?? ''}
+							onChange={(e) => updateRow(0, { duration: e.target.value ? Number(e.target.value) : undefined })}
+						/>
+					</div>
+					<div className="session-detail-cardio-field">
+						<label>Distance (mi)</label>
+						<input
+							type="number"
+							inputMode="decimal"
+							value={row.distance ?? ''}
+							onChange={(e) => updateRow(0, { distance: e.target.value ? Number(e.target.value) : undefined })}
+						/>
+					</div>
+					<div className="session-detail-cardio-field">
+						<label>Elevation (ft)</label>
+						<input
+							type="number"
+							inputMode="decimal"
+							value={row.elevation ?? ''}
+							onChange={(e) => updateRow(0, { elevation: e.target.value ? Number(e.target.value) : undefined })}
+						/>
+					</div>
+					<div className="session-detail-cardio-field">
+						<label>Weight (lbs)</label>
+						<input
+							type="number"
+							inputMode="decimal"
+							value={row.cardioWeight ?? ''}
+							onChange={(e) => updateRow(0, { cardioWeight: e.target.value ? Number(e.target.value) : undefined })}
+						/>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	// Strength session: group rows by exercise
+	const exerciseOrder: string[] = [];
+	const exerciseMap = new Map<string, number[]>();
+	for (let i = 0; i < editRows.length; i++) {
+		const eName = editRows[i].exerciseName;
+		if (!exerciseMap.has(eName)) {
+			exerciseOrder.push(eName);
+			exerciseMap.set(eName, []);
+		}
+		exerciseMap.get(eName)!.push(i);
+	}
+
+	return (
+		<div className="session-detail">
+			<div className="session-detail-header">
+				<button className="session-detail-back" onClick={onClose}>
+					<ChevronLeft size={20} />
+				</button>
+				<div className="session-detail-title">
+					<span className="session-detail-name">{name}</span>
+					<span className="session-detail-date">{display}</span>
+				</div>
+				<button
+					className={`session-detail-save${dirty ? ' session-detail-save-active' : ''}`}
+					onClick={handleSave}
+					disabled={!dirty || saving}
+				>
+					{saving ? <Check size={18} /> : <Save size={18} />}
+				</button>
+			</div>
+
+			<div className="session-detail-exercises">
+				{exerciseOrder.map((eName) => {
+					const indices = exerciseMap.get(eName)!;
+					return (
+						<div key={eName} className="session-detail-exercise">
+							<div className="session-detail-exercise-name">{eName}</div>
+							<div className="session-detail-sets">
+								<div className="session-detail-set-header">
+									<span className="session-detail-set-num">#</span>
+									<span className="session-detail-set-type">Type</span>
+									<span className="session-detail-set-weight">Weight</span>
+									<span className="session-detail-set-reps">Reps</span>
+									<span className="session-detail-set-done">✓</span>
+								</div>
+								{indices.map((idx) => {
+									const row = editRows[idx];
+									return (
+										<div key={idx} className={`session-detail-set-row session-detail-set-${row.setType}`}>
+											<span className="session-detail-set-num">{row.setNumber}</span>
+											<select
+												className="session-detail-set-type-input"
+												value={row.setType}
+												onChange={(e) => updateRow(idx, { setType: e.target.value as SetType })}
+											>
+												{SET_TYPES.map((t) => (
+													<option key={t} value={t}>{t}</option>
+												))}
+											</select>
+											<input
+												className="session-detail-set-weight-input"
+												type="number"
+												inputMode="decimal"
+												value={row.actualWeight}
+												onChange={(e) => updateRow(idx, { actualWeight: Number(e.target.value) || 0 })}
+											/>
+											<input
+												className="session-detail-set-reps-input"
+												type="number"
+												inputMode="numeric"
+												value={row.actualReps}
+												onChange={(e) => updateRow(idx, { actualReps: Number(e.target.value) || 0 })}
+											/>
+											<button
+												className={`session-detail-set-check${row.completed ? ' session-detail-set-checked' : ''}`}
+												onClick={() => updateRow(idx, { completed: !row.completed })}
+											>
+												{row.completed ? <Check size={14} /> : ''}
+											</button>
+										</div>
+									);
+								})}
+							</div>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
 export function CalendarView({
 	workouts,
 	schedule,
+	logRows,
 	onAssign,
 	onRemove,
 	onOpenWorkout,
+	onUpdateLogRows,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
+	const [historyMode, setHistoryMode] = useState(false);
+	const [pastDays, setPastDays] = useState<string[]>([]);
+	const [activeSession, setActiveSession] = useState<LogSession | null>(null);
+	const historyTopRef = useRef<HTMLDivElement>(null);
+	const todayRef = useRef<HTMLDivElement>(null);
 
-	const days = useMemo(() => generateDays(28), []);
+	const futureDays = useMemo(() => generateFutureDays(28), []);
 
 	// Build a map of date → workoutIds for fast lookup
 	const scheduleMap = useMemo(() => {
@@ -79,6 +375,9 @@ export function CalendarView({
 		}
 		return map;
 	}, [workouts]);
+
+	// Build log sessions grouped by date, using workout names for display
+	const logByDate = useMemo(() => groupLogByDate(logRows, workoutNames), [logRows, workoutNames]);
 
 	// Build a set of cardio workout IDs for quick lookup
 	const cardioIds = useMemo(() => {
@@ -110,18 +409,118 @@ export function CalendarView({
 		[addingForDate, onAssign],
 	);
 
+	// Toggle history mode — load initial batch of past days
+	const handleToggleHistory = useCallback(() => {
+		if (historyMode) {
+			setHistoryMode(false);
+			setPastDays([]);
+		} else {
+			const today = todayStr();
+			// Load 28 days of history initially
+			setPastDays(generatePastDays(today, 28));
+			setHistoryMode(true);
+		}
+	}, [historyMode]);
+
+	// Load more past days
+	const handleLoadMore = useCallback(() => {
+		if (pastDays.length === 0) return;
+		const oldest = pastDays[pastDays.length - 1];
+		const moreDays = generatePastDays(oldest, 28);
+		setPastDays((prev) => [...prev, ...moreDays]);
+	}, [pastDays]);
+
+	// Scroll to today when history mode is activated
+	useEffect(() => {
+		if (historyMode && todayRef.current) {
+			// Small delay to let DOM render
+			setTimeout(() => {
+				todayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 100);
+		}
+	}, [historyMode]);
+
+	// Build day infos for both past and future
+	const allDays = useMemo(() => {
+		const combined = historyMode
+			? [...pastDays.slice().reverse(), ...futureDays]
+			: futureDays;
+		return buildDayInfos(combined, scheduleMap, logByDate);
+	}, [historyMode, pastDays, futureDays, scheduleMap, logByDate]);
+
+	const handleOpenSession = useCallback((session: LogSession) => {
+		setActiveSession(session);
+	}, []);
+
+	const handleCloseSession = useCallback(() => {
+		setActiveSession(null);
+	}, []);
+
+	const handleSaveSession = useCallback(
+		(updatedRows: ParsedLogRow[]) => {
+			if (!activeSession) return;
+			onUpdateLogRows(
+				activeSession.key.date,
+				activeSession.key.workoutId,
+				activeSession.key.startTime,
+				updatedRows,
+			);
+			// Update the active session with saved data
+			setActiveSession((prev) =>
+				prev ? { ...prev, rows: updatedRows } : null,
+			);
+		},
+		[activeSession, onUpdateLogRows],
+	);
+
+	// If a session detail is open, show it instead of the calendar
+	if (activeSession) {
+		return (
+			<SessionDetail
+				session={activeSession}
+				workoutNames={workoutNames}
+				onSave={handleSaveSession}
+				onClose={handleCloseSession}
+			/>
+		);
+	}
+
 	return (
 		<div className="calendar-view">
+			{/* History toggle button */}
+			<div className="calendar-history-toggle">
+				<button
+					className={`calendar-history-btn${historyMode ? ' calendar-history-btn-active' : ''}`}
+					onClick={handleToggleHistory}
+				>
+					<History size={16} />
+					{historyMode ? 'Hide History' : 'History'}
+				</button>
+			</div>
+
+			{/* Load more button at top of history */}
+			{historyMode && pastDays.length > 0 && (
+				<div className="calendar-load-more" ref={historyTopRef}>
+					<button className="calendar-load-more-btn" onClick={handleLoadMore}>
+						Load earlier days
+					</button>
+				</div>
+			)}
+
 			<div className="calendar-days">
-				{days.map((dateStr) => {
-					const { weekday, display } = formatDate(dateStr);
-					const today = isToday(dateStr);
-					const weekend = isWeekend(dateStr);
-					const assigned = scheduleMap.get(dateStr) ?? [];
+				{allDays.map((dayInfo) => {
+					const { weekday, display } = formatDate(dayInfo.date);
+					const today = isToday(dayInfo.date);
+					const weekend = isWeekend(dayInfo.date);
+					const isPast = dayInfo.date < todayStr();
+
+					// Deduplicate: collect all workout IDs that appear (scheduled + logged)
+					const loggedWorkoutIds = new Set(dayInfo.sessions.map((s) => s.key.workoutId));
 
 					return (
 						<div
-							key={dateStr}
+							key={dayInfo.date}
+							ref={today ? todayRef : undefined}
 							className={`calendar-day${today ? ' calendar-day-today' : ''}${weekend ? ' calendar-day-weekend' : ''}`}
 						>
 							<div className="calendar-day-header">
@@ -130,24 +529,36 @@ export function CalendarView({
 									<span className="calendar-display-date">{display}</span>
 									{today && <span className="calendar-today-badge">Today</span>}
 								</div>
-								<button
-									className="calendar-add-btn"
-									onClick={() => setAddingForDate(dateStr)}
-									aria-label={`Add workout to ${display}`}
-								>
-									<CalendarPlus size={18} />
-								</button>
+								{!isPast && (
+									<button
+										className="calendar-add-btn"
+										onClick={() => setAddingForDate(dayInfo.date)}
+										aria-label={`Add workout to ${display}`}
+									>
+										<CalendarPlus size={18} />
+									</button>
+								)}
 							</div>
 
-							{assigned.length > 0 && (
+							{/* Scheduled workouts (not yet logged) */}
+							{dayInfo.scheduled.length > 0 && (
 								<div className="calendar-workouts">
-									{assigned.map((wid, idx) => {
+									{dayInfo.scheduled.map((wid, idx) => {
 										const isCardio = cardioIds.has(wid);
+										const hasLog = loggedWorkoutIds.has(wid);
 										return (
-											<div key={`${wid}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
+											<div key={`sched-${wid}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
+												{hasLog && <span className="calendar-completed-bar" />}
 												{isCardio ? (
 													<span className="calendar-workout-link calendar-workout-link-cardio">
 														<Activity size={14} />
+														<span className="calendar-workout-name">
+															{workoutNames.get(wid) ?? wid}
+														</span>
+													</span>
+												) : isPast ? (
+													<span className="calendar-workout-link">
+														<Dumbbell size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -164,21 +575,66 @@ export function CalendarView({
 														<ChevronRight size={14} />
 													</button>
 												)}
-												<button
-													className="calendar-remove-btn"
-													onClick={() => onRemove(dateStr, wid)}
-													aria-label={`Remove ${workoutNames.get(wid) ?? wid}`}
-												>
-													<X size={14} />
-												</button>
+												{!isPast && (
+													<button
+														className="calendar-remove-btn"
+														onClick={() => onRemove(dayInfo.date, wid)}
+														aria-label={`Remove ${workoutNames.get(wid) ?? wid}`}
+													>
+														<X size={14} />
+													</button>
+												)}
 											</div>
 										);
 									})}
 								</div>
 							)}
 
+							{/* Logged sessions not already shown via schedule */}
+							{dayInfo.sessions.filter((s) => !dayInfo.scheduled.includes(s.key.workoutId)).length > 0 && (
+								<div className="calendar-workouts">
+									{dayInfo.sessions
+										.filter((s) => !dayInfo.scheduled.includes(s.key.workoutId))
+										.map((session, idx) => {
+											const isCardio = session.category === 'cardio';
+											const name = workoutNames.get(session.key.workoutId) ?? session.workoutName;
+											return (
+												<div key={`log-${session.key.workoutId}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
+													<span className="calendar-completed-bar" />
+													<button
+														className="calendar-workout-link"
+														onClick={() => handleOpenSession(session)}
+													>
+														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
+														<span className="calendar-workout-name">{name}</span>
+														<ChevronRight size={14} />
+													</button>
+												</div>
+											);
+										})}
+								</div>
+							)}
+
+							{/* For scheduled+logged items, make them clickable to view session detail */}
+							{dayInfo.sessions.filter((s) => dayInfo.scheduled.includes(s.key.workoutId)).length > 0 && dayInfo.scheduled.length > 0 && (
+								<div className="calendar-history-sessions">
+									{dayInfo.sessions
+										.filter((s) => dayInfo.scheduled.includes(s.key.workoutId))
+										.map((session, idx) => (
+											<button
+												key={`sess-${session.key.workoutId}-${idx}`}
+												className="calendar-session-link"
+												onClick={() => handleOpenSession(session)}
+											>
+												View session
+												<ChevronRight size={14} />
+											</button>
+										))}
+								</div>
+							)}
+
 							{/* Workout picker overlay for this day */}
-							{addingForDate === dateStr && (
+							{addingForDate === dayInfo.date && (
 								<div className="calendar-picker">
 									<div className="calendar-picker-header">
 										<span>Assign workout</span>
@@ -223,3 +679,4 @@ export function CalendarView({
 		</div>
 	);
 }
+

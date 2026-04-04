@@ -474,6 +474,118 @@ export async function appendLogRows(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Log zone – in-place update                                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Update existing log rows in-place by matching (date, workoutId, startTime).
+ *
+ * Reads all raw rows from the log tab, finds the ones matching the session
+ * key, then overwrites each matching row with the corresponding updated
+ * ParsedLogRow. This targets individual rows rather than rewriting the
+ * entire log, which is safer for large logs.
+ */
+export async function updateLogRows(
+	spreadsheetId: string,
+	sessionDate: string,
+	sessionWorkoutId: string,
+	sessionStartTime: string,
+	updatedRows: ParsedLogRow[],
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	// Read all raw rows to find sheet-level row numbers
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: LOG_READ_RANGE,
+	})
+
+	const rawRows = response.result.values
+	if (!rawRows || rawRows.length === 0) return
+
+	// Find raw row indices matching this session
+	const matchingIndices: number[] = []
+	for (let i = 0; i < rawRows.length; i++) {
+		const raw = rawRows[i]
+		const date = (raw[0] ?? '').trim()
+		const startTime = (raw[1] ?? '').trim()
+		const workoutId = (raw[3] ?? '').trim()
+		if (date === sessionDate && startTime === sessionStartTime && workoutId === sessionWorkoutId) {
+			matchingIndices.push(i)
+		}
+	}
+
+	if (matchingIndices.length === 0) return
+
+	// Build updated row data keyed by (exerciseName, setNumber) for matching
+	const updateMap = new Map<string, ParsedLogRow>()
+	for (const row of updatedRows) {
+		updateMap.set(`${row.exerciseName}:${row.setNumber}`, row)
+	}
+
+	// Update each matching row in-place
+	for (const rawIdx of matchingIndices) {
+		const raw = rawRows[rawIdx]
+		const exerciseName = (raw[4] ?? '').trim()
+		const setNumber = (raw[6] ?? '').trim()
+		const key = `${exerciseName}:${setNumber}`
+		const updated = updateMap.get(key)
+		if (!updated) continue
+
+		// Row number in sheet = rawIdx + 2 (data starts at row 2, 0-indexed)
+		const sheetRow = rawIdx + 2
+		const range = `'${LOG_TAB_NAME}'!A${sheetRow}:R${sheetRow}`
+
+		const rowData = updated.category === 'cardio'
+			? [
+				updated.date,
+				updated.startTime,
+				updated.endTime,
+				updated.workoutId,
+				updated.exerciseName,
+				updated.liftId,
+				updated.setNumber,
+				updated.setType,
+				updated.plannedWeight,
+				updated.plannedReps,
+				updated.actualWeight,
+				updated.actualReps,
+				updated.completed ? 'TRUE' : 'FALSE',
+				'cardio',
+				updated.duration ?? '',
+				updated.distance ?? '',
+				updated.elevation ?? '',
+				updated.cardioWeight ?? '',
+			]
+			: [
+				updated.date,
+				updated.startTime,
+				updated.endTime,
+				updated.workoutId,
+				updated.exerciseName,
+				updated.liftId,
+				updated.setNumber,
+				updated.setType,
+				updated.plannedWeight,
+				updated.plannedReps,
+				updated.actualWeight,
+				updated.actualReps,
+				updated.completed ? 'TRUE' : 'FALSE',
+				'strength',
+				'', '', '', '',
+			]
+
+		await gapi.client.sheets.spreadsheets.values.update({
+			spreadsheetId,
+			range,
+			valueInputOption: 'RAW',
+			resource: { values: [rowData] },
+		})
+	}
+}
+
+/* ------------------------------------------------------------------ */
 /*  Workout Defs tab – constants                                       */
 /* ------------------------------------------------------------------ */
 
