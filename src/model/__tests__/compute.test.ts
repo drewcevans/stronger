@@ -518,6 +518,8 @@ describe('RSS Intermediate B scenarios', () => {
 			increment: 5,
 			minimumWeight: 5,
 			roundingFactor: 5,
+			barWeight: 0,
+			gear: 'dumbbell',
 		};
 		const allConfigs = configMap(lateralRaiseConfig);
 
