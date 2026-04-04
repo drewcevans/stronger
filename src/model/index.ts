@@ -4,6 +4,7 @@ export type {
 	ComputedSet,
 	ExerciseRole,
 	ExerciseTemplate,
+	GearType,
 	LiftConfig,
 	PreviousSetData,
 	ProgressionProposal,

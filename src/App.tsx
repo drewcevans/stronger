@@ -9,6 +9,8 @@ import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { CardioView } from './components/CardioView.js';
 import { WorkoutEditor } from './components/WorkoutEditor.js';
+import { ExerciseLibrary } from './components/ExerciseLibrary.js';
+import { ExerciseEditor } from './components/ExerciseEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView } from './components/CalendarView.js';
 import { SetupPage } from './components/SetupPage.js';
@@ -265,6 +267,10 @@ function App() {
     navigateTo({ view: 'calendar' });
   }, [navigateTo]);
 
+  const handleOpenExercises = useCallback(() => {
+    navigateTo({ view: 'exercises' });
+  }, [navigateTo]);
+
   // Editor handlers
   const handleEditWorkout = useCallback((workoutId: string) => {
     navigateTo({ view: 'editor', workoutId });
@@ -291,6 +297,38 @@ function App() {
   const handleEditorCancel = useCallback(() => {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
+
+  // Exercise editor handlers
+  const handleEditExercise = useCallback((exerciseId: string) => {
+    navigateTo({ view: 'exerciseEditor', exerciseId });
+  }, [navigateTo]);
+
+  const handleNewExercise = useCallback(() => {
+    navigateTo({ view: 'exerciseEditor' });
+  }, [navigateTo]);
+
+  const handleExerciseEditorCancel = useCallback(() => {
+    navigateTo({ view: 'exercises' });
+  }, [navigateTo]);
+
+  const handleExerciseSave = useCallback(
+    (config: LiftConfig) => {
+      const isNew = !configs.some((c) => c.id === config.id);
+      const updatedConfigs = isNew
+        ? [...configs, config]
+        : configs.map((c) => (c.id === config.id ? config : c));
+
+      setConfigs(updatedConfigs);
+      setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
+
+      if (spreadsheetId) {
+        void writeConfigValues(spreadsheetId, updatedConfigs);
+      }
+
+      navigateTo({ view: 'exercises' });
+    },
+    [configs, definitions, spreadsheetId, navigateTo],
+  );
 
   const handleEditorSave = useCallback(
     (definition: WorkoutDefinition) => {
@@ -389,6 +427,48 @@ function App() {
     );
   }
 
+  if (route.view === 'exerciseEditor') {
+    const editConfig = route.exerciseId
+      ? configs.find((c) => c.id === route.exerciseId)
+      : undefined;
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
+        />
+        <ExerciseEditor
+          existing={editConfig}
+          allConfigs={configs}
+          onSave={handleExerciseSave}
+          onCancel={handleExerciseEditorCancel}
+        />
+      </>
+    );
+  }
+
+  if (route.view === 'exercises') {
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
+        />
+        <ExerciseLibrary
+          configs={configs}
+          onEdit={handleEditExercise}
+          onNew={handleNewExercise}
+        />
+      </>
+    );
+  }
+
   if (route.view === 'editor') {
     const editDef = route.workoutId
       ? definitions.find((d) => d.id === route.workoutId)
@@ -400,6 +480,7 @@ function App() {
           onDisconnected={handleDisconnected}
           onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
         />
         <WorkoutEditor
           existing={editDef}
@@ -420,6 +501,7 @@ function App() {
           onDisconnected={handleDisconnected}
           onGoToList={handleGoToList}
           onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
         />
         <CalendarView
           workouts={workouts}
@@ -445,6 +527,7 @@ function App() {
         onDisconnected={handleDisconnected}
         onGoToList={handleGoToList}
         onOpenCalendar={handleOpenCalendar}
+        onOpenExercises={handleOpenExercises}
       />
       <WorkoutSelect
         workouts={workouts}

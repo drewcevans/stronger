@@ -1690,3 +1690,194 @@ body {
 .btn-new-workout:active {
 	background: rgba(0, 229, 255, 0.1);
 }
+
+/* ------------------------------------------------------------------ */
+/*  Exercise Library                                                    */
+/* ------------------------------------------------------------------ */
+
+.exercise-library {
+	padding: 1rem;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.exercise-library-title {
+	color: var(--color-primary);
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin: 0 0 1rem 0;
+}
+
+.exercise-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.exercise-card-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.exercise-card {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	padding: 0.5rem 1rem;
+	background: var(--color-bg);
+	border: 1px solid var(--color-border-glow);
+	border-radius: var(--radius);
+	color: var(--color-text);
+	text-align: left;
+	cursor: pointer;
+	font-size: 1rem;
+	transition: background 0.15s;
+	min-height: 64px;
+	flex: 1;
+	width: 0;
+}
+
+.exercise-card:active {
+	background: var(--color-surface-hover);
+}
+
+.exercise-card-cardio {
+	border-style: dashed;
+}
+
+.exercise-card-info {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	min-width: 0;
+}
+
+.exercise-name {
+	font-weight: 500;
+}
+
+.exercise-detail {
+	font-size: 0.8rem;
+	color: var(--color-text-muted);
+}
+
+.btn-edit-exercise {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	flex-shrink: 0;
+	padding: 0;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	border-radius: 6px;
+	transition: color 0.15s;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.btn-edit-exercise:active {
+	color: var(--color-primary);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Exercise Editor                                                     */
+/* ------------------------------------------------------------------ */
+
+.exercise-editor {
+	padding: 0 1rem 2rem;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.exercise-editor-form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.editor-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.editor-label {
+	font-size: 0.85rem;
+	color: var(--color-text-muted);
+	font-weight: 500;
+}
+
+.editor-input {
+	padding: 0.6rem 0.75rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	color: var(--color-text);
+	font-size: 1rem;
+	outline: none;
+	transition: border-color 0.15s;
+}
+
+.editor-input:focus {
+	border-color: var(--color-primary);
+}
+
+.editor-input:disabled {
+	opacity: 0.5;
+}
+
+.editor-select {
+	padding: 0.6rem 0.75rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	color: var(--color-text);
+	font-size: 1rem;
+	outline: none;
+	transition: border-color 0.15s;
+	cursor: pointer;
+}
+
+.editor-select:focus {
+	border-color: var(--color-primary);
+}
+
+.editor-error {
+	font-size: 0.8rem;
+	color: var(--color-danger);
+}
+
+.editor-hint {
+	font-size: 0.9rem;
+	color: var(--color-text-muted);
+	margin: 0;
+}
+
+.editor-type-toggle {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.editor-type-btn {
+	flex: 1;
+	padding: 0.5rem 1rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	color: var(--color-text-muted);
+	font-size: 0.9rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.editor-type-active {
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+	background: rgba(0, 229, 255, 0.08);
+}
