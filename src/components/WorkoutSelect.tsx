@@ -41,13 +41,11 @@ function WorkoutCard({
 				className={`workout-card${cardio ? ' workout-card-cardio' : ''}`}
 				onClick={() => onSelect(w)}
 			>
-				{/* TODO: re-enable once new neon-style icons are ready
 				{cardio ? (
 					<span className="cardio-badge"><Activity size={24} /></span>
 				) : (
 					<LiftBadge liftId={w.exercises[0]?.liftId ?? 'unknown'} size={48} />
 				)}
-				*/}
 				<span className="workout-name">{w.name}</span>
 			</button>
 			{onEdit && (
