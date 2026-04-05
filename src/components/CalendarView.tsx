@@ -662,7 +662,9 @@ export function CalendarView({
 										</button>
 									</div>
 									<div className="calendar-picker-list">
-										<div className="calendar-picker-divider">Strength</div>
+										{cardioActivities.length > 0 && workouts.length > 0 && (
+											<div className="calendar-picker-divider">Strength</div>
+										)}
 										{workouts.map((w) => (
 											<button
 												key={w.id}
