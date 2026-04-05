@@ -13,6 +13,11 @@
  * Column aliases: each internal field maps to possible CSV header names.
  * The old Hevy format (pre-2025) used Title Case names and metric units.
  * The new format uses snake_case names and imperial units.
+ *
+ * The first matching alias wins. The matched header name is used to detect
+ * the unit system: 'weight_lbs' → already in lbs, 'Weight (kg)' → needs
+ * kg-to-lbs conversion; 'distance_miles' → already in miles,
+ * 'Distance (meters)' → needs meters-to-miles conversion.
  */
 const COLUMN_ALIASES: Record<string, string[]> = {
   workoutName: ['title', 'Workout Name'],
@@ -20,9 +25,9 @@ const COLUMN_ALIASES: Record<string, string[]> = {
   workoutEnd: ['end_time', 'Workout End'],
   exerciseName: ['exercise_title', 'Exercise Name'],
   setOrder: ['set_index', 'Set Order'],
-  weight: ['weight_lbs', 'weight_kg', 'Weight (kg)'],
+  weight: ['weight_lbs', 'Weight (kg)'],
   reps: ['reps', 'Reps'],
-  distance: ['distance_miles', 'distance_km', 'Distance (meters)'],
+  distance: ['distance_miles', 'Distance (meters)'],
   seconds: ['duration_seconds', 'Seconds'],
   setType: ['set_type', 'Set Type'],
   weightSystem: ['Weight System'],
