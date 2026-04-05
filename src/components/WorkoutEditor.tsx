@@ -301,6 +301,7 @@ export function WorkoutEditor({
 			setConfirmDelete(true);
 			return;
 		}
+		setConfirmDelete(false);
 		onDelete(existing.id);
 	}, [existing, onDelete, confirmDelete]);
 
