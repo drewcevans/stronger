@@ -320,7 +320,7 @@ function ProgressChart({
           />
         ))}
       </svg>
-      <div className="progress-unit">{yUnit}</div>
+      <div className="progress-unit">{yUnit} · max {formatValue(maxVal)}</div>
     </div>
   );
 }
