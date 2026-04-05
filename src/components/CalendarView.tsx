@@ -510,16 +510,21 @@ export function CalendarView({
 
 	return (
 		<div className="calendar-view">
-			{!showPush && (
-				<div className="calendar-push-toggle">
-					<button
-						className="calendar-push-toggle-btn"
-						onClick={() => setShowPush(true)}
-					>
-						<CalendarCog size={16} /> Planner
-					</button>
-				</div>
-			)}
+			<div className="calendar-toolbar">
+				<button
+					className={`calendar-toolbar-btn${showPush ? ' calendar-toolbar-btn-active' : ''}`}
+					onClick={() => setShowPush(!showPush)}
+				>
+					<CalendarCog size={16} /> Planner
+				</button>
+				<button
+					className={`calendar-toolbar-btn${historyMode ? ' calendar-toolbar-btn-active' : ''}`}
+					onClick={handleToggleHistory}
+				>
+					<History size={16} />
+					{historyMode ? 'Hide History' : 'History'}
+				</button>
+			</div>
 			{showPush && (
 				<CalendarPush
 					workouts={workouts}
@@ -527,17 +532,6 @@ export function CalendarView({
 					onUpdateSchedule={onBulkSchedule}
 				/>
 			)}
-
-			{/* History toggle button */}
-			<div className="calendar-history-toggle">
-				<button
-					className={`calendar-history-btn${historyMode ? ' calendar-history-btn-active' : ''}`}
-					onClick={handleToggleHistory}
-				>
-					<History size={16} />
-					{historyMode ? 'Hide History' : 'History'}
-				</button>
-			</div>
 
 			{/* Load more button at top of history */}
 			{historyMode && pastDays.length > 0 && (
