@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Workout, ScheduleEntry } from '../model/index.js';
+import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
 import type { CalendarListEntry, CalendarPushResult, WeeklySlot } from '../google/index.js';
 import { listWritableCalendars, pushEventsToCalendar } from '../google/index.js';
 import { saveCalendarId, loadCalendarId } from '../google/index.js';
@@ -7,6 +7,7 @@ import { Upload, CheckCircle, AlertCircle, Loader, X, CalendarCheck } from 'luci
 
 interface CalendarPushProps {
   workouts: Workout[];
+  cardioActivities: CardioActivity[];
   onClose: () => void;
   onUpdateSchedule: (entries: ScheduleEntry[]) => void;
 }
@@ -27,9 +28,11 @@ function nextMonday(): string {
 
 type PushStatus = 'idle' | 'pushing' | 'success' | 'error';
 
-export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPushProps) {
+export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSchedule }: CalendarPushProps) {
   // Weekly day → workout mapping (7 entries, empty string = no workout)
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
+  // Weekly day → cardio mapping (7 entries, empty string = no cardio)
+  const [cardioSlots, setCardioSlots] = useState<string[]>(Array(7).fill(''));
   const [weeks, setWeeks] = useState(4);
   const [startDate, setStartDate] = useState(nextMonday);
 
@@ -49,6 +52,13 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
     for (const w of workouts) map.set(w.id, w);
     return map;
   }, [workouts]);
+
+  // Cardio lookup map
+  const cardioMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of cardioActivities) map.set(`cardio:${c.id}`, c.name);
+    return map;
+  }, [cardioActivities]);
 
   // Load user's writable calendars on mount
   useEffect(() => {
@@ -85,25 +95,34 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
     });
   }, []);
 
-  const hasSlots = daySlots.some((id) => id !== '');
+  const handleCardioChange = useCallback((dayIndex: number, cardioId: string) => {
+    setCardioSlots((prev) => {
+      const next = [...prev];
+      next[dayIndex] = cardioId;
+      return next;
+    });
+  }, []);
+
+  const hasSlots = daySlots.some((id) => id !== '') || cardioSlots.some((id) => id !== '');
   const canPush = hasSlots && selectedCalendarId && pushStatus !== 'pushing';
 
-  // Generate ScheduleEntry[] from the weekly planner
+  // Generate ScheduleEntry[] from the weekly planner (strength + cardio)
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
     const entries: ScheduleEntry[] = [];
     const [sy, sm, sd] = startDate.split('-').map(Number);
     const start = new Date(sy, sm - 1, sd);
     for (let week = 0; week < weeks; week++) {
       for (let day = 0; day < 7; day++) {
-        const wid = daySlots[day];
-        if (!wid) continue;
         const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + week * 7 + day);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        entries.push({ date: dateStr, workoutId: wid });
+        const wid = daySlots[day];
+        if (wid) entries.push({ date: dateStr, workoutId: wid });
+        const cid = cardioSlots[day];
+        if (cid) entries.push({ date: dateStr, workoutId: cid });
       }
     }
     return entries;
-  }, [daySlots, startDate, weeks]);
+  }, [daySlots, cardioSlots, startDate, weeks]);
 
   const [scheduleUpdated, setScheduleUpdated] = useState(false);
 
@@ -120,14 +139,19 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
     const slots: WeeklySlot[] = [];
     for (let i = 0; i < 7; i++) {
       const wid = daySlots[i];
-      if (!wid) continue;
-      const w = workoutMap.get(wid);
-      if (!w) continue;
-      slots.push({
-        dayIndex: i,
-        workoutId: wid,
-        workoutName: w.name,
-      });
+      if (wid) {
+        const w = workoutMap.get(wid);
+        if (w) {
+          slots.push({ dayIndex: i, workoutId: wid, workoutName: w.name });
+        }
+      }
+      const cid = cardioSlots[i];
+      if (cid) {
+        const name = cardioMap.get(cid);
+        if (name) {
+          slots.push({ dayIndex: i, workoutId: cid, workoutName: name });
+        }
+      }
     }
 
     setPushStatus('pushing');
@@ -151,7 +175,7 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
       });
       setPushStatus('error');
     }
-  }, [canPush, daySlots, workoutMap, selectedCalendarId, startDate, weeks]);
+  }, [canPush, daySlots, cardioSlots, workoutMap, cardioMap, selectedCalendarId, startDate, weeks]);
 
   return (
     <div className="calendar-push">
@@ -162,9 +186,9 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
         </button>
       </div>
 
-      {/* Weekly schedule */}
+      {/* Weekly schedule — strength */}
       <div className="calendar-push-section">
-        <label className="calendar-push-label">Weekly schedule</label>
+        <label className="calendar-push-label">Strength</label>
         <div className="calendar-push-days">
           {DAY_NAMES.map((name, i) => (
             <div key={name} className="calendar-push-day-row">
@@ -185,6 +209,32 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
           ))}
         </div>
       </div>
+
+      {/* Weekly schedule — cardio */}
+      {cardioActivities.length > 0 && (
+        <div className="calendar-push-section">
+          <label className="calendar-push-label">Cardio</label>
+          <div className="calendar-push-days">
+            {DAY_NAMES.map((name, i) => (
+              <div key={name} className="calendar-push-day-row">
+                <span className="calendar-push-day-name">{name}</span>
+                <select
+                  className="calendar-push-select"
+                  value={cardioSlots[i]}
+                  onChange={(e) => handleCardioChange(i, e.target.value)}
+                >
+                  <option value="">— None —</option>
+                  {cardioActivities.map((c) => (
+                    <option key={c.id} value={`cardio:${c.id}`}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Start date */}
       <div className="calendar-push-section">

@@ -174,7 +174,8 @@ export async function pushEventsToCalendar(
 
 	for (const slot of request.slots) {
 		const dates = generateEventDates(request.startDate, slot.dayIndex, request.weeks)
-		const deepLink = buildDeepLink(slot.workoutId)
+		const isCardio = slot.workoutId.startsWith('cardio:')
+		const deepLink = isCardio ? null : buildDeepLink(slot.workoutId)
 
 		for (const date of dates) {
 			// Skip if this workout already exists on this date.
@@ -185,7 +186,7 @@ export async function pushEventsToCalendar(
 
 			const event: CalendarEventResource = {
 				summary: slot.workoutName,
-				description: `Open workout: ${deepLink}`,
+				description: deepLink ? `Open workout: ${deepLink}` : slot.workoutName,
 				start: { date },
 				end: { date },
 			}

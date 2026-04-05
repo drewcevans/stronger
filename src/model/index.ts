@@ -1,4 +1,5 @@
 export type {
+	CardioActivity,
 	ComputedExercise,
 	ComputedSet,
 	ExerciseRole,

@@ -187,6 +187,18 @@ export interface ScheduleEntry {
 }
 
 // ---------------------------------------------------------------------------
+// Cardio activity (read-only, used for planning / calendar sync)
+// ---------------------------------------------------------------------------
+
+/** A simple cardio activity loaded from cardio.json. Not editable in-app. */
+export interface CardioActivity {
+	/** Stable identifier (e.g. "running"). */
+	id: string;
+	/** Human-readable name (e.g. "Running"). */
+	name: string;
+}
+
+// ---------------------------------------------------------------------------
 // Layer 7 – Progression (post-workout weight update proposals)
 // ---------------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ import { computeProgression } from './model/index.js';
 import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
-import { buildWorkoutsFromConfigs, workoutDefinitions } from './data/sample-workouts.js';
+import { buildWorkoutsFromConfigs, workoutDefinitions, defaultCardioActivities } from './data/sample-workouts.js';
 import { WorkoutSelect } from './components/WorkoutSelect.js';
 import { WorkoutView } from './components/WorkoutView.js';
 import { WorkoutEditor } from './components/WorkoutEditor.js';
@@ -614,6 +614,7 @@ function App() {
         />
         <CalendarView
           workouts={workouts}
+          cardioActivities={defaultCardioActivities}
           schedule={schedule}
           logRows={logRows}
           onAssign={handleScheduleAssign}

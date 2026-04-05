@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { Workout, ScheduleEntry, SetType } from '../model/index.js';
+import type { Workout, ScheduleEntry, SetType, CardioActivity } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
 	workouts: Workout[];
+	cardioActivities: CardioActivity[];
 	schedule: ScheduleEntry[];
 	logRows: ParsedLogRow[];
 	onAssign: (date: string, workoutId: string) => void;
@@ -281,6 +282,7 @@ export function SessionDetail({
 
 export function CalendarView({
 	workouts,
+	cardioActivities,
 	schedule,
 	logRows,
 	onAssign,
@@ -318,8 +320,17 @@ export function CalendarView({
 		for (const w of workouts) {
 			map.set(w.id, w.name);
 		}
+		for (const c of cardioActivities) {
+			map.set(`cardio:${c.id}`, c.name);
+		}
 		return map;
-	}, [workouts]);
+	}, [workouts, cardioActivities]);
+
+	// Set of cardio schedule IDs for icon differentiation
+	const cardioIds = useMemo(
+		() => new Set(cardioActivities.map((c) => `cardio:${c.id}`)),
+		[cardioActivities],
+	);
 
 	// Build log sessions grouped by date, using workout names for display
 	const logByDate = useMemo(() => groupLogByDate(logRows, workoutNames), [logRows, workoutNames]);
@@ -442,6 +453,7 @@ export function CalendarView({
 			{showPush && (
 				<CalendarPush
 					workouts={workouts}
+					cardioActivities={cardioActivities}
 					onClose={() => setShowPush(false)}
 					onUpdateSchedule={onBulkSchedule}
 				/>
@@ -500,10 +512,35 @@ export function CalendarView({
 							{dayInfo.scheduled.length > 0 && (
 								<div className="calendar-workouts">
 									{dayInfo.scheduled.map((wid, idx) => {
+										const isCardio = cardioIds.has(wid);
 										const hasLog = loggedWorkoutIds.has(wid);
 										const session = sessionByWorkoutId.get(wid);
 										const deleteKey = session ? sessionKeyStr(session) : null;
 										const isConfirming = deleteKey !== null && confirmDeleteKey === deleteKey;
+										const Icon = isCardio ? HeartPulse : Dumbbell;
+
+										if (isCardio) {
+											return (
+												<div key={`sched-${wid}-${idx}`} className="calendar-workout-item">
+													<span className="calendar-workout-link calendar-workout-link-cardio">
+														<Icon size={14} />
+														<span className="calendar-workout-name">
+															{workoutNames.get(wid) ?? wid}
+														</span>
+													</span>
+													{!isPast && (
+														<button
+															className="calendar-remove-btn"
+															onClick={() => onRemove(dayInfo.date, wid)}
+															aria-label={`Remove ${workoutNames.get(wid) ?? wid}`}
+														>
+															<X size={14} />
+														</button>
+													)}
+												</div>
+											);
+										}
+
 										return (
 											<div key={`sched-${wid}-${idx}`} className="calendar-workout-item">
 												{hasLog && <span className="calendar-completed-bar" />}
@@ -512,7 +549,7 @@ export function CalendarView({
 														className="calendar-workout-link"
 														onClick={() => handleOpenSession(session)}
 													>
-														<Dumbbell size={14} />
+														<Icon size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -520,7 +557,7 @@ export function CalendarView({
 													</button>
 												) : isPast ? (
 													<span className="calendar-workout-link">
-														<Dumbbell size={14} />
+														<Icon size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -530,7 +567,7 @@ export function CalendarView({
 														className="calendar-workout-link calendar-workout-link-strength"
 														onClick={() => onOpenWorkout(wid)}
 													>
-														<Dumbbell size={14} />
+														<Icon size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -625,6 +662,7 @@ export function CalendarView({
 										</button>
 									</div>
 									<div className="calendar-picker-list">
+										<div className="calendar-picker-divider">Strength</div>
 										{workouts.map((w) => (
 											<button
 												key={w.id}
@@ -635,6 +673,21 @@ export function CalendarView({
 												{w.name}
 											</button>
 										))}
+										{cardioActivities.length > 0 && (
+											<>
+												<div className="calendar-picker-divider">Cardio</div>
+												{cardioActivities.map((c) => (
+													<button
+														key={c.id}
+														className="calendar-picker-item calendar-picker-item-cardio"
+														onClick={() => handleAssign(`cardio:${c.id}`)}
+													>
+														<HeartPulse size={14} />
+														{c.name}
+													</button>
+												))}
+											</>
+										)}
 									</div>
 								</div>
 							)}

@@ -1,0 +1,12 @@
+[
+	{ "id": "running", "name": "Running" },
+	{ "id": "cycling", "name": "Cycling" },
+	{ "id": "swimming", "name": "Swimming" },
+	{ "id": "rowing", "name": "Rowing" },
+	{ "id": "hiking", "name": "Hiking" },
+	{ "id": "walking", "name": "Walking" },
+	{ "id": "jump-rope", "name": "Jump Rope" },
+	{ "id": "stair-climber", "name": "Stair Climber" },
+	{ "id": "elliptical", "name": "Elliptical" },
+	{ "id": "yoga", "name": "Yoga" }
+]

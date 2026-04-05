@@ -6,17 +6,24 @@
  * workouts from sheet-sourced configs on subsequent visits.
  */
 
-import type { ExerciseTemplate, LiftConfig, Workout, ComputedExercise } from '../model/index.js';
+import type { ExerciseTemplate, LiftConfig, Workout, ComputedExercise, CardioActivity } from '../model/index.js';
 import { computeExercise } from '../model/index.js';
 
 import exercisesJson from '../../lib/exercises.json';
 import workoutsJson from '../../lib/workouts.json';
+import cardioJson from '../../lib/cardio.json';
 
 // ---------------------------------------------------------------------------
 // Lift configurations — defaults written to the sheet on first connect
 // ---------------------------------------------------------------------------
 
 export const defaultLiftConfigs: LiftConfig[] = exercisesJson as LiftConfig[];
+
+// ---------------------------------------------------------------------------
+// Cardio activities — read-only list for planning / calendar sync
+// ---------------------------------------------------------------------------
+
+export const defaultCardioActivities: CardioActivity[] = cardioJson as CardioActivity[];
 
 // ---------------------------------------------------------------------------
 // Workout definitions (id + name + template list)
