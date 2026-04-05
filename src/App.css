@@ -57,6 +57,7 @@ body {
 
 .workout-select {
 	text-align: center;
+	padding-bottom: 30vh;
 }
 
 /* Banner & logo */
@@ -106,9 +107,10 @@ body {
 	line-height: 1.6;
 	color: var(--color-accent);
 	text-shadow:
-		0 0 4px color-mix(in srgb, var(--color-accent) 70%, transparent),
-		0 0 12px color-mix(in srgb, var(--color-accent) 35%, transparent),
-		0 0 30px color-mix(in srgb, var(--color-accent) 15%, transparent);
+		0 0 5px color-mix(in srgb, var(--color-accent) 85%, transparent),
+		0 0 16px color-mix(in srgb, var(--color-accent) 65%, transparent),
+		0 0 36px color-mix(in srgb, var(--color-accent) 35%, transparent),
+		0 0 55px color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
 
