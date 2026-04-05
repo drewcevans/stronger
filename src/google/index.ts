@@ -44,11 +44,18 @@ export {
 	createScheduleTab,
 	readSchedule,
 	writeSchedule,
+	cardioActivityToRow,
+	parseCardioRow,
+	verifyCardioTab,
+	createCardioTab,
+	readCardioActivities,
+	writeDefaultCardioActivities,
+	writeCardioActivities,
 } from './sheets.ts'
 export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
 export type { CalendarListEntry } from './types.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
-export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
+export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
 export {
 	listWritableCalendars,
 	buildDeepLink,
