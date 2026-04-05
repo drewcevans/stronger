@@ -660,6 +660,7 @@ function App() {
           spreadsheetId={spreadsheetId}
           onImportComplete={handleImportComplete}
           appendLogRows={appendLogRows}
+          onDisconnectSheet={handleDisconnected}
         />
       </>
     );

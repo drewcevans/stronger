@@ -1,17 +1,19 @@
 import { useState, useCallback, useRef } from 'react';
-import { Upload, FileText, AlertTriangle, Check, Loader } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Check, Loader, Unlink } from 'lucide-react';
 import { parseHevyCsv, convertHevyRows, computeImportSummary } from '../model/hevy-import.js';
+import { clearSheetId } from '../google/storage.js';
 import type { ImportSummary } from '../model/hevy-import.js';
 
 interface Props {
   spreadsheetId: string;
   onImportComplete: () => void;
   appendLogRows: (spreadsheetId: string, rows: (string | number | boolean)[][]) => Promise<void>;
+  onDisconnectSheet: () => void;
 }
 
 type ImportPhase = 'idle' | 'preview' | 'importing' | 'done' | 'error';
 
-export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows }: Props) {
+export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows, onDisconnectSheet }: Props) {
   const [phase, setPhase] = useState<ImportPhase>('idle');
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [convertedRows, setConvertedRows] = useState<(string | number | boolean)[][] | null>(null);
@@ -168,6 +170,25 @@ export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows }:
             </button>
           </div>
         )}
+      </div>
+
+      <div className="settings-section settings-section-disconnect">
+        <h3 className="settings-section-title">
+          <Unlink size={18} />
+          Google Sheet
+        </h3>
+        <p className="settings-disconnect-description">
+          Disconnect the current Google Sheet to connect a different one.
+          Your data in the sheet will not be deleted.
+        </p>
+        <button className="btn-danger" onClick={() => {
+          if (window.confirm('Disconnect this Google Sheet? You can reconnect it later.')) {
+            clearSheetId();
+            onDisconnectSheet();
+          }
+        }}>
+          Disconnect Sheet
+        </button>
       </div>
     </div>
   );
