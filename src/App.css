@@ -106,10 +106,9 @@ body {
 	line-height: 1.6;
 	color: var(--color-accent);
 	text-shadow:
-		0 0 7px var(--color-accent),
-		0 0 20px var(--color-accent),
-		0 0 42px color-mix(in srgb, var(--color-accent) 60%, transparent),
-		0 0 80px color-mix(in srgb, var(--color-accent) 30%, transparent);
+		0 0 4px color-mix(in srgb, var(--color-accent) 70%, transparent),
+		0 0 12px color-mix(in srgb, var(--color-accent) 35%, transparent),
+		0 0 30px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 
