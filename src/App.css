@@ -1243,6 +1243,41 @@ body {
 	color: var(--color-accent);
 }
 
+/* Day header actions (flags + add button) */
+.calendar-day-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+}
+
+.calendar-flag-icon {
+	color: var(--color-text-muted);
+	opacity: 0.7;
+}
+
+/* Flag checkboxes in picker */
+.calendar-flag-checkboxes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.75rem;
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.calendar-flag-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+	cursor: pointer;
+}
+
+.calendar-flag-checkbox input[type="checkbox"] {
+	accent-color: var(--color-primary);
+	margin: 0;
+}
+
 /* Calendar toolbar (planner + history on one row) */
 .calendar-toolbar {
 	display: flex;

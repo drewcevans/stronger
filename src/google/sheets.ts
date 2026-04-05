@@ -6,7 +6,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, CardioActivity } from '../model/types.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -1135,15 +1135,15 @@ export async function readLogZone(
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the schedule header (row 1). */
-const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:B1`
+const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:F1`
 
 /** A1 range for reading all schedule data (row 2 onward, generous upper bound). */
-const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:B10000`
+const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:F10000`
 
 /** A1 range covering the full schedule tab for clearing. */
-const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:B10000`
+const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:F10000`
 
-const SCHEDULE_HEADER: string[] = ['date', 'workoutId']
+const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'travel', 'visitors']
 
 /* ------------------------------------------------------------------ */
 /*  Schedule tab – serialization                                       */
@@ -1152,23 +1152,45 @@ const SCHEDULE_HEADER: string[] = ['date', 'workoutId']
 /**
  * Parse a single raw schedule row (string array) into a {@link ScheduleEntry}.
  * Returns `null` for incomplete or invalid rows.
+ * A row with flags but no workoutId is valid (flag-only row).
  */
 export function parseScheduleRow(row: string[]): ScheduleEntry | null {
-	if (!row || row.length < 2) return null
+	if (!row || row.length < 1) return null
 
 	const date = (row[0] ?? '').trim()
 	const workoutId = (row[1] ?? '').trim()
 
-	if (!date || !workoutId) return null
+	if (!date) return null
 	// Basic date format validation: YYYY-MM-DD
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
 
-	return { date, workoutId }
+	// Parse flag columns (columns 2-5, TRUE/FALSE strings)
+	const flags: DayFlags = {
+		home: (row[2] ?? '').trim().toUpperCase() === 'TRUE',
+		elsewhere: (row[3] ?? '').trim().toUpperCase() === 'TRUE',
+		travel: (row[4] ?? '').trim().toUpperCase() === 'TRUE',
+		visitors: (row[5] ?? '').trim().toUpperCase() === 'TRUE',
+	}
+
+	const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors
+
+	// Must have either a workoutId or at least one flag
+	if (!workoutId && !hasFlags) return null
+
+	return { date, workoutId, ...(hasFlags ? { flags } : {}) }
 }
 
 /** Convert a {@link ScheduleEntry} to a spreadsheet row. */
 export function scheduleEntryToRow(entry: ScheduleEntry): string[] {
-	return [entry.date, entry.workoutId]
+	const f = entry.flags
+	return [
+		entry.date,
+		entry.workoutId,
+		f?.home ? 'TRUE' : '',
+		f?.elsewhere ? 'TRUE' : '',
+		f?.travel ? 'TRUE' : '',
+		f?.visitors ? 'TRUE' : '',
+	]
 }
 
 /* ------------------------------------------------------------------ */

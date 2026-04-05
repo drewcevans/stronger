@@ -178,12 +178,26 @@ export interface SetResult {
 // Layer 6 – Schedule (day→workout mapping for calendar planning)
 // ---------------------------------------------------------------------------
 
+/** Boolean flags that can be applied to any calendar day. */
+export interface DayFlags {
+	/** At home. */
+	home: boolean;
+	/** Away / vacation. */
+	elsewhere: boolean;
+	/** Traveling. */
+	travel: boolean;
+	/** Have visitors. */
+	visitors: boolean;
+}
+
 /** A single schedule entry mapping a date to a workout. */
 export interface ScheduleEntry {
 	/** Date in YYYY-MM-DD format. */
 	date: string;
-	/** References a Workout.id (e.g. "A", "B"). */
+	/** References a Workout.id (e.g. "A", "B"). Empty string for flag-only rows. */
 	workoutId: string;
+	/** Optional day-level flags (only meaningful on the first row for a given date). */
+	flags?: DayFlags;
 }
 
 // ---------------------------------------------------------------------------

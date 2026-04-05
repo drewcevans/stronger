@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import type { Workout, ScheduleEntry, SetType, CardioActivity } from '../model/index.js';
+import type { Workout, ScheduleEntry, SetType, CardioActivity, DayFlags } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
@@ -24,6 +24,7 @@ interface CalendarViewProps {
 		sessionStartTime: string,
 	) => void;
 	onBulkSchedule: (entries: ScheduleEntry[]) => void;
+	onUpdateFlags: (date: string, flags: DayFlags) => void;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -134,17 +135,20 @@ export interface DayInfo {
 	date: string;
 	scheduled: string[]; // workoutIds from schedule
 	sessions: LogSession[]; // completed workout sessions from log
+	flags?: DayFlags; // day-level flags
 }
 
 export function buildDayInfos(
 	dates: string[],
 	scheduleMap: Map<string, string[]>,
 	logByDate: Map<string, LogSession[]>,
+	flagsMap?: Map<string, DayFlags>,
 ): DayInfo[] {
 	return dates.map((date) => ({
 		date,
 		scheduled: scheduleMap.get(date) ?? [],
 		sessions: logByDate.get(date) ?? [],
+		flags: flagsMap?.get(date),
 	}));
 }
 
@@ -291,6 +295,7 @@ export function CalendarView({
 	onUpdateLogRows,
 	onDeleteSession,
 	onBulkSchedule,
+	onUpdateFlags,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
 	const [showPush, setShowPush] = useState(false);
@@ -307,9 +312,21 @@ export function CalendarView({
 	const scheduleMap = useMemo(() => {
 		const map = new Map<string, string[]>();
 		for (const entry of schedule) {
+			if (!entry.workoutId) continue; // skip flag-only rows
 			const existing = map.get(entry.date) ?? [];
 			existing.push(entry.workoutId);
 			map.set(entry.date, existing);
+		}
+		return map;
+	}, [schedule]);
+
+	// Build a map of date → DayFlags for fast lookup (flags come from the first entry for a date)
+	const flagsMap = useMemo(() => {
+		const map = new Map<string, DayFlags>();
+		for (const entry of schedule) {
+			if (entry.flags && !map.has(entry.date)) {
+				map.set(entry.date, entry.flags);
+			}
 		}
 		return map;
 	}, [schedule]);
@@ -381,8 +398,8 @@ export function CalendarView({
 		const combined = historyMode
 			? [...pastDays.slice().reverse(), ...futureDays]
 			: futureDays;
-		return buildDayInfos(combined, scheduleMap, logByDate);
-	}, [historyMode, pastDays, futureDays, scheduleMap, logByDate]);
+		return buildDayInfos(combined, scheduleMap, logByDate, flagsMap);
+	}, [historyMode, pastDays, futureDays, scheduleMap, logByDate, flagsMap]);
 
 	const handleOpenSession = useCallback((session: LogSession) => {
 		setActiveSession(session);
@@ -498,15 +515,21 @@ export function CalendarView({
 									<span className="calendar-display-date">{display}</span>
 									{today && <span className="calendar-today-badge">Today</span>}
 								</div>
-								{!isPast && (
-									<button
-										className="calendar-add-btn"
-										onClick={() => setAddingForDate(dayInfo.date)}
-										aria-label={`Add workout to ${display}`}
-									>
-										<CalendarPlus size={18} />
-									</button>
-								)}
+								<div className="calendar-day-actions">
+									{dayInfo.flags?.home && <House size={14} className="calendar-flag-icon" />}
+									{dayInfo.flags?.elsewhere && <Palmtree size={14} className="calendar-flag-icon" />}
+									{dayInfo.flags?.travel && <Plane size={14} className="calendar-flag-icon" />}
+									{dayInfo.flags?.visitors && <Users size={14} className="calendar-flag-icon" />}
+									{!isPast && (
+										<button
+											className="calendar-add-btn"
+											onClick={() => setAddingForDate(dayInfo.date)}
+											aria-label={`Add workout to ${display}`}
+										>
+											<CalendarPlus size={18} />
+										</button>
+									)}
+								</div>
 							</div>
 
 							{/* Scheduled workouts */}
@@ -661,6 +684,29 @@ export function CalendarView({
 										>
 											<X size={16} />
 										</button>
+									</div>
+									<div className="calendar-flag-checkboxes">
+										{([
+											['home', 'Home', House],
+											['elsewhere', 'Elsewhere', Palmtree],
+											['travel', 'Travel', Plane],
+											['visitors', 'Visitors', Users],
+										] as const).map(([key, label, Icon]) => {
+											const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false };
+											return (
+												<label key={key} className="calendar-flag-checkbox">
+													<input
+														type="checkbox"
+														checked={currentFlags[key]}
+														onChange={(e) => {
+															onUpdateFlags(dayInfo.date, { ...currentFlags, [key]: e.target.checked });
+														}}
+													/>
+													<Icon size={14} />
+													{label}
+												</label>
+											);
+										})}
 									</div>
 									<div className="calendar-picker-list">
 										{cardioActivities.length > 0 && workouts.length > 0 && (
