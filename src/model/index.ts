@@ -2,6 +2,7 @@ export type {
 	CardioActivity,
 	ComputedExercise,
 	ComputedSet,
+	DayFlags,
 	ExerciseRole,
 	ExerciseTemplate,
 	GearType,

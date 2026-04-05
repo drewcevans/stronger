@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, CardioActivity } from './model/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity } from './model/index.js';
 import { computeProgression } from './model/index.js';
 import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
@@ -263,6 +263,33 @@ function App() {
         }
         return true;
       });
+      setSchedule(updated);
+      if (spreadsheetId) {
+        void writeSchedule(spreadsheetId, updated);
+      }
+    },
+    [schedule, spreadsheetId],
+  );
+
+  const handleUpdateFlags = useCallback(
+    (date: string, flags: DayFlags) => {
+      const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors;
+      // Find the first entry for this date to apply flags to
+      const firstIdx = schedule.findIndex((e) => e.date === date);
+      let updated: ScheduleEntry[];
+      if (firstIdx >= 0) {
+        // Update flags on the first entry for this date
+        updated = schedule.map((e, i) =>
+          i === firstIdx ? { ...e, flags: hasFlags ? flags : undefined } : e,
+        );
+      } else if (hasFlags) {
+        // No existing entry — add a flag-only row
+        updated = [...schedule, { date, workoutId: '', flags }];
+      } else {
+        return; // No flags and no existing entry — nothing to do
+      }
+      // Remove flag-only rows that no longer have flags
+      updated = updated.filter((e) => e.workoutId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors)));
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);
@@ -644,6 +671,7 @@ function App() {
           onUpdateLogRows={handleUpdateLogRows}
           onDeleteSession={handleDeleteSession}
           onBulkSchedule={handleBulkSchedule}
+          onUpdateFlags={handleUpdateFlags}
         />
       </>
     );
