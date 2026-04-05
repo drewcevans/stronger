@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Activity, Dumbbell, History, Save, Check, CalendarCog } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
@@ -92,7 +92,6 @@ interface SessionKey {
 export interface LogSession {
 	key: SessionKey;
 	workoutName: string;
-	category: 'strength' | 'cardio';
 	rows: ParsedLogRow[];
 }
 
@@ -109,7 +108,6 @@ export function groupLogByDate(logRows: ParsedLogRow[], workoutNames?: Map<strin
 			session = {
 				key: { date: row.date, workoutId: row.workoutId, startTime: row.startTime },
 				workoutName: workoutNames?.get(row.workoutId) ?? row.workoutId,
-				category: row.category,
 				rows: [],
 			};
 			sessionMap.set(key, session);
@@ -190,71 +188,7 @@ export function SessionDetail({
 		setDirty(false);
 	}, [editRows, onSave]);
 
-	if (session.category === 'cardio') {
-		// Cardio session: single row with duration, distance, elevation, weight
-		const row = editRows[0];
-		return (
-			<div className="session-detail">
-				<div className="session-detail-header">
-					<button className="session-detail-back" onClick={onClose}>
-						<ChevronLeft size={20} />
-					</button>
-					<div className="session-detail-title">
-						<span className="session-detail-name">{name}</span>
-						<span className="session-detail-date">{display}</span>
-					</div>
-					<button
-						className={`session-detail-save${dirty ? ' session-detail-save-active' : ''}`}
-						onClick={handleSave}
-						disabled={!dirty || saving}
-					>
-						{saving ? <Check size={18} /> : <Save size={18} />}
-					</button>
-				</div>
-
-				<div className="session-detail-cardio">
-					<div className="session-detail-cardio-field">
-						<label>Duration (min)</label>
-						<input
-							type="number"
-							inputMode="decimal"
-							value={row.duration ?? ''}
-							onChange={(e) => updateRow(0, { duration: e.target.value ? Number(e.target.value) : undefined })}
-						/>
-					</div>
-					<div className="session-detail-cardio-field">
-						<label>Distance (mi)</label>
-						<input
-							type="number"
-							inputMode="decimal"
-							value={row.distance ?? ''}
-							onChange={(e) => updateRow(0, { distance: e.target.value ? Number(e.target.value) : undefined })}
-						/>
-					</div>
-					<div className="session-detail-cardio-field">
-						<label>Elevation (ft)</label>
-						<input
-							type="number"
-							inputMode="decimal"
-							value={row.elevation ?? ''}
-							onChange={(e) => updateRow(0, { elevation: e.target.value ? Number(e.target.value) : undefined })}
-						/>
-					</div>
-					<div className="session-detail-cardio-field">
-						<label>Weight (lbs)</label>
-						<input
-							type="number"
-							inputMode="decimal"
-							value={row.cardioWeight ?? ''}
-							onChange={(e) => updateRow(0, { cardioWeight: e.target.value ? Number(e.target.value) : undefined })}
-						/>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	// Strength session: group rows by exercise
+	// Group rows by exercise
 	const exerciseOrder: string[] = [];
 	const exerciseMap = new Map<string, number[]>();
 	for (let i = 0; i < editRows.length; i++) {
@@ -389,26 +323,6 @@ export function CalendarView({
 
 	// Build log sessions grouped by date, using workout names for display
 	const logByDate = useMemo(() => groupLogByDate(logRows, workoutNames), [logRows, workoutNames]);
-
-	// Build a set of cardio workout IDs for quick lookup
-	const cardioIds = useMemo(() => {
-		const ids = new Set<string>();
-		for (const w of workouts) {
-			if (w.category === 'cardio') ids.add(w.id);
-		}
-		return ids;
-	}, [workouts]);
-
-	// Split workouts into strength and cardio for the picker
-	const { strengthWorkouts, cardioWorkouts } = useMemo(() => {
-		const strengthWorkouts: Workout[] = [];
-		const cardioWorkouts: Workout[] = [];
-		for (const w of workouts) {
-			if (w.category === 'cardio') cardioWorkouts.push(w);
-			else strengthWorkouts.push(w);
-		}
-		return { strengthWorkouts, cardioWorkouts };
-	}, [workouts]);
 
 	const handleAssign = useCallback(
 		(workoutId: string) => {
@@ -586,20 +500,19 @@ export function CalendarView({
 							{dayInfo.scheduled.length > 0 && (
 								<div className="calendar-workouts">
 									{dayInfo.scheduled.map((wid, idx) => {
-										const isCardio = cardioIds.has(wid);
 										const hasLog = loggedWorkoutIds.has(wid);
 										const session = sessionByWorkoutId.get(wid);
 										const deleteKey = session ? sessionKeyStr(session) : null;
 										const isConfirming = deleteKey !== null && confirmDeleteKey === deleteKey;
 										return (
-											<div key={`sched-${wid}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
+											<div key={`sched-${wid}-${idx}`} className="calendar-workout-item">
 												{hasLog && <span className="calendar-completed-bar" />}
 												{hasLog && session ? (
 													<button
 														className="calendar-workout-link"
 														onClick={() => handleOpenSession(session)}
 													>
-														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
+														<Dumbbell size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -607,7 +520,7 @@ export function CalendarView({
 													</button>
 												) : isPast ? (
 													<span className="calendar-workout-link">
-														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
+														<Dumbbell size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -617,7 +530,7 @@ export function CalendarView({
 														className="calendar-workout-link calendar-workout-link-strength"
 														onClick={() => onOpenWorkout(wid)}
 													>
-														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
+														<Dumbbell size={14} />
 														<span className="calendar-workout-name">
 															{workoutNames.get(wid) ?? wid}
 														</span>
@@ -662,18 +575,17 @@ export function CalendarView({
 									{dayInfo.sessions
 										.filter((s) => !dayInfo.scheduled.includes(s.key.workoutId))
 										.map((session, idx) => {
-											const isCardio = session.category === 'cardio';
 											const name = workoutNames.get(session.key.workoutId) ?? session.workoutName;
 											const deleteKey = sessionKeyStr(session);
 											const isConfirming = confirmDeleteKey === deleteKey;
 											return (
-												<div key={`log-${session.key.workoutId}-${idx}`} className={`calendar-workout-item${isCardio ? ' calendar-workout-cardio' : ''}`}>
+												<div key={`log-${session.key.workoutId}-${idx}`} className="calendar-workout-item">
 													<span className="calendar-completed-bar" />
 													<button
 														className="calendar-workout-link"
 														onClick={() => handleOpenSession(session)}
 													>
-														{isCardio ? <Activity size={14} /> : <Dumbbell size={14} />}
+														<Dumbbell size={14} />
 														<span className="calendar-workout-name">{name}</span>
 														<ChevronRight size={14} />
 													</button>
@@ -713,26 +625,13 @@ export function CalendarView({
 										</button>
 									</div>
 									<div className="calendar-picker-list">
-										{strengthWorkouts.map((w) => (
+										{workouts.map((w) => (
 											<button
 												key={w.id}
 												className="calendar-picker-item calendar-picker-item-strength"
 												onClick={() => handleAssign(w.id)}
 											>
 												<Dumbbell size={14} />
-												{w.name}
-											</button>
-										))}
-										{cardioWorkouts.length > 0 && strengthWorkouts.length > 0 && (
-											<div className="calendar-picker-divider">Cardio</div>
-										)}
-										{cardioWorkouts.map((w) => (
-											<button
-												key={w.id}
-												className="calendar-picker-item calendar-picker-item-cardio"
-												onClick={() => handleAssign(w.id)}
-											>
-												<Activity size={14} />
 												{w.name}
 											</button>
 										))}

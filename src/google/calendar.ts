@@ -16,8 +16,6 @@ export interface WeeklySlot {
 	dayIndex: number
 	workoutId: string
 	workoutName: string
-	/** 'strength' or 'cardio' — determines the deep-link route. */
-	category: 'strength' | 'cardio'
 }
 
 export interface CalendarPushRequest {
@@ -111,12 +109,10 @@ function buildExistingEventKeys(events: CalendarEventItem[]): Set<string> {
  */
 export function buildDeepLink(
 	workoutId: string,
-	category: 'strength' | 'cardio',
 	baseUrl?: string,
 ): string {
 	const base = baseUrl ?? window.location.href.split('#')[0]
-	const route = category === 'cardio' ? 'cardio' : 'workout'
-	return `${base}#/${route}/${encodeURIComponent(workoutId)}`
+	return `${base}#/workout/${encodeURIComponent(workoutId)}`
 }
 
 /**
@@ -178,7 +174,7 @@ export async function pushEventsToCalendar(
 
 	for (const slot of request.slots) {
 		const dates = generateEventDates(request.startDate, slot.dayIndex, request.weeks)
-		const deepLink = buildDeepLink(slot.workoutId, slot.category)
+		const deepLink = buildDeepLink(slot.workoutId)
 
 		for (const date of dates) {
 			// Skip if this workout already exists on this date.

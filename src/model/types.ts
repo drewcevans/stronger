@@ -39,8 +39,7 @@ export interface LiftConfig {
 	barWeight: number;
 	/** Equipment type used for this exercise. */
 	gear: GearType;
-	/** Exercise category — defaults to 'strength' when absent. */
-	category?: ActivityType;
+
 }
 
 // ---------------------------------------------------------------------------
@@ -139,17 +138,12 @@ export interface ComputedExercise {
 // Layer 4 – Workout (named collection of exercises)
 // ---------------------------------------------------------------------------
 
-/** Broad category for an activity entry. */
-export type ActivityType = 'strength' | 'cardio';
-
 /** A named workout containing an ordered list of computed exercises. */
 export interface Workout {
 	/** Short identifier (e.g. "A", "B", "C", "D"). */
 	id: string;
 	/** Display name (e.g. "Workout A – Bench / Squat"). */
 	name: string;
-	/** Broad category — strength workouts have sets/reps, cardio entries do not. */
-	category: ActivityType;
 	/** Whether this workout appears in the favorites list. */
 	favorite: boolean;
 	/** Ordered list of exercises for this workout. */

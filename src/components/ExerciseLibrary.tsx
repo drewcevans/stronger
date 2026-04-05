@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { LiftConfig, GearType } from '../model/index.js';
-import { Activity, BicepsFlexed, Pencil, Plus, ChevronDown } from 'lucide-react';
+import { BicepsFlexed, Pencil, Plus } from 'lucide-react';
 
 /** Generate a kebab-case ID from a name. */
 export function nameToId(name: string): string {
@@ -21,11 +21,6 @@ export const DEFAULT_STRENGTH_CONFIG: Omit<LiftConfig, 'id' | 'name'> = {
 	gear: 'barbell' as GearType,
 };
 
-/** Check whether a LiftConfig represents a cardio exercise. */
-export function isCardioExercise(config: LiftConfig): boolean {
-	return config.category === 'cardio';
-}
-
 interface ExerciseLibraryProps {
 	configs: LiftConfig[];
 	onEdit: (exerciseId: string) => void;
@@ -35,30 +30,22 @@ interface ExerciseLibraryProps {
 function ExerciseCard({
 	config,
 	onEdit,
-	cardio,
 }: {
 	config: LiftConfig;
 	onEdit: (id: string) => void;
-	cardio: boolean;
 }) {
 	return (
-		<div className={`exercise-card-wrapper${cardio ? ' exercise-card-cardio' : ''}`}>
+		<div className="exercise-card-wrapper">
 			<button
 				className="exercise-card"
 				onClick={() => onEdit(config.id)}
 			>
-				{cardio ? (
-					<span className="cardio-badge"><Activity size={24} /></span>
-				) : (
-					<span className="strength-badge"><BicepsFlexed size={24} /></span>
-				)}
+				<span className="strength-badge"><BicepsFlexed size={24} /></span>
 				<div className="exercise-card-info">
 					<span className="exercise-name">{config.name}</span>
-					{!cardio && (
-						<span className="exercise-detail">
-							{config.topSetWeight} lbs · {config.gear}
-						</span>
-					)}
+					<span className="exercise-detail">
+						{config.topSetWeight} lbs · {config.gear}
+					</span>
 				</div>
 			</button>
 			<button
@@ -73,48 +60,18 @@ function ExerciseCard({
 }
 
 export function ExerciseLibrary({ configs, onEdit, onNew }: ExerciseLibraryProps) {
-	const { strength, cardio } = useMemo(() => {
-		const strength: LiftConfig[] = [];
-		const cardio: LiftConfig[] = [];
-		for (const c of configs) {
-			if (isCardioExercise(c)) {
-				cardio.push(c);
-			} else {
-				strength.push(c);
-			}
-		}
-		// Sort alphabetically
-		strength.sort((a, b) => a.name.localeCompare(b.name));
-		cardio.sort((a, b) => a.name.localeCompare(b.name));
-		return { strength, cardio };
+	const sorted = useMemo(() => {
+		return [...configs].sort((a, b) => a.name.localeCompare(b.name));
 	}, [configs]);
-
-	const [cardioOpen, setCardioOpen] = useState(false);
 
 	return (
 		<div className="exercise-library">
 			<h2 className="exercise-library-title">Exercises</h2>
 
 			<div className="exercise-list">
-				{strength.map((c) => (
-					<ExerciseCard key={c.id} config={c} onEdit={onEdit} cardio={false} />
+				{sorted.map((c) => (
+					<ExerciseCard key={c.id} config={c} onEdit={onEdit} />
 				))}
-
-				{cardio.length > 0 && (
-					<>
-						<button
-							className="btn-more-toggle"
-							onClick={() => setCardioOpen(!cardioOpen)}
-							aria-expanded={cardioOpen}
-						>
-							Cardio ({cardio.length})
-							<ChevronDown size={16} className={`more-chevron${cardioOpen ? ' more-chevron-open' : ''}`} />
-						</button>
-						{cardioOpen && cardio.map((c) => (
-							<ExerciseCard key={c.id} config={c} onEdit={onEdit} cardio={true} />
-						))}
-					</>
-				)}
 
 				<button className="btn-new-workout" onClick={onNew}>
 					<Plus size={20} /> New Exercise

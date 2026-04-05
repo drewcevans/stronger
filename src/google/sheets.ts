@@ -6,7 +6,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, ActivityType } from '../model/types.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -14,16 +14,16 @@ import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the config zone (open-ended rows). */
-const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A:J`
+const CONFIG_RANGE = `'${TARGET_TAB_NAME}'!A:I`
 
 /** A1 range for the log zone header (row 1 of the log tab). */
-const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:R1`
+const LOG_HEADER_RANGE = `'${LOG_TAB_NAME}'!A1:M1`
 
 /** A1 range used for appending log data (row 2 onward). */
-const LOG_APPEND_RANGE = `'${LOG_TAB_NAME}'!A2:R2`
+const LOG_APPEND_RANGE = `'${LOG_TAB_NAME}'!A2:M2`
 
 /** A1 range for reading all log data (row 2 onward, open-ended). */
-const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:R`
+const LOG_READ_RANGE = `'${LOG_TAB_NAME}'!A2:M`
 
 const CONFIG_HEADER: string[] = [
 	'id',
@@ -35,7 +35,6 @@ const CONFIG_HEADER: string[] = [
 	'roundingFactor',
 	'barWeight',
 	'gear',
-	'category',
 ]
 
 const LOG_HEADER: string[] = [
@@ -52,11 +51,6 @@ const LOG_HEADER: string[] = [
 	'actualWeight',
 	'actualReps',
 	'completed',
-	'category',
-	'duration',
-	'distance',
-	'elevation',
-	'cardioWeight',
 ]
 
 /* ------------------------------------------------------------------ */
@@ -216,7 +210,6 @@ export function liftConfigToRow(
 		config.roundingFactor,
 		config.barWeight,
 		config.gear,
-		config.category ?? 'strength',
 	]
 }
 
@@ -278,11 +271,7 @@ export function rowToLiftConfig(row: string[]): LiftConfig | null {
 	const rawGear = (row[8] ?? '').trim().toLowerCase();
 	const gear = VALID_GEAR_TYPES.has(rawGear) ? rawGear as LiftConfig['gear'] : 'other';
 
-	// category (col 9) — default to 'strength' if absent or unrecognized
-	const rawCategory = (row[9] ?? '').trim().toLowerCase()
-	const category = rawCategory === 'cardio' ? 'cardio' as const : undefined
-
-	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear, ...(category ? { category } : {}) };
+	return { id, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear };
 }
 
 /* ------------------------------------------------------------------ */
@@ -412,40 +401,6 @@ export function buildLogRow(
 		result.actualWeight,
 		result.actualReps,
 		result.completed ? 'TRUE' : 'FALSE',
-		'strength',
-		'', '', '', '',
-	]
-}
-
-export interface CardioLogData {
-	duration?: number
-	distance?: number
-	elevation?: number
-	weight?: number
-}
-
-/** Build a single log row for a cardio workout. */
-export function buildCardioLogRow(
-	ctx: LogContext,
-	workoutName: string,
-	data: CardioLogData,
-): (string | number | boolean)[] {
-	return [
-		ctx.date,
-		ctx.startTime,
-		ctx.endTime,
-		ctx.workoutId,
-		workoutName,
-		'',
-		1,
-		'cardio',
-		0, 0, 0, 0,
-		'TRUE',
-		'cardio',
-		data.duration ?? '',
-		data.distance ?? '',
-		data.elevation ?? '',
-		data.weight ?? '',
 	]
 }
 
@@ -535,46 +490,23 @@ export async function updateLogRows(
 
 		// Row number in sheet = rawIdx + 2 (data starts at row 2, 0-indexed)
 		const sheetRow = rawIdx + 2
-		const range = `'${LOG_TAB_NAME}'!A${sheetRow}:R${sheetRow}`
+		const range = `'${LOG_TAB_NAME}'!A${sheetRow}:M${sheetRow}`
 
-		const rowData = updated.category === 'cardio'
-			? [
-				updated.date,
-				updated.startTime,
-				updated.endTime,
-				updated.workoutId,
-				updated.exerciseName,
-				updated.liftId,
-				updated.setNumber,
-				updated.setType,
-				updated.plannedWeight,
-				updated.plannedReps,
-				updated.actualWeight,
-				updated.actualReps,
-				updated.completed ? 'TRUE' : 'FALSE',
-				'cardio',
-				updated.duration ?? '',
-				updated.distance ?? '',
-				updated.elevation ?? '',
-				updated.cardioWeight ?? '',
-			]
-			: [
-				updated.date,
-				updated.startTime,
-				updated.endTime,
-				updated.workoutId,
-				updated.exerciseName,
-				updated.liftId,
-				updated.setNumber,
-				updated.setType,
-				updated.plannedWeight,
-				updated.plannedReps,
-				updated.actualWeight,
-				updated.actualReps,
-				updated.completed ? 'TRUE' : 'FALSE',
-				'strength',
-				'', '', '', '',
-			]
+		const rowData = [
+			updated.date,
+			updated.startTime,
+			updated.endTime,
+			updated.workoutId,
+			updated.exerciseName,
+			updated.liftId,
+			updated.setNumber,
+			updated.setType,
+			updated.plannedWeight,
+			updated.plannedReps,
+			updated.actualWeight,
+			updated.actualReps,
+			updated.completed ? 'TRUE' : 'FALSE',
+		]
 
 		await gapi.client.sheets.spreadsheets.values.update({
 			spreadsheetId,
@@ -667,7 +599,7 @@ export async function deleteLogSession(
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the workout defs tab (open-ended rows). */
-const WORKOUT_DEFS_RANGE = `'${WORKOUT_DEFS_TAB_NAME}'!A:N`
+const WORKOUT_DEFS_RANGE = `'${WORKOUT_DEFS_TAB_NAME}'!A:M`
 
 const WORKOUT_DEFS_HEADER: string[] = [
 	'workoutId',
@@ -682,7 +614,6 @@ const WORKOUT_DEFS_HEADER: string[] = [
 	'maxReps',
 	'amrap',
 	'comment',
-	'category',
 	'favorite',
 ]
 
@@ -746,47 +677,28 @@ export function workoutDefsToRows(
 ): (string | number)[][] {
 	const rows: (string | number)[][] = []
 	for (const def of defs) {
-		const category = def.category ?? 'strength'
-		if (def.templates.length === 0) {
-			// Cardio or other template-less activities: emit a single marker row
-			rows.push([
-				def.id,
-				def.name,
-				'',  // exerciseOrder
-				'',  // exerciseRole
-				'',  // liftId
-				'',  // setType
-				'',  // percentage
-				'',  // weightBasis
-				'',  // minReps
-				'',  // maxReps
-				'',  // amrap
-				'',  // comment
-				category,
-				def.favorite ? 'TRUE' : 'FALSE',
-			])
-		} else {
-			for (let ei = 0; ei < def.templates.length; ei++) {
-				const tpl = def.templates[ei]
-				const exerciseOrder = ei + 1
-				for (const set of tpl.sets) {
-					rows.push([
-						def.id,
-						def.name,
-						exerciseOrder,
-						tpl.role,
-						tpl.liftId,
-						set.setType,
-						set.percentage,
-						encodeWeightBasis(set.weightBasis),
-						set.minReps,
-						set.maxReps,
-						set.amrap ? 'TRUE' : 'FALSE',
-						set.comment ?? '',
-						category,
-						def.favorite ? 'TRUE' : 'FALSE',
-					])
-				}
+		// Skip workouts with no exercises
+		if (def.templates.length === 0) continue
+
+		for (let ei = 0; ei < def.templates.length; ei++) {
+			const tpl = def.templates[ei]
+			const exerciseOrder = ei + 1
+			for (const set of tpl.sets) {
+				rows.push([
+					def.id,
+					def.name,
+					exerciseOrder,
+					tpl.role,
+					tpl.liftId,
+					set.setType,
+					set.percentage,
+					encodeWeightBasis(set.weightBasis),
+					set.minReps,
+					set.maxReps,
+					set.amrap ? 'TRUE' : 'FALSE',
+					set.comment ?? '',
+					def.favorite ? 'TRUE' : 'FALSE',
+				])
 			}
 		}
 	}
@@ -811,58 +723,29 @@ interface WorkoutDefRow {
 	exerciseOrder: number
 	exerciseRole: string
 	liftId: string
-	category: ActivityType
 	favorite: boolean
 	set: SetTemplate
 }
 
-/** A marker row for a template-less (e.g. cardio) activity. */
-interface WorkoutDefCardioRow {
-	workoutId: string
-	workoutName: string
-	category: ActivityType
-	favorite: boolean
-	cardio: true
-}
-
-type ParsedDefRow = WorkoutDefRow | WorkoutDefCardioRow
-
-/** Type guard: is this a cardio marker row (no exercise/set data)? */
-function isCardioMarkerRow(row: ParsedDefRow): row is WorkoutDefCardioRow {
-	return 'cardio' in row
-}
-
 /**
- * Parse a single spreadsheet row into a {@link ParsedDefRow}.
+ * Parse a single spreadsheet row into a {@link WorkoutDefRow}.
  * Returns `null` for invalid or incomplete rows.
- *
- * Supports two flavours:
- * 1. **Strength row** – all 12 original columns present (category in col 13 optional, defaults to 'strength').
- * 2. **Cardio marker row** – workoutId + workoutName present, exerciseOrder blank, category = 'cardio'.
  */
-export function parseWorkoutDefRow(row: string[]): ParsedDefRow | null {
+export function parseWorkoutDefRow(row: string[]): WorkoutDefRow | null {
 	if (!row || row.length < 2) return null
 
 	const workoutId = (row[0] ?? '').trim()
 	const workoutName = (row[1] ?? '').trim()
 	if (!workoutId || !workoutName) return null
 
-	// Detect category from column 13 (index 12) — default to 'strength'
-	const rawCategory = (row[12] ?? '').trim().toLowerCase()
-	const category: ActivityType = rawCategory === 'cardio' ? 'cardio' : 'strength'
+	// Detect favorite from column 13 (index 12) — default to false
+	const favorite = (row[12] ?? '').trim().toUpperCase() === 'TRUE'
 
-	// Detect favorite from column 14 (index 13) — default to false
-	const favorite = (row[13] ?? '').trim().toUpperCase() === 'TRUE'
-
-	// If the exerciseOrder column is empty, this is a cardio marker row
+	// Exercise order must be present
 	const rawOrder = (row[2] ?? '').trim()
-	if (!rawOrder) {
-		// Only allow cardio activities to have no exercise data
-		if (category !== 'cardio') return null
-		return { workoutId, workoutName, category, favorite, cardio: true }
-	}
+	if (!rawOrder) return null
 
-	// Full strength row — validate all fields
+	// Full row — validate all fields
 	if (row.length < 11) return null
 
 	const exerciseRole = (row[3] ?? '').trim()
@@ -907,7 +790,7 @@ export function parseWorkoutDefRow(row: string[]): ParsedDefRow | null {
 		...(comment ? { comment } : {}),
 	}
 
-	return { workoutId, workoutName, exerciseOrder, exerciseRole, liftId, category, favorite, set }
+	return { workoutId, workoutName, exerciseOrder, exerciseRole, liftId, favorite, set }
 }
 
 /**
@@ -917,31 +800,23 @@ export function parseWorkoutDefRow(row: string[]): ParsedDefRow | null {
  * (caller should map lift names afterward using configs if desired).
  */
 export function rowsToWorkoutDefs(
-	rows: ParsedDefRow[],
+	rows: WorkoutDefRow[],
 	liftNames?: ReadonlyMap<string, string>,
 ): WorkoutDefinition[] {
 	// Group by workoutId, preserving row order for stable workout ordering
 	const workoutOrder: string[] = []
-	const workoutMap = new Map<string, { name: string; category: ActivityType; favorite: boolean; rows: WorkoutDefRow[] }>()
+	const workoutMap = new Map<string, { name: string; favorite: boolean; rows: WorkoutDefRow[] }>()
 	for (const r of rows) {
 		if (!workoutMap.has(r.workoutId)) {
 			workoutOrder.push(r.workoutId)
-			workoutMap.set(r.workoutId, { name: r.workoutName, category: r.category, favorite: r.favorite, rows: [] })
+			workoutMap.set(r.workoutId, { name: r.workoutName, favorite: r.favorite, rows: [] })
 		}
-		if (!isCardioMarkerRow(r)) {
-			workoutMap.get(r.workoutId)!.rows.push(r)
-		}
+		workoutMap.get(r.workoutId)!.rows.push(r)
 	}
 
 	const defs: WorkoutDefinition[] = []
 	for (const wid of workoutOrder) {
 		const entry = workoutMap.get(wid)!
-
-		// Cardio entries with no set rows → template-less definition
-		if (entry.rows.length === 0) {
-			defs.push({ id: wid, name: entry.name, category: entry.category, favorite: entry.favorite, templates: [] })
-			continue
-		}
 
 		// Group by exerciseOrder within this workout
 		const exerciseOrderSet: number[] = []
@@ -972,7 +847,7 @@ export function rowsToWorkoutDefs(
 			})
 		}
 
-		defs.push({ id: wid, name: entry.name, category: entry.category, favorite: entry.favorite, templates })
+		defs.push({ id: wid, name: entry.name, favorite: entry.favorite, templates })
 	}
 
 	return defs
@@ -1044,7 +919,7 @@ export async function readWorkoutDefs(
 	// Skip header, parse data rows, filter out nulls
 	const parsed = allRows.slice(1)
 		.map(parseWorkoutDefRow)
-		.filter((r): r is ParsedDefRow => r !== null)
+		.filter((r): r is WorkoutDefRow => r !== null)
 
 	if (parsed.length === 0) return null
 
@@ -1112,7 +987,7 @@ export async function writeWorkoutDefs(
 /*  Log zone – read & parse                                            */
 /* ------------------------------------------------------------------ */
 
-/** A parsed log row representing one completed set or cardio entry. */
+/** A parsed log row representing one completed set. */
 export interface ParsedLogRow {
 	date: string
 	startTime: string
@@ -1127,11 +1002,6 @@ export interface ParsedLogRow {
 	actualWeight: number
 	actualReps: number
 	completed: boolean
-	category: 'strength' | 'cardio'
-	duration?: number
-	distance?: number
-	elevation?: number
-	cardioWeight?: number
 }
 
 /**
@@ -1155,45 +1025,7 @@ export function parseLogRow(row: string[]): ParsedLogRow | null {
 	const rawActualReps = (row[11] ?? '').trim()
 	const rawCompleted = (row[12] ?? '').trim().toUpperCase()
 
-	// New columns (may be absent in old rows)
-	const rawCategory = (row[13] ?? '').trim().toLowerCase()
-	const rawDuration = (row[14] ?? '').trim()
-	const rawDistance = (row[15] ?? '').trim()
-	const rawElevation = (row[16] ?? '').trim()
-	const rawCardioWeight = (row[17] ?? '').trim()
-
-	const category: 'strength' | 'cardio' = rawCategory === 'cardio' ? 'cardio' : 'strength'
-
 	if (!date || !startTime || !workoutId || !exerciseName) return null
-
-	// Cardio rows don't need valid set numbers or actual weight/reps
-	if (category === 'cardio') {
-		const duration = rawDuration ? Number(rawDuration) : undefined
-		const distance = rawDistance ? Number(rawDistance) : undefined
-		const elevation = rawElevation ? Number(rawElevation) : undefined
-		const cardioWeight = rawCardioWeight ? Number(rawCardioWeight) : undefined
-
-		return {
-			date,
-			startTime,
-			endTime,
-			workoutId,
-			exerciseName,
-			liftId,
-			setNumber: 1,
-			setType: 'cardio',
-			plannedWeight: 0,
-			plannedReps: 0,
-			actualWeight: 0,
-			actualReps: 0,
-			completed: true,
-			category,
-			...(duration !== undefined && Number.isFinite(duration) ? { duration } : {}),
-			...(distance !== undefined && Number.isFinite(distance) ? { distance } : {}),
-			...(elevation !== undefined && Number.isFinite(elevation) ? { elevation } : {}),
-			...(cardioWeight !== undefined && Number.isFinite(cardioWeight) ? { cardioWeight } : {}),
-		}
-	}
 
 	const setNumber = Number(rawSetNumber)
 	const plannedWeight = Number(rawPlannedWeight)
@@ -1218,7 +1050,6 @@ export function parseLogRow(row: string[]): ParsedLogRow | null {
 		actualWeight,
 		actualReps,
 		completed: rawCompleted === 'TRUE',
-		category,
 	}
 }
 
