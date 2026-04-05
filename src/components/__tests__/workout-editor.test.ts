@@ -43,7 +43,6 @@ describe('toEditable', () => {
 		const def: WorkoutDefinition = {
 			id: 'A',
 			name: 'Workout A',
-			category: 'strength',
 			templates: [
 				{
 					liftId: 'bench',
@@ -66,7 +65,6 @@ describe('toEditable', () => {
 		const result = toEditable(def);
 		expect(result.id).toBe('A');
 		expect(result.name).toBe('Workout A');
-		expect(result.category).toBe('strength');
 		expect(result.exercises).toHaveLength(1);
 		expect(result.exercises[0].liftId).toBe('bench');
 		expect(result.exercises[0].role).toBe('primary');
@@ -104,28 +102,6 @@ describe('toEditable', () => {
 		expect(result.exercises[1].role).toBe('assistance');
 		expect(result.exercises[2].role).toBe('primary');
 	});
-
-	it('defaults category to strength when omitted', () => {
-		const def: WorkoutDefinition = {
-			id: 'X',
-			name: 'Test',
-			templates: [],
-		};
-		const result = toEditable(def);
-		expect(result.category).toBe('strength');
-	});
-
-	it('converts a cardio definition', () => {
-		const def: WorkoutDefinition = {
-			id: 'run',
-			name: 'Easy Run',
-			category: 'cardio',
-			templates: [],
-		};
-		const result = toEditable(def);
-		expect(result.category).toBe('cardio');
-		expect(result.exercises).toHaveLength(0);
-	});
 });
 
 /* ------------------------------------------------------------------ */
@@ -142,7 +118,6 @@ describe('fromEditable', () => {
 		const editable: EditableWorkout = {
 			id: 'A',
 			name: 'Workout A',
-			category: 'strength',
 			exercises: [
 				{
 					liftId: 'bench',
@@ -156,7 +131,6 @@ describe('fromEditable', () => {
 		const result = fromEditable(editable, configs);
 		expect(result.id).toBe('A');
 		expect(result.name).toBe('Workout A');
-		expect(result.category).toBe('strength');
 		expect(result.templates).toHaveLength(1);
 		expect(result.templates[0].liftId).toBe('bench');
 		expect(result.templates[0].name).toBe('Bench Press');
@@ -168,7 +142,6 @@ describe('fromEditable', () => {
 		const editable: EditableWorkout = {
 			id: 'X',
 			name: 'Test',
-			category: 'strength',
 			exercises: [
 				{ liftId: 'squat', role: 'secondary', sets: [{ setType: 'work', percentage: 0.85, weightBasis: { kind: 'topSet' }, minReps: 5, maxReps: 5, amrap: false }] },
 			],
@@ -182,7 +155,6 @@ describe('fromEditable', () => {
 		const editable: EditableWorkout = {
 			id: 'X',
 			name: 'Test',
-			category: 'strength',
 			exercises: [
 				{ liftId: 'unknown-lift', role: 'assistance', sets: [{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 8, maxReps: 8, amrap: false }] },
 			],
@@ -192,23 +164,10 @@ describe('fromEditable', () => {
 		expect(result.templates[0].role).toBe('assistance');
 	});
 
-	it('converts a cardio workout', () => {
-		const editable: EditableWorkout = {
-			id: 'run',
-			name: 'Easy Run',
-			category: 'cardio',
-			exercises: [],
-		};
-		const result = fromEditable(editable, configs);
-		expect(result.category).toBe('cardio');
-		expect(result.templates).toHaveLength(0);
-	});
-
 	it('preserves set comments through round-trip', () => {
 		const def: WorkoutDefinition = {
 			id: 'A',
 			name: 'Workout A',
-			category: 'strength',
 			templates: [
 				{
 					liftId: 'bench',

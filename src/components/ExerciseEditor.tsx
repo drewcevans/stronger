@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { LiftConfig, GearType } from '../model/index.js';
 import { ArrowLeft } from 'lucide-react';
-import { nameToId, DEFAULT_STRENGTH_CONFIG, isCardioExercise } from './ExerciseLibrary.js';
+import { nameToId, DEFAULT_STRENGTH_CONFIG } from './ExerciseLibrary.js';
 
 const GEAR_OPTIONS: GearType[] = ['barbell', 'dumbbell', 'band', 'bodyweight', 'other'];
 
@@ -14,12 +14,8 @@ interface ExerciseEditorProps {
 
 export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: ExerciseEditorProps) {
 	const isNew = !existing;
-	const isCardio = existing ? isCardioExercise(existing) : false;
 
 	const [name, setName] = useState(existing?.name ?? '');
-	const [exerciseType, setExerciseType] = useState<'strength' | 'cardio'>(
-		isCardio ? 'cardio' : 'strength',
-	);
 	const [topSetWeight, setTopSetWeight] = useState(existing?.topSetWeight ?? DEFAULT_STRENGTH_CONFIG.topSetWeight);
 	const [backoffWeight, setBackoffWeight] = useState(existing?.backoffWeight ?? DEFAULT_STRENGTH_CONFIG.backoffWeight);
 	const [increment, setIncrement] = useState(existing?.increment ?? DEFAULT_STRENGTH_CONFIG.increment);
@@ -43,34 +39,19 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 		if (!isValid || saving) return;
 		setSaving(true);
 
-		const config: LiftConfig = exerciseType === 'cardio'
-			? {
-				id: effectiveId,
-				name: name.trim(),
-				topSetWeight: 0,
-				backoffWeight: 0,
-				increment: 0,
-				minimumWeight: 0,
-				roundingFactor: 0,
-				barWeight: 0,
-				gear: 'bodyweight',
-				category: 'cardio',
-			}
-			: {
-				id: effectiveId,
-				name: name.trim(),
-				topSetWeight,
-				backoffWeight,
-				increment,
-				minimumWeight,
-				roundingFactor,
-				barWeight,
-				gear,
-			};
+		const config: LiftConfig = {
+			id: effectiveId,
+			name: name.trim(),
+			topSetWeight,
+			backoffWeight,
+			increment,
+			minimumWeight,
+			roundingFactor,
+			barWeight,
+			gear,
+		};
 		onSave(config);
-	}, [isValid, saving, effectiveId, name, exerciseType, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear, onSave]);
-
-	const showWeightFields = exerciseType === 'strength' && !isCardio;
+	}, [isValid, saving, effectiveId, name, topSetWeight, backoffWeight, increment, minimumWeight, roundingFactor, barWeight, gear, onSave]);
 
 	return (
 		<div className="exercise-editor">
@@ -108,133 +89,99 @@ export function ExerciseEditor({ existing, allConfigs, onSave, onCancel }: Exerc
 					)}
 				</label>
 
-				{/* Type selector (only for new exercises) */}
-				{isNew && (
-					<div className="editor-field">
-						<span className="editor-label">Type</span>
-						<div className="editor-type-toggle">
-							<button
-								className={`editor-type-btn${exerciseType === 'strength' ? ' editor-type-active' : ''}`}
-								onClick={() => setExerciseType('strength')}
-								type="button"
-							>
-								Strength
-							</button>
-							<button
-								className={`editor-type-btn${exerciseType === 'cardio' ? ' editor-type-active' : ''}`}
-								onClick={() => setExerciseType('cardio')}
-								type="button"
-							>
-								Cardio
-							</button>
-						</div>
-					</div>
-				)}
+				{/* Weight parameters */}
+				<label className="editor-field">
+					<span className="editor-label">Top Set Weight (lbs)</span>
+					<input
+						className="editor-input"
+						type="number"
+						min="0"
+						step="any"
+						value={topSetWeight}
+						onFocus={(e) => e.target.select()}
+						onChange={(e) => setTopSetWeight(Number(e.target.value) || 0)}
+					/>
+				</label>
 
-				{/* Weight parameters (strength only) */}
-				{showWeightFields && (
-					<>
-						<label className="editor-field">
-							<span className="editor-label">Top Set Weight (lbs)</span>
-							<input
-								className="editor-input"
-								type="number"
-								min="0"
-								step="any"
-								value={topSetWeight}
-								onFocus={(e) => e.target.select()}
-								onChange={(e) => setTopSetWeight(Number(e.target.value) || 0)}
-							/>
-						</label>
+				<label className="editor-field">
+					<span className="editor-label">Backoff Weight (lbs)</span>
+					<input
+						className="editor-input"
+						type="number"
+						min="0"
+						step="any"
+						value={backoffWeight}
+						onFocus={(e) => e.target.select()}
+						onChange={(e) => setBackoffWeight(Number(e.target.value) || 0)}
+					/>
+				</label>
 
-						<label className="editor-field">
-							<span className="editor-label">Backoff Weight (lbs)</span>
-							<input
-								className="editor-input"
-								type="number"
-								min="0"
-								step="any"
-								value={backoffWeight}
-								onFocus={(e) => e.target.select()}
-								onChange={(e) => setBackoffWeight(Number(e.target.value) || 0)}
-							/>
-						</label>
+				<label className="editor-field">
+					<span className="editor-label">Increment (lbs)</span>
+					<input
+						className="editor-input"
+						type="number"
+						min="0"
+						step="any"
+						value={increment}
+						onFocus={(e) => e.target.select()}
+						onChange={(e) => setIncrement(Number(e.target.value) || 0)}
+					/>
+				</label>
 
-						<label className="editor-field">
-							<span className="editor-label">Increment (lbs)</span>
-							<input
-								className="editor-input"
-								type="number"
-								min="0"
-								step="any"
-								value={increment}
-								onFocus={(e) => e.target.select()}
-								onChange={(e) => setIncrement(Number(e.target.value) || 0)}
-							/>
-						</label>
+				<label className="editor-field">
+					<span className="editor-label">Minimum Weight (lbs)</span>
+					<input
+						className="editor-input"
+						type="number"
+						min="0"
+						step="any"
+						value={minimumWeight}
+						onFocus={(e) => e.target.select()}
+						onChange={(e) => setMinimumWeight(Number(e.target.value) || 0)}
+					/>
+				</label>
 
-						<label className="editor-field">
-							<span className="editor-label">Minimum Weight (lbs)</span>
-							<input
-								className="editor-input"
-								type="number"
-								min="0"
-								step="any"
-								value={minimumWeight}
-								onFocus={(e) => e.target.select()}
-								onChange={(e) => setMinimumWeight(Number(e.target.value) || 0)}
-							/>
-						</label>
+				<label className="editor-field">
+					<span className="editor-label">Rounding Factor</span>
+					<input
+						className="editor-input"
+						type="number"
+						min="0"
+						step="any"
+						value={roundingFactor}
+						onFocus={(e) => e.target.select()}
+						onChange={(e) => setRoundingFactor(Number(e.target.value) || 0)}
+					/>
+				</label>
 
-						<label className="editor-field">
-							<span className="editor-label">Rounding Factor</span>
-							<input
-								className="editor-input"
-								type="number"
-								min="0"
-								step="any"
-								value={roundingFactor}
-								onFocus={(e) => e.target.select()}
-								onChange={(e) => setRoundingFactor(Number(e.target.value) || 0)}
-							/>
-						</label>
+				<label className="editor-field">
+					<span className="editor-label">Bar Weight (lbs)</span>
+					<input
+						className="editor-input"
+						type="number"
+						min="0"
+						step="any"
+						value={barWeight}
+						onFocus={(e) => e.target.select()}
+						onChange={(e) => setBarWeight(Number(e.target.value) || 0)}
+					/>
+				</label>
 
-						<label className="editor-field">
-							<span className="editor-label">Bar Weight (lbs)</span>
-							<input
-								className="editor-input"
-								type="number"
-								min="0"
-								step="any"
-								value={barWeight}
-								onFocus={(e) => e.target.select()}
-								onChange={(e) => setBarWeight(Number(e.target.value) || 0)}
-							/>
-						</label>
-
-						<div className="editor-field">
-							<span className="editor-label">Gear Type</span>
-							<select
-								className="editor-select"
-								value={gear}
-								onChange={(e) => setGear(e.target.value as GearType)}
-							>
-								{GEAR_OPTIONS.map((g) => (
-									<option key={g} value={g}>
-										{g.charAt(0).toUpperCase() + g.slice(1)}
-									</option>
-								))}
-							</select>
-						</div>
-					</>
-				)}
-
-				{/* Cardio info (existing cardio exercises) */}
-				{!isNew && isCardio && (
-					<p className="editor-hint">
-						Cardio exercises have no weight parameters to edit.
-					</p>
-				)}
+				<div className="editor-field">
+					<span className="editor-label">Gear Type</span>
+					<select
+						className="editor-select"
+						value={gear}
+						onChange={(e) => setGear(e.target.value as GearType)}
+					>
+						{GEAR_OPTIONS.map((g) => (
+							<option key={g} value={g}>
+								{g.charAt(0).toUpperCase() + g.slice(1)}
+							</option>
+						))}
+					</select>
+				</div>
 			</div>
 		</div>
 	);

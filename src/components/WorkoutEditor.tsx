@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import type { SetTemplate, WeightBasis, SetType, LiftConfig, ExerciseRole } from '../model/index.js';
 import type { WorkoutDefinition } from '../data/sample-workouts.js';
-import type { ActivityType } from '../model/types.js';
 
 /** Local state for an exercise being edited. */
 export interface EditableExercise {
@@ -15,7 +14,6 @@ export interface EditableExercise {
 export interface EditableWorkout {
 	id: string;
 	name: string;
-	category: ActivityType;
 	exercises: EditableExercise[];
 }
 
@@ -77,7 +75,6 @@ export function toEditable(def: WorkoutDefinition): EditableWorkout {
 	return {
 		id: def.id,
 		name: def.name,
-		category: def.category ?? 'strength',
 		exercises: def.templates.map((t) => ({
 			liftId: t.liftId,
 			role: t.role,
@@ -92,7 +89,6 @@ export function fromEditable(e: EditableWorkout, configs: LiftConfig[], existing
 	return {
 		id: e.id,
 		name: e.name,
-		category: e.category,
 		favorite: existing?.favorite,
 		templates: e.exercises.map((ex) => {
 			const liftName = liftMap.get(ex.liftId) ?? ex.liftId;
@@ -120,7 +116,6 @@ export function WorkoutEditor({
 			: {
 					id: '',
 					name: '',
-					category: 'strength',
 					exercises: [],
 				},
 	);
@@ -149,13 +144,11 @@ export function WorkoutEditor({
 	if (!workout.name.trim()) errors.push('Workout name is required');
 	if (!effectiveId) errors.push('Workout ID is required');
 	if (isNew && usedIds.has(effectiveId)) errors.push(`ID "${effectiveId}" is already in use`);
-	if (workout.category === 'strength') {
-		if (workout.exercises.length === 0) errors.push('Add at least one exercise');
-		for (let i = 0; i < workout.exercises.length; i++) {
-			const ex = workout.exercises[i];
-			if (!ex.liftId) errors.push(`Exercise ${i + 1}: select a lift`);
-			if (ex.sets.length === 0) errors.push(`Exercise ${i + 1}: add at least one set`);
-		}
+	if (workout.exercises.length === 0) errors.push('Add at least one exercise');
+	for (let i = 0; i < workout.exercises.length; i++) {
+		const ex = workout.exercises[i];
+		if (!ex.liftId) errors.push(`Exercise ${i + 1}: select a lift`);
+		if (ex.sets.length === 0) errors.push(`Exercise ${i + 1}: add at least one set`);
 	}
 	const isValid = errors.length === 0;
 
@@ -166,15 +159,6 @@ export function WorkoutEditor({
 
 	const updateId = useCallback((id: string) => {
 		setWorkout((prev) => ({ ...prev, id }));
-	}, []);
-
-	const updateCategory = useCallback((category: ActivityType) => {
-		setWorkout((prev) => ({
-			...prev,
-			category,
-			// Clear exercises when switching to cardio — they aren't used
-			exercises: category === 'cardio' ? [] : prev.exercises,
-		}));
 	}, []);
 
 	// --- Exercise-level updates ---
@@ -349,23 +333,11 @@ export function WorkoutEditor({
 						/>
 					</label>
 				)}
-				<label className="editor-field">
-					<span className="editor-field-label">Category</span>
-					<select
-						className="editor-select"
-						value={workout.category}
-						onChange={(e) => updateCategory(e.target.value as ActivityType)}
-					>
-						<option value="strength">Strength</option>
-						<option value="cardio">Cardio</option>
-					</select>
-				</label>
 			</section>
 
 			{/* Exercises */}
-			{workout.category === 'strength' && (
-				<>
-					{workout.exercises.map((exercise, exerciseIdx) => (
+			<>
+				{workout.exercises.map((exercise, exerciseIdx) => (
 						<section key={exerciseIdx} className="editor-exercise">
 							<div className="editor-exercise-header">
 								<span className="editor-exercise-number">
@@ -585,7 +557,6 @@ export function WorkoutEditor({
 						<Plus size={20} /> Add Exercise
 					</button>
 				</>
-			)}
 
 			{/* Validation errors */}
 			{errors.length > 0 && (

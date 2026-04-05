@@ -186,32 +186,7 @@ body {
 	font-weight: 500;
 }
 
-/* Category divider between strength and cardio */
-.category-divider {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding: 0.25rem 0;
-}
-
-.category-divider::before,
-.category-divider::after {
-	content: '';
-	flex: 1;
-	height: 1px;
-	background: var(--color-border);
-}
-
-.category-divider-label {
-	font-size: 0.75rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-	white-space: nowrap;
-}
-
 /* Workout card icon badges */
-.cardio-badge,
 .strength-badge {
 	display: flex;
 	align-items: center;
@@ -220,20 +195,8 @@ body {
 	height: 3rem;
 	border-radius: 50%;
 	flex-shrink: 0;
-}
-
-.cardio-badge {
 	background: rgba(0, 229, 255, 0.12);
 	color: var(--color-primary);
-}
-
-.strength-badge {
-	background: rgba(0, 229, 255, 0.12);
-	color: var(--color-primary);
-}
-
-.workout-card-cardio {
-	border-style: dashed;
 }
 
 /* -----------------------------------------------------------------------
@@ -570,62 +533,6 @@ body {
 
 .btn-finish:active {
 	opacity: 0.85;
-}
-
-/* Cardio logging fields */
-.cardio-fields {
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-	padding: 1rem 0;
-}
-
-.cardio-field {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 0.75rem 1rem;
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
-}
-
-.cardio-label {
-	font-size: 0.95rem;
-	font-weight: 500;
-	color: var(--color-text);
-}
-
-.cardio-input-group {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.cardio-input-group input {
-	width: 5rem;
-	padding: 0.5rem;
-	font-size: 1.1rem;
-	text-align: right;
-	background: var(--color-bg);
-	border: 1px solid var(--color-border);
-	border-radius: var(--radius);
-	color: var(--color-text);
-}
-
-.cardio-input-group input:focus {
-	border-color: var(--color-primary);
-	outline: none;
-}
-
-.cardio-input-group input::placeholder {
-	color: var(--color-text-muted);
-}
-
-.cardio-unit {
-	font-size: 0.8rem;
-	color: var(--color-text-muted);
-	min-width: 1.5rem;
 }
 
 /* Finish summary */
@@ -1320,32 +1227,10 @@ body {
 	background: var(--color-surface-alt);
 }
 
-.calendar-picker-item-cardio {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
 .calendar-picker-item-strength {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-}
-
-/* Cardio workout in calendar day */
-.calendar-workout-cardio {
-	opacity: 0.85;
-}
-
-.calendar-workout-link-cardio {
-	flex: 1;
-	display: flex;
-	align-items: center;
-	gap: 0.375rem;
-	font-size: 0.875rem;
-	font-weight: 500;
-	padding: 0.25rem 0;
-	min-height: 36px;
 }
 
 /* Calendar toolbar (planner + history on one row) */
@@ -1647,36 +1532,6 @@ body {
 .session-detail-set-work { border-left: 3px solid var(--color-work); }
 .session-detail-set-backoff { border-left: 3px solid var(--color-backoff); }
 .session-detail-set-joker { border-left: 3px solid var(--color-joker); }
-
-/* Cardio session detail */
-.session-detail-cardio {
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-	padding: 0.5rem 0;
-}
-
-.session-detail-cardio-field {
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
-.session-detail-cardio-field label {
-	font-size: 0.75rem;
-	font-weight: 600;
-	text-transform: uppercase;
-	color: var(--color-text-muted);
-}
-
-.session-detail-cardio-field input {
-	background: var(--color-surface);
-	border: 1px solid var(--color-border);
-	color: var(--color-text);
-	border-radius: 8px;
-	font-size: 1rem;
-	padding: 0.75rem;
-}
 
 /* -----------------------------------------------------------------------
    Calendar push (Google Calendar integration)
@@ -2402,10 +2257,6 @@ body {
 
 .exercise-library .exercise-card:active {
 	background: var(--color-surface-hover);
-}
-
-.exercise-card-wrapper.exercise-card-cardio {
-	border-style: dashed;
 }
 
 .exercise-card-info {

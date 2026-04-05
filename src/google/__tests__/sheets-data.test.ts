@@ -20,7 +20,7 @@ describe('liftConfigToRow', () => {
 		gear: 'barbell',
 	};
 
-	it('serializes all ten fields in order', () => {
+	it('serializes all nine fields in order', () => {
 		const row = liftConfigToRow(config);
 		expect(row).toEqual([
 			'bench',
@@ -32,12 +32,11 @@ describe('liftConfigToRow', () => {
 			5,
 			45,
 			'barbell',
-			'strength',
 		]);
 	});
 
-	it('returns exactly 10 columns', () => {
-		expect(liftConfigToRow(config)).toHaveLength(10);
+	it('returns exactly 9 columns', () => {
+		expect(liftConfigToRow(config)).toHaveLength(9);
 	});
 });
 
@@ -162,7 +161,7 @@ describe('buildLogRow', () => {
 		actualSetType: 'work',
 	};
 
-	it('returns a row with all 18 columns', () => {
+	it('returns a row with all 13 columns', () => {
 		const row = buildLogRow(
 			ctx,
 			'Primary: Bench Press',
@@ -172,7 +171,7 @@ describe('buildLogRow', () => {
 			planned,
 			result,
 		);
-		expect(row).toHaveLength(18);
+		expect(row).toHaveLength(13);
 	});
 
 	it('populates columns in the correct order', () => {
@@ -199,8 +198,6 @@ describe('buildLogRow', () => {
 			170,
 			7,
 			'TRUE',
-			'strength',
-			'', '', '', '',
 		]);
 	});
 

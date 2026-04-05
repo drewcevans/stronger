@@ -17,7 +17,6 @@ const QUALIFYING_SET_TYPES = new Set(['work', 'backoff', 'joker']);
 function isQualifyingSet(row: ParsedLogRow): boolean {
   return (
     row.completed &&
-    row.category !== 'cardio' &&
     QUALIFYING_SET_TYPES.has(row.setType)
   );
 }

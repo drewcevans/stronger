@@ -127,7 +127,6 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
         dayIndex: i,
         workoutId: wid,
         workoutName: w.name,
-        category: w.category ?? 'strength',
       });
     }
 

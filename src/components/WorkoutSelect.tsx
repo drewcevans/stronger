@@ -5,7 +5,7 @@ import type { LogSession } from './CalendarView.js';
 import { groupLogByDate } from './CalendarView.js';
 import { Banner } from './Banner.js';
 import { MotivationalQuote } from './MotivationalQuote.js';
-import { Activity, BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
+import { BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -24,14 +24,12 @@ function WorkoutCard({
 	onSelect,
 	onEdit,
 	onToggleFavorite,
-	cardio,
 	done,
 }: {
 	w: Workout;
 	onSelect: (w: Workout) => void;
 	onEdit?: (id: string) => void;
 	onToggleFavorite?: (id: string, fav: boolean) => void;
-	cardio?: boolean;
 	done?: boolean;
 }) {
 	return (
@@ -46,14 +44,10 @@ function WorkoutCard({
 				</button>
 			)}
 			<button
-				className={`workout-card${cardio ? ' workout-card-cardio' : ''}${done ? ' workout-card-done' : ''}`}
+				className={`workout-card${done ? ' workout-card-done' : ''}`}
 				onClick={() => onSelect(w)}
 			>
-				{cardio ? (
-					<span className="cardio-badge"><Activity size={24} /></span>
-				) : (
-					<span className="strength-badge"><BicepsFlexed size={24} /></span>
-				)}
+				<span className="strength-badge"><BicepsFlexed size={24} /></span>
 				<span className="workout-name">{w.name}</span>
 			</button>
 			{onEdit && (
@@ -154,7 +148,6 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 								key={w.id}
 								w={w}
 								onSelect={() => handleTodayCardClick(w, done)}
-								cardio={w.category === 'cardio'}
 								done={done}
 							/>
 						))}
@@ -169,7 +162,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 			) : (
 				<div className="workout-list">
 					{favorites.map((w) => (
-						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio={w.category === 'cardio'} />
+						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
 					))}
 					{others.length > 0 && (
 						<>
@@ -182,7 +175,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 								<ChevronDown size={16} className={`more-chevron${moreOpen ? ' more-chevron-open' : ''}`} />
 							</button>
 							{moreOpen && others.map((w) => (
-								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} cardio={w.category === 'cardio'} />
+								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
 							))}
 						</>
 					)}

@@ -40,7 +40,6 @@ function makeLogRow(overrides: Partial<ParsedLogRow> = {}): ParsedLogRow {
 		actualWeight: 185,
 		actualReps: 5,
 		completed: true,
-		category: 'strength',
 		...overrides,
 	};
 }
@@ -73,16 +72,6 @@ describe('groupLogByDate', () => {
 	it('returns empty map for empty input', () => {
 		const result = groupLogByDate([]);
 		expect(result.size).toBe(0);
-	});
-
-	it('correctly identifies cardio sessions', () => {
-		const rows: ParsedLogRow[] = [
-			makeLogRow({ category: 'cardio', workoutId: 'running' }),
-		];
-
-		const result = groupLogByDate(rows);
-		const sessions = result.get('2026-04-01')!;
-		expect(sessions[0].category).toBe('cardio');
 	});
 
 	it('uses workoutNames map for session display name when provided', () => {
@@ -118,7 +107,6 @@ describe('buildDayInfos', () => {
 		const session: LogSession = {
 			key: { date: '2026-04-01', workoutId: 'workout-a', startTime: '2026-04-01T10:00:00.000Z' },
 			workoutName: 'Bench Press',
-			category: 'strength',
 			rows: [makeLogRow()],
 		};
 
@@ -146,7 +134,6 @@ describe('buildDayInfos', () => {
 		const session: LogSession = {
 			key: { date: '2026-04-01', workoutId: 'workout-x', startTime: '2026-04-01T10:00:00.000Z' },
 			workoutName: 'Unscheduled Workout',
-			category: 'strength',
 			rows: [makeLogRow({ workoutId: 'workout-x' })],
 		};
 		const logByDate = new Map([['2026-04-01', [session]]]);

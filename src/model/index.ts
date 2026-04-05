@@ -1,5 +1,4 @@
 export type {
-	ActivityType,
 	ComputedExercise,
 	ComputedSet,
 	ExerciseRole,
