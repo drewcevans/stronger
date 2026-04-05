@@ -306,7 +306,8 @@ export function CalendarView({
 	const historyTopRef = useRef<HTMLDivElement>(null);
 	const todayRef = useRef<HTMLDivElement>(null);
 
-	const futureDays = useMemo(() => generateFutureDays(28), []);
+	const [futureDayCount, setFutureDayCount] = useState(30);
+	const futureDays = useMemo(() => generateFutureDays(futureDayCount), [futureDayCount]);
 
 	// Build a map of date → workoutIds for fast lookup
 	const scheduleMap = useMemo(() => {
@@ -382,6 +383,11 @@ export function CalendarView({
 		const moreDays = generatePastDays(oldest, 7);
 		setPastDays((prev) => [...prev, ...moreDays]);
 	}, [pastDays]);
+
+	// Load more future days
+	const handleLoadMoreFuture = useCallback(() => {
+		setFutureDayCount((prev) => prev + 30);
+	}, []);
 
 	// Scroll to today when history mode is activated
 	useEffect(() => {
@@ -758,6 +764,13 @@ export function CalendarView({
 						</div>
 					);
 				})}
+			</div>
+
+			{/* Load more future days */}
+			<div className="calendar-load-more">
+				<button className="calendar-load-more-btn" onClick={handleLoadMoreFuture}>
+					Load more days
+				</button>
 			</div>
 		</div>
 	);
