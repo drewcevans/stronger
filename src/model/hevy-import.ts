@@ -259,6 +259,11 @@ export function parseHevyCsv(csvText: string): HevyRow[] {
 /*  Mapping helpers                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Strip parenthetical suffixes like "(Dumbbell)" or "(Barbell)" from a name. */
+export function stripParentheticals(name: string): string {
+  return name.replace(/\s*\([^)]*\)/g, '').trim();
+}
+
 /** Slugify a string: lowercase, replace non-alphanumeric with hyphens, collapse. */
 export function slugify(name: string): string {
   return name
@@ -349,8 +354,8 @@ export function convertHevyRows(
     const startTime = parseTimestamp(row.workoutStart);
     const endTime = parseTimestamp(row.workoutEnd);
     const workoutId = slugify(row.workoutName);
-    const exerciseName = row.exerciseName;
-    const liftId = slugify(row.exerciseName);
+    const exerciseName = stripParentheticals(row.exerciseName);
+    const liftId = slugify(exerciseName);
     const setNumber = parseInt(row.setOrder, 10) || 1;
     const setType = mapSetType(row.setType);
 
@@ -413,7 +418,7 @@ export function convertHevyRows(
  */
 export function computeImportSummary(rows: HevyRow[]): ImportSummary {
   const dates = rows.map((r) => extractDate(r)).filter(Boolean).sort();
-  const exercises = new Set(rows.map((r) => r.exerciseName));
+  const exercises = new Set(rows.map((r) => stripParentheticals(r.exerciseName)));
   const workouts = new Set(
     rows.map((r) => {
       const date = extractDate(r);

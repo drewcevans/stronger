@@ -7,7 +7,34 @@ import {
   slugify,
   kgToLbs,
   metersToMiles,
+  stripParentheticals,
 } from '../hevy-import.js';
+
+/* ------------------------------------------------------------------ */
+/*  stripParentheticals                                                */
+/* ------------------------------------------------------------------ */
+
+describe('stripParentheticals', () => {
+  it('strips a single parenthetical', () => {
+    expect(stripParentheticals('Bench Press (Barbell)')).toBe('Bench Press');
+  });
+
+  it('strips multiple parentheticals', () => {
+    expect(stripParentheticals('Curl (Dumbbell) (Seated)')).toBe('Curl');
+  });
+
+  it('returns name unchanged when no parenthetical', () => {
+    expect(stripParentheticals('Push Up')).toBe('Push Up');
+  });
+
+  it('handles empty string', () => {
+    expect(stripParentheticals('')).toBe('');
+  });
+
+  it('handles parenthetical in the middle', () => {
+    expect(stripParentheticals('A (B) C')).toBe('A C');
+  });
+});
 
 /* ------------------------------------------------------------------ */
 /*  slugify                                                            */
@@ -215,8 +242,8 @@ describe('convertHevyRows', () => {
     expect(r[1]).toBe('2025-01-15T08:30:00');              // startTime
     expect(r[2]).toBe('2025-01-15T09:45:00');              // endTime
     expect(r[3]).toBe('push-day');                         // workoutId
-    expect(r[4]).toBe('Bench Press (Barbell)');            // exerciseName
-    expect(r[5]).toBe('bench-press-barbell');              // liftId
+    expect(r[4]).toBe('Bench Press');                     // exerciseName (parenthetical stripped)
+    expect(r[5]).toBe('bench-press');                     // liftId
     expect(r[6]).toBe(1);                                  // setNumber
     expect(r[7]).toBe('work');                              // setType (normal → work)
     expect(r[8]).toBe(kgToLbs(90));                        // plannedWeight
@@ -240,7 +267,7 @@ describe('convertHevyRows', () => {
 
     expect(r[0]).toBe('2025-01-15');                      // date (from start_time)
     expect(r[3]).toBe('push-day');                         // workoutId
-    expect(r[4]).toBe('Bench Press (Barbell)');            // exerciseName
+    expect(r[4]).toBe('Bench Press');                      // exerciseName (parenthetical stripped)
     expect(r[8]).toBe(200);                                // weight already in lbs, no conversion
     expect(r[10]).toBe(200);                               // actualWeight
     expect(r[9]).toBe(6);                                  // reps
