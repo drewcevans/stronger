@@ -9,41 +9,44 @@
 /*  Hevy CSV types                                                     */
 /* ------------------------------------------------------------------ */
 
-/** Raw column names in a Hevy CSV export. */
-const HEVY_COLUMNS = [
-  'Workout Name',
-  'Workout Start',
-  'Workout End',
-  'Workout Notes',
-  'Exercise Name',
-  'Set Order',
-  'Weight (kg)',
-  'Reps',
-  'Distance (meters)',
-  'Seconds',
-  'Weight System',
-  'Set Type',
-  'Exercise Category',
-  'Exercise Comments',
-  'Rest Time',
-  'Workout Duration',
-  'Workout Date',
-] as const;
+/**
+ * Column aliases: each internal field maps to possible CSV header names.
+ * The old Hevy format (pre-2025) used Title Case names and metric units.
+ * The new format uses snake_case names and imperial units.
+ */
+const COLUMN_ALIASES: Record<string, string[]> = {
+  workoutName: ['title', 'Workout Name'],
+  workoutStart: ['start_time', 'Workout Start'],
+  workoutEnd: ['end_time', 'Workout End'],
+  exerciseName: ['exercise_title', 'Exercise Name'],
+  setOrder: ['set_index', 'Set Order'],
+  weight: ['weight_lbs', 'weight_kg', 'Weight (kg)'],
+  reps: ['reps', 'Reps'],
+  distance: ['distance_miles', 'distance_km', 'Distance (meters)'],
+  seconds: ['duration_seconds', 'Seconds'],
+  setType: ['set_type', 'Set Type'],
+  weightSystem: ['Weight System'],
+  workoutDate: ['Workout Date'],
+};
 
 /** One parsed row from the Hevy CSV. All values are strings before conversion. */
-interface HevyRow {
+export interface HevyRow {
   workoutName: string;
   workoutStart: string;
   workoutEnd: string;
   exerciseName: string;
   setOrder: string;
-  weightKg: string;
+  weight: string;
   reps: string;
-  distanceMeters: string;
+  distance: string;
   seconds: string;
   weightSystem: string;
   setType: string;
   workoutDate: string;
+  /** True when the weight column is already in lbs (new format). */
+  weightInLbs: boolean;
+  /** True when the distance column is already in miles (new format). */
+  distanceInMiles: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -63,16 +66,29 @@ export interface ImportSummary {
 /* ------------------------------------------------------------------ */
 
 /**
- * Parse a CSV string that may contain quoted fields (with embedded commas,
- * newlines, and escaped quotes).
+ * Detect the delimiter used in a CSV/TSV file by checking the first line.
+ * If tabs outnumber commas, assume TSV; otherwise CSV.
+ */
+function detectDelimiter(text: string): string {
+  const firstLine = text.split(/\r?\n/, 1)[0] ?? '';
+  const tabs = (firstLine.match(/\t/g) ?? []).length;
+  const commas = (firstLine.match(/,/g) ?? []).length;
+  return tabs > commas ? '\t' : ',';
+}
+
+/**
+ * Parse a CSV/TSV string that may contain quoted fields (with embedded
+ * delimiters, newlines, and escaped quotes).  The delimiter is auto-detected
+ * from the first line (tab vs comma).
  */
 export function parseCsvRows(csvText: string): string[][] {
+  const delimiter = detectDelimiter(csvText);
   const rows: string[][] = [];
   let i = 0;
   const len = csvText.length;
 
   while (i < len) {
-    const { fields, nextIndex } = parseCsvLine(csvText, i);
+    const { fields, nextIndex } = parseCsvLine(csvText, i, delimiter);
     rows.push(fields);
     i = nextIndex;
   }
@@ -83,6 +99,7 @@ export function parseCsvRows(csvText: string): string[][] {
 function parseCsvLine(
   text: string,
   start: number,
+  delimiter: string,
 ): { fields: string[]; nextIndex: number } {
   const fields: string[] = [];
   let i = start;
@@ -108,8 +125,8 @@ function parseCsvLine(
         }
       }
       fields.push(value);
-      // Skip comma or end-of-line
-      if (i < len && text[i] === ',') {
+      // Skip delimiter or end-of-line
+      if (i < len && text[i] === delimiter) {
         i++;
       } else {
         // end of line
@@ -118,15 +135,15 @@ function parseCsvLine(
         break;
       }
     } else {
-      // Unquoted field — find next comma or newline
-      const commaIdx = text.indexOf(',', i);
+      // Unquoted field — find next delimiter or newline
+      const delimIdx = text.indexOf(delimiter, i);
       const crIdx = text.indexOf('\r', i);
       const lfIdx = text.indexOf('\n', i);
       // Find the nearest delimiter
       let endIdx = len;
       let isEol = true;
-      if (commaIdx >= 0 && commaIdx < endIdx) {
-        endIdx = commaIdx;
+      if (delimIdx >= 0 && delimIdx < endIdx) {
+        endIdx = delimIdx;
         isEol = false;
       }
       if (crIdx >= 0 && crIdx < endIdx) {
@@ -146,7 +163,7 @@ function parseCsvLine(
         if (i < len && text[i] === '\n') i++;
         break;
       } else {
-        i = endIdx + 1; // skip comma
+        i = endIdx + 1; // skip delimiter
       }
     }
   }
@@ -155,7 +172,8 @@ function parseCsvLine(
 }
 
 /**
- * Parse a Hevy CSV export into structured rows.
+ * Parse a Hevy CSV/TSV export into structured rows.
+ * Supports both old (Title Case, metric) and new (snake_case, imperial) formats.
  * Throws if the header row doesn't contain the expected columns.
  */
 export function parseHevyCsv(csvText: string): HevyRow[] {
@@ -166,23 +184,42 @@ export function parseHevyCsv(csvText: string): HevyRow[] {
 
   const headerRow = allRows[0].map((h) => h.trim());
 
-  // Build column index map — match Hevy column names to positions
+  // Build column index map using aliases
   const colIndex = new Map<string, number>();
-  for (const col of HEVY_COLUMNS) {
-    const idx = headerRow.indexOf(col);
-    if (idx >= 0) colIndex.set(col, idx);
-  }
-
-  // Require at minimum the essential columns
-  const required = ['Exercise Name', 'Set Order', 'Workout Name'] as const;
-  for (const r of required) {
-    if (!colIndex.has(r)) {
-      throw new Error(`Missing required column: "${r}". Is this a Hevy CSV export?`);
+  for (const [field, aliases] of Object.entries(COLUMN_ALIASES)) {
+    for (const alias of aliases) {
+      const idx = headerRow.indexOf(alias);
+      if (idx >= 0) {
+        colIndex.set(field, idx);
+        break;
+      }
     }
   }
 
-  const get = (row: string[], col: string): string => {
-    const idx = colIndex.get(col);
+  // Require at minimum the essential columns
+  const required = ['exerciseName', 'setOrder', 'workoutName'] as const;
+  for (const r of required) {
+    if (!colIndex.has(r)) {
+      const aliases = COLUMN_ALIASES[r]?.join('" or "') ?? r;
+      throw new Error(`Missing required column: "${aliases}". Is this a Hevy CSV export?`);
+    }
+  }
+
+  // Detect units from which column header was matched
+  const weightColName = (() => {
+    const idx = colIndex.get('weight');
+    return idx !== undefined ? headerRow[idx] : '';
+  })();
+  const weightInLbs = weightColName === 'weight_lbs';
+
+  const distColName = (() => {
+    const idx = colIndex.get('distance');
+    return idx !== undefined ? headerRow[idx] : '';
+  })();
+  const distanceInMiles = distColName === 'distance_miles';
+
+  const get = (row: string[], field: string): string => {
+    const idx = colIndex.get(field);
     return idx !== undefined && idx < row.length ? row[idx].trim() : '';
   };
 
@@ -193,18 +230,20 @@ export function parseHevyCsv(csvText: string): HevyRow[] {
     if (row.length === 0 || (row.length === 1 && row[0].trim() === '')) continue;
 
     result.push({
-      workoutName: get(row, 'Workout Name'),
-      workoutStart: get(row, 'Workout Start'),
-      workoutEnd: get(row, 'Workout End'),
-      exerciseName: get(row, 'Exercise Name'),
-      setOrder: get(row, 'Set Order'),
-      weightKg: get(row, 'Weight (kg)'),
-      reps: get(row, 'Reps'),
-      distanceMeters: get(row, 'Distance (meters)'),
-      seconds: get(row, 'Seconds'),
-      weightSystem: get(row, 'Weight System'),
-      setType: get(row, 'Set Type'),
-      workoutDate: get(row, 'Workout Date'),
+      workoutName: get(row, 'workoutName'),
+      workoutStart: get(row, 'workoutStart'),
+      workoutEnd: get(row, 'workoutEnd'),
+      exerciseName: get(row, 'exerciseName'),
+      setOrder: get(row, 'setOrder'),
+      weight: get(row, 'weight'),
+      reps: get(row, 'reps'),
+      distance: get(row, 'distance'),
+      seconds: get(row, 'seconds'),
+      weightSystem: get(row, 'weightSystem'),
+      setType: get(row, 'setType'),
+      workoutDate: get(row, 'workoutDate'),
+      weightInLbs,
+      distanceInMiles,
     });
   }
 
@@ -276,8 +315,8 @@ function extractDate(row: HevyRow): string {
  * Cardio if distance/seconds is populated AND weight is empty/zero.
  */
 function isCardioRow(row: HevyRow): boolean {
-  const weight = parseFloat(row.weightKg) || 0;
-  const distance = parseFloat(row.distanceMeters) || 0;
+  const weight = parseFloat(row.weight) || 0;
+  const distance = parseFloat(row.distance) || 0;
   const seconds = parseFloat(row.seconds) || 0;
   return weight === 0 && (distance > 0 || seconds > 0);
 }
@@ -292,6 +331,10 @@ function isCardioRow(row: HevyRow): boolean {
  *
  * Hevy does not track planned vs. actual weight/reps separately, so
  * both planned and actual columns are set to the same value.
+ *
+ * Unit handling:
+ * - New format (weight_lbs / distance_miles): values are already in lbs/miles.
+ * - Old format (Weight (kg) / Distance (meters)): converted based on Weight System.
  */
 export function convertHevyRows(
   rows: HevyRow[],
@@ -306,9 +349,16 @@ export function convertHevyRows(
     const setNumber = parseInt(row.setOrder, 10) || 1;
     const setType = mapSetType(row.setType);
 
-    const rawWeight = parseFloat(row.weightKg) || 0;
-    const isMetric = row.weightSystem.toLowerCase().trim() !== 'imperial';
-    const weight = rawWeight > 0 && isMetric ? kgToLbs(rawWeight) : rawWeight;
+    const rawWeight = parseFloat(row.weight) || 0;
+    let weight: number;
+    if (row.weightInLbs) {
+      // New format: already in lbs
+      weight = rawWeight;
+    } else {
+      // Old format: convert from kg to lbs unless already imperial
+      const isMetric = row.weightSystem.toLowerCase().trim() !== 'imperial';
+      weight = rawWeight > 0 && isMetric ? kgToLbs(rawWeight) : rawWeight;
+    }
 
     const reps = parseInt(row.reps, 10) || 0;
     const cardio = isCardioRow(row);
@@ -316,9 +366,19 @@ export function convertHevyRows(
 
     // Cardio-specific fields
     const seconds = parseFloat(row.seconds) || 0;
-    const distanceMeters = parseFloat(row.distanceMeters) || 0;
+    const rawDistance = parseFloat(row.distance) || 0;
     const duration = cardio && seconds > 0 ? seconds / 60 : '';
-    const distance = cardio && distanceMeters > 0 ? Math.round(metersToMiles(distanceMeters) * 100) / 100 : '';
+
+    let distance: number | string = '';
+    if (cardio && rawDistance > 0) {
+      if (row.distanceInMiles) {
+        // New format: already in miles
+        distance = Math.round(rawDistance * 100) / 100;
+      } else {
+        // Old format: convert meters to miles
+        distance = Math.round(metersToMiles(rawDistance) * 100) / 100;
+      }
+    }
 
     return [
       date,
