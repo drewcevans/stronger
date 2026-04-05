@@ -1,6 +1,6 @@
 [
 	{
-		"id": "bench",
+		"id": "bench-press",
 		"name": "Bench Press",
 		"topSetWeight": 200,
 		"backoffWeight": 170,
@@ -22,8 +22,8 @@
 		"gear": "barbell"
 	},
 	{
-		"id": "press",
-		"name": "Press",
+		"id": "overhead-press",
+		"name": "Overhead Press",
 		"topSetWeight": 140,
 		"backoffWeight": 120,
 		"increment": 2.5,
@@ -66,7 +66,7 @@
 		"gear": "bodyweight"
 	},
 	{
-		"id": "bicep-curl-ez",
+		"id": "ez-bar-biceps-curl",
 		"name": "EZ Bar Biceps Curl",
 		"topSetWeight": 30,
 		"backoffWeight": 25,
