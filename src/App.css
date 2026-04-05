@@ -1236,11 +1236,11 @@ body {
 	display: flex;
 	align-items: center;
 	gap: 0.5rem;
-	color: var(--color-accent);
+	color: var(--color-text);
 }
 
 .calendar-workout-link-cardio {
-	color: var(--color-accent);
+	color: var(--color-text);
 }
 
 /* Calendar toolbar (planner + history on one row) */
