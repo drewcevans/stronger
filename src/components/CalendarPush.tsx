@@ -30,10 +30,8 @@ function nextMonday(): string {
 type PushStatus = 'idle' | 'pushing' | 'success' | 'error';
 
 export function CalendarPush({ workouts, cardioActivities, schedule, onClose, onUpdateSchedule }: CalendarPushProps) {
-  // Weekly day → workout mapping (7 entries, empty string = no workout)
+  // Weekly day → activity mapping (7 entries, empty string = rest day)
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
-  // Weekly day → cardio mapping (7 entries, empty string = no cardio)
-  const [cardioSlots, setCardioSlots] = useState<string[]>(Array(7).fill(''));
   const [weeks, setWeeks] = useState(4);
   const [startDate, setStartDate] = useState(nextMonday);
 
@@ -96,15 +94,7 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
     });
   }, []);
 
-  const handleCardioChange = useCallback((dayIndex: number, cardioId: string) => {
-    setCardioSlots((prev) => {
-      const next = [...prev];
-      next[dayIndex] = cardioId;
-      return next;
-    });
-  }, []);
-
-  const hasSlots = daySlots.some((id) => id !== '') || cardioSlots.some((id) => id !== '');
+  const hasSlots = daySlots.some((id) => id !== '');
 
   // Schedule entries from today onward
   const futureEntries = useMemo(() => {
@@ -115,7 +105,7 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
 
   const canPush = futureEntries.length > 0 && selectedCalendarId && pushStatus !== 'pushing';
 
-  // Generate ScheduleEntry[] from the weekly planner (strength + cardio)
+  // Generate ScheduleEntry[] from the weekly planner
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
     const entries: ScheduleEntry[] = [];
     const [sy, sm, sd] = startDate.split('-').map(Number);
@@ -126,12 +116,10 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const wid = daySlots[day];
         if (wid) entries.push({ date: dateStr, workoutId: wid });
-        const cid = cardioSlots[day];
-        if (cid) entries.push({ date: dateStr, workoutId: cid });
       }
     }
     return entries;
-  }, [daySlots, cardioSlots, startDate, weeks]);
+  }, [daySlots, startDate, weeks]);
 
   const [scheduleUpdated, setScheduleUpdated] = useState(false);
 
@@ -190,9 +178,9 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
         </button>
       </div>
 
-      {/* Weekly schedule — strength */}
+      {/* Weekly schedule */}
       <div className="calendar-push-section">
-        <label className="calendar-push-label">Strength</label>
+        <label className="calendar-push-label">Weekly schedule</label>
         <div className="calendar-push-days">
           {DAY_NAMES.map((name, i) => (
             <div key={name} className="calendar-push-day-row">
@@ -203,42 +191,27 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
                 onChange={(e) => handleDayChange(i, e.target.value)}
               >
                 <option value="">— Rest —</option>
-                {workouts.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
+                <optgroup label="Strength">
+                  {workouts.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
+                </optgroup>
+                {cardioActivities.length > 0 && (
+                  <optgroup label="Cardio">
+                    {cardioActivities.map((c) => (
+                      <option key={c.id} value={`cardio:${c.id}`}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Weekly schedule — cardio */}
-      {cardioActivities.length > 0 && (
-        <div className="calendar-push-section">
-          <label className="calendar-push-label">Cardio</label>
-          <div className="calendar-push-days">
-            {DAY_NAMES.map((name, i) => (
-              <div key={name} className="calendar-push-day-row">
-                <span className="calendar-push-day-name">{name}</span>
-                <select
-                  className="calendar-push-select"
-                  value={cardioSlots[i]}
-                  onChange={(e) => handleCardioChange(i, e.target.value)}
-                >
-                  <option value="">— None —</option>
-                  {cardioActivities.map((c) => (
-                    <option key={c.id} value={`cardio:${c.id}`}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Start date */}
       <div className="calendar-push-section">
