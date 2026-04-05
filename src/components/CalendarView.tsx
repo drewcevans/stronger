@@ -516,10 +516,25 @@ export function CalendarView({
 									{today && <span className="calendar-today-badge">Today</span>}
 								</div>
 								<div className="calendar-day-actions">
-									{dayInfo.flags?.home && <House size={14} className="calendar-flag-icon" />}
-									{dayInfo.flags?.elsewhere && <Palmtree size={14} className="calendar-flag-icon" />}
-									{dayInfo.flags?.travel && <Plane size={14} className="calendar-flag-icon" />}
-									{dayInfo.flags?.visitors && <Users size={14} className="calendar-flag-icon" />}
+									{([
+										['home', House],
+										['elsewhere', Palmtree],
+										['travel', Plane],
+										['visitors', Users],
+									] as [keyof DayFlags, typeof House][]).map(([key, Icon]) => {
+										const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false };
+										const active = currentFlags[key];
+										return (
+											<button
+												key={key}
+												className={`calendar-flag-toggle calendar-flag-${key}${active ? ' calendar-flag-active' : ''}`}
+												onClick={() => onUpdateFlags(dayInfo.date, { ...currentFlags, [key]: !active })}
+												aria-label={`Toggle ${key}`}
+											>
+												<Icon size={14} />
+											</button>
+										);
+									})}
 									{!isPast && (
 										<button
 											className="calendar-add-btn"

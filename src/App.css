@@ -1250,9 +1250,36 @@ body {
 	gap: 0.375rem;
 }
 
-.calendar-flag-icon {
+.calendar-flag-toggle {
+	background: none;
+	border: none;
+	padding: 0.125rem;
+	cursor: pointer;
 	color: var(--color-text-muted);
-	opacity: 0.7;
+	opacity: 0.25;
+	transition: opacity 0.15s, color 0.15s;
+	display: flex;
+	align-items: center;
+}
+
+.calendar-flag-active.calendar-flag-home {
+	color: #4caf50;
+	opacity: 1;
+}
+
+.calendar-flag-active.calendar-flag-elsewhere {
+	color: #ff9800;
+	opacity: 1;
+}
+
+.calendar-flag-active.calendar-flag-travel {
+	color: #ff2d7b;
+	opacity: 1;
+}
+
+.calendar-flag-active.calendar-flag-visitors {
+	color: #bb86fc;
+	opacity: 1;
 }
 
 /* Flag checkboxes in picker */
