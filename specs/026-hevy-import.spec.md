@@ -27,6 +27,7 @@ Hevy's CSV export contains one row per set with these columns:
 | `Distance (meters)` | *(empty or number)* |
 | `Seconds` | *(empty or number)* |
 | `Weight System` | metric |
+| `Set Type` | normal |
 | `Exercise Category` | Barbell |
 | `Exercise Comments` | *(optional)* |
 | `Rest Time` | *(optional)* |
@@ -44,7 +45,7 @@ Hevy's CSV export contains one row per set with these columns:
 | `exerciseName` | `Exercise Name` | Use as-is from Hevy |
 | `liftId` | Slugified `Exercise Name` | e.g., "Bench Press (Barbell)" → "bench-press-barbell" |
 | `setNumber` | `Set Order` | 1-based integer, use as-is |
-| `setType` | `"work"` | Hevy has no set-type concept; default all to work |
+| `setType` | `Set Type` | Map Hevy values: `"warmup"` → `"warmup"`, `"normal"` → `"work"`. Default unknown values to `"work"`. |
 | `plannedWeight` | Same as `actualWeight` | Hevy doesn't track planned vs. actual |
 | `plannedReps` | Same as `actualReps` | Same reason |
 | `actualWeight` | `Weight (kg)` | Convert kg → lbs if metric (× 2.20462), round to nearest 0.5 |
