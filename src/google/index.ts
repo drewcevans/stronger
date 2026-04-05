@@ -54,9 +54,12 @@ export {
 	buildDeepLink,
 	generateEventDates,
 	pushEventsToCalendar,
+	pushScheduleToCalendar,
 } from './calendar.ts'
 export type {
 	WeeklySlot,
 	CalendarPushRequest,
 	CalendarPushResult,
+	ScheduleCalendarEntry,
+	SchedulePushRequest,
 } from './calendar.ts'
