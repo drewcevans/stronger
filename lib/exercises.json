@@ -45,7 +45,7 @@
 	},
 	{
 		"id": "skull-crusher",
-		"name": "Skull Crusher",
+		"name": "Skullcrusher",
 		"topSetWeight": 60,
 		"backoffWeight": 50,
 		"increment": 1,
@@ -56,7 +56,7 @@
 	},
 	{
 		"id": "chin-up",
-		"name": "Chin-up",
+		"name": "Chin Up",
 		"topSetWeight": 0,
 		"backoffWeight": 0,
 		"increment": 0,
@@ -67,7 +67,7 @@
 	},
 	{
 		"id": "bicep-curl-ez",
-		"name": "Bicep Curl (EZ Bar)",
+		"name": "EZ Bar Biceps Curl",
 		"topSetWeight": 30,
 		"backoffWeight": 25,
 		"increment": 1,
