@@ -273,7 +273,7 @@ function App() {
 
   const handleUpdateFlags = useCallback(
     (date: string, flags: DayFlags) => {
-      const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors;
+      const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
       // Find the first entry for this date to apply flags to
       const firstIdx = schedule.findIndex((e) => e.date === date);
       let updated: ScheduleEntry[];
@@ -289,7 +289,7 @@ function App() {
         return; // No flags and no existing entry — nothing to do
       }
       // Remove flag-only rows that no longer have flags
-      updated = updated.filter((e) => e.workoutId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors)));
+      updated = updated.filter((e) => e.workoutId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors || e.flags.blocked)));
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);

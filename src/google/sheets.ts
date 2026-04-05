@@ -1135,15 +1135,15 @@ export async function readLogZone(
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the schedule header (row 1). */
-const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:F1`
+const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:G1`
 
 /** A1 range for reading all schedule data (row 2 onward, generous upper bound). */
-const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:F10000`
+const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:G10000`
 
 /** A1 range covering the full schedule tab for clearing. */
-const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:F10000`
+const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:G10000`
 
-const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'travel', 'visitors']
+const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'travel', 'visitors', 'blocked']
 
 /* ------------------------------------------------------------------ */
 /*  Schedule tab – serialization                                       */
@@ -1164,15 +1164,16 @@ export function parseScheduleRow(row: string[]): ScheduleEntry | null {
 	// Basic date format validation: YYYY-MM-DD
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
 
-	// Parse flag columns (columns 2-5, TRUE/FALSE strings)
+	// Parse flag columns (columns 2-6, TRUE/FALSE strings)
 	const flags: DayFlags = {
 		home: (row[2] ?? '').trim().toUpperCase() === 'TRUE',
 		elsewhere: (row[3] ?? '').trim().toUpperCase() === 'TRUE',
 		travel: (row[4] ?? '').trim().toUpperCase() === 'TRUE',
 		visitors: (row[5] ?? '').trim().toUpperCase() === 'TRUE',
+		blocked: (row[6] ?? '').trim().toUpperCase() === 'TRUE',
 	}
 
-	const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors
+	const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked
 
 	// Must have either a workoutId or at least one flag
 	if (!workoutId && !hasFlags) return null
@@ -1190,6 +1191,7 @@ export function scheduleEntryToRow(entry: ScheduleEntry): string[] {
 		f?.elsewhere ? 'TRUE' : '',
 		f?.travel ? 'TRUE' : '',
 		f?.visitors ? 'TRUE' : '',
+		f?.blocked ? 'TRUE' : '',
 	]
 }
 

@@ -54,23 +54,31 @@ describe('parseScheduleRow', () => {
 	})
 
 	it('parses flag columns', () => {
-		expect(parseScheduleRow(['2025-01-15', 'A', 'TRUE', '', 'TRUE', ''])).toEqual({
+		expect(parseScheduleRow(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', ''])).toEqual({
 			date: '2025-01-15',
 			workoutId: 'A',
-			flags: { home: true, elsewhere: false, travel: true, visitors: false },
+			flags: { home: true, elsewhere: false, travel: true, visitors: false, blocked: false },
 		})
 	})
 
 	it('accepts flag-only rows (no workoutId)', () => {
-		expect(parseScheduleRow(['2025-01-15', '', 'TRUE', '', '', ''])).toEqual({
+		expect(parseScheduleRow(['2025-01-15', '', 'TRUE', '', '', '', ''])).toEqual({
 			date: '2025-01-15',
 			workoutId: '',
-			flags: { home: true, elsewhere: false, travel: false, visitors: false },
+			flags: { home: true, elsewhere: false, travel: false, visitors: false, blocked: false },
 		})
 	})
 
 	it('returns null for row with no workoutId and no flags', () => {
-		expect(parseScheduleRow(['2025-01-15', '', '', '', '', ''])).toBeNull()
+		expect(parseScheduleRow(['2025-01-15', '', '', '', '', '', ''])).toBeNull()
+	})
+
+	it('parses blocked flag', () => {
+		expect(parseScheduleRow(['2025-01-15', '', '', '', '', '', 'TRUE'])).toEqual({
+			date: '2025-01-15',
+			workoutId: '',
+			flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
+		})
 	})
 })
 
@@ -87,6 +95,7 @@ describe('scheduleEntryToRow', () => {
 			'',
 			'',
 			'',
+			'',
 		])
 	})
 
@@ -95,9 +104,9 @@ describe('scheduleEntryToRow', () => {
 			scheduleEntryToRow({
 				date: '2025-01-15',
 				workoutId: 'A',
-				flags: { home: true, elsewhere: false, travel: true, visitors: false },
+				flags: { home: true, elsewhere: false, travel: true, visitors: false, blocked: false },
 			}),
-		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', ''])
+		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', ''])
 	})
 
 	it('converts a flag-only row', () => {
@@ -105,9 +114,19 @@ describe('scheduleEntryToRow', () => {
 			scheduleEntryToRow({
 				date: '2025-01-15',
 				workoutId: '',
-				flags: { home: false, elsewhere: true, travel: false, visitors: true },
+				flags: { home: false, elsewhere: true, travel: false, visitors: true, blocked: false },
 			}),
-		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE'])
+		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE', ''])
+	})
+
+	it('converts a blocked flag row', () => {
+		expect(
+			scheduleEntryToRow({
+				date: '2025-01-15',
+				workoutId: '',
+				flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
+			}),
+		).toEqual(['2025-01-15', '', '', '', '', '', 'TRUE'])
 	})
 
 	it('round-trips through parseScheduleRow', () => {
@@ -126,7 +145,17 @@ describe('scheduleEntryToRow', () => {
 		const entry = {
 			date: '2025-01-15',
 			workoutId: 'A',
-			flags: { home: true, elsewhere: false, travel: false, visitors: true },
+			flags: { home: true, elsewhere: false, travel: false, visitors: true, blocked: false },
+		}
+		const row = scheduleEntryToRow(entry)
+		expect(parseScheduleRow(row)).toEqual(entry)
+	})
+
+	it('round-trips blocked flag', () => {
+		const entry = {
+			date: '2025-01-15',
+			workoutId: '',
+			flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
 		}
 		const row = scheduleEntryToRow(entry)
 		expect(parseScheduleRow(row)).toEqual(entry)
