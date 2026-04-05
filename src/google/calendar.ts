@@ -5,7 +5,7 @@
  * workout events as all-day entries with deep links back to the app.
  */
 
-import type { CalendarListEntry, CalendarEventResource } from './types.ts'
+import type { CalendarListEntry, CalendarEventResource, CalendarEventItem } from './types.ts'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -31,6 +31,7 @@ export interface CalendarPushRequest {
 
 export interface CalendarPushResult {
 	created: number
+	skipped: number
 	failed: number
 	errors: string[]
 }
@@ -52,6 +53,49 @@ export async function listWritableCalendars(): Promise<CalendarListEntry[]> {
 	return items.filter(
 		(c: CalendarListEntry) => c.accessRole === 'writer' || c.accessRole === 'owner',
 	)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Existing event lookup                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Fetch all events in a date range from a Google Calendar.
+ *
+ * Returns the raw event items so the caller can check for duplicates.
+ */
+async function listEventsInRange(
+	calendarId: string,
+	startDate: string,
+	endDate: string,
+): Promise<CalendarEventItem[]> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.calendar.events.list({
+		calendarId,
+		timeMin: `${startDate}T00:00:00Z`,
+		timeMax: `${endDate}T00:00:00Z`,
+		singleEvents: true,
+		maxResults: 2500,
+	})
+	return response.result.items ?? []
+}
+
+/**
+ * Build a set of "date|summary" keys from existing calendar events
+ * for fast duplicate lookup.
+ */
+function buildExistingEventKeys(events: CalendarEventItem[]): Set<string> {
+	const keys = new Set<string>()
+	for (const e of events) {
+		const date = e.start?.date ?? e.start?.dateTime?.slice(0, 10)
+		const summary = e.summary
+		if (date && summary) {
+			keys.add(`${date}|${summary}`)
+		}
+	}
+	return keys
 }
 
 /* ------------------------------------------------------------------ */
@@ -115,13 +159,34 @@ export async function pushEventsToCalendar(
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
 
-	const result: CalendarPushResult = { created: 0, failed: 0, errors: [] }
+	const result: CalendarPushResult = { created: 0, skipped: 0, failed: 0, errors: [] }
+
+	// Compute the end date of the entire range for the existing-event query.
+	const [sy, sm, sd] = request.startDate.split('-').map(Number)
+	const rangeEnd = new Date(sy, sm - 1, sd + request.weeks * 7)
+	const endDate = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, '0')}-${String(rangeEnd.getDate()).padStart(2, '0')}`
+
+	// Fetch existing events in the range to avoid duplicates.
+	let existingKeys: Set<string>
+	try {
+		const existing = await listEventsInRange(request.calendarId, request.startDate, endDate)
+		existingKeys = buildExistingEventKeys(existing)
+	} catch {
+		// If listing fails, proceed without dedup rather than blocking the push.
+		existingKeys = new Set()
+	}
 
 	for (const slot of request.slots) {
 		const dates = generateEventDates(request.startDate, slot.dayIndex, request.weeks)
 		const deepLink = buildDeepLink(slot.workoutId, slot.category)
 
 		for (const date of dates) {
+			// Skip if this workout already exists on this date.
+			if (existingKeys.has(`${date}|${slot.workoutName}`)) {
+				result.skipped++
+				continue
+			}
+
 			const event: CalendarEventResource = {
 				summary: slot.workoutName,
 				description: `Open workout: ${deepLink}`,

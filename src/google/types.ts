@@ -121,6 +121,13 @@ export interface GapiClient {
 				calendarId: string
 				resource: CalendarEventResource
 			}) => Promise<CalendarEventResponse>
+			list: (params: {
+				calendarId: string
+				timeMin?: string
+				timeMax?: string
+				singleEvents?: boolean
+				maxResults?: number
+			}) => Promise<CalendarEventsListResponse>
 		}
 	}
 }
@@ -193,6 +200,18 @@ export interface CalendarEventResponse {
 		id: string
 		htmlLink: string
 	}
+}
+
+export interface CalendarEventsListResponse {
+	result: {
+		items?: CalendarEventItem[]
+	}
+}
+
+export interface CalendarEventItem {
+	summary?: string
+	start?: { date?: string; dateTime?: string }
+	end?: { date?: string; dateTime?: string }
 }
 
 /* ------------------------------------------------------------------ */

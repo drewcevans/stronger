@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Workout, ScheduleEntry } from '../model/index.js';
 import type { CalendarListEntry, CalendarPushResult, WeeklySlot } from '../google/index.js';
 import { listWritableCalendars, pushEventsToCalendar } from '../google/index.js';
+import { saveCalendarId, loadCalendarId } from '../google/index.js';
 import { Upload, CheckCircle, AlertCircle, Loader, X, CalendarCheck } from 'lucide-react';
 
 interface CalendarPushProps {
@@ -59,9 +60,12 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
       .then((cals) => {
         if (cancelled) return;
         setCalendars(cals);
-        // Default to the primary calendar, or the first writable one
+        // Use the saved calendar if it still exists, otherwise fall back
+        // to the primary calendar or the first writable one.
+        const saved = loadCalendarId();
+        const savedCal = saved ? cals.find((c) => c.id === saved) : null;
         const primary = cals.find((c) => c.primary);
-        setSelectedCalendarId(primary?.id ?? cals[0]?.id ?? '');
+        setSelectedCalendarId(savedCal?.id ?? primary?.id ?? cals[0]?.id ?? '');
         setLoadingCalendars(false);
       })
       .catch((err) => {
@@ -142,6 +146,7 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
     } catch (err) {
       setPushResult({
         created: 0,
+        skipped: 0,
         failed: 1,
         errors: [err instanceof Error ? err.message : String(err)],
       });
@@ -262,7 +267,10 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
             id="push-calendar"
             className="calendar-push-select"
             value={selectedCalendarId}
-            onChange={(e) => setSelectedCalendarId(e.target.value)}
+            onChange={(e) => {
+              setSelectedCalendarId(e.target.value);
+              saveCalendarId(e.target.value);
+            }}
           >
             {calendars.map((c) => (
               <option key={c.id} value={c.id}>
@@ -294,7 +302,7 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
       {pushResult && pushStatus === 'success' && (
         <div className="calendar-push-feedback calendar-push-feedback-success">
           <CheckCircle size={16} />
-          Created {pushResult.created} event{pushResult.created !== 1 ? 's' : ''} successfully.
+          Created {pushResult.created} event{pushResult.created !== 1 ? 's' : ''}{pushResult.skipped > 0 ? `, skipped ${pushResult.skipped} duplicate${pushResult.skipped !== 1 ? 's' : ''}` : ''}.
         </div>
       )}
       {pushResult && pushStatus === 'error' && (
@@ -302,7 +310,7 @@ export function CalendarPush({ workouts, onClose, onUpdateSchedule }: CalendarPu
           <AlertCircle size={16} />
           <div>
             <p>
-              Created {pushResult.created}, failed {pushResult.failed}.
+              Created {pushResult.created}, skipped {pushResult.skipped}, failed {pushResult.failed}.
             </p>
             {pushResult.errors.slice(0, 3).map((err, i) => (
               <p key={i} className="calendar-push-error-detail">{err}</p>
