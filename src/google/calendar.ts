@@ -143,6 +143,80 @@ export function generateEventDates(
 	return dates
 }
 
+/** A single date→workout entry to push as a calendar event. */
+export interface ScheduleCalendarEntry {
+	date: string
+	workoutId: string
+	workoutName: string
+}
+
+export interface SchedulePushRequest {
+	calendarId: string
+	entries: ScheduleCalendarEntry[]
+}
+
+/**
+ * Push individual schedule entries to a Google Calendar.
+ *
+ * Creates one all-day event per entry. Skips entries whose
+ * workout name already exists on the same date (duplicate detection).
+ */
+export async function pushScheduleToCalendar(
+	request: SchedulePushRequest,
+): Promise<CalendarPushResult> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const result: CalendarPushResult = { created: 0, skipped: 0, failed: 0, errors: [] }
+	if (request.entries.length === 0) return result
+
+	// Compute the date range for existing-event query.
+	const dates = request.entries.map((e) => e.date).sort()
+	const startDate = dates[0]
+	const [ey, em, ed] = dates[dates.length - 1].split('-').map(Number)
+	const rangeEnd = new Date(ey, em - 1, ed + 1)
+	const endDate = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, '0')}-${String(rangeEnd.getDate()).padStart(2, '0')}`
+
+	// Fetch existing events in the range to avoid duplicates.
+	let existingKeys: Set<string>
+	try {
+		const existing = await listEventsInRange(request.calendarId, startDate, endDate)
+		existingKeys = buildExistingEventKeys(existing)
+	} catch {
+		existingKeys = new Set()
+	}
+
+	for (const entry of request.entries) {
+		if (existingKeys.has(`${entry.date}|${entry.workoutName}`)) {
+			result.skipped++
+			continue
+		}
+
+		const isCardio = entry.workoutId.startsWith('cardio:')
+		const deepLink = isCardio ? null : buildDeepLink(entry.workoutId)
+		const event: CalendarEventResource = {
+			summary: entry.workoutName,
+			description: deepLink ? `Open workout: ${deepLink}` : entry.workoutName,
+			start: { date: entry.date },
+			end: { date: entry.date },
+		}
+
+		try {
+			await gapi.client.calendar.events.insert({
+				calendarId: request.calendarId,
+				resource: event,
+			})
+			result.created++
+		} catch (err: unknown) {
+			result.failed++
+			const message = err instanceof Error ? err.message : String(err)
+			result.errors.push(`${entry.workoutName} on ${entry.date}: ${message}`)
+		}
+	}
+
+	return result
+}
+
 /**
  * Push workout events to a Google Calendar.
  *

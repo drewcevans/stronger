@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
-import type { CalendarListEntry, CalendarPushResult, WeeklySlot } from '../google/index.js';
-import { listWritableCalendars, pushEventsToCalendar } from '../google/index.js';
+import type { CalendarListEntry, CalendarPushResult } from '../google/index.js';
+import { listWritableCalendars, pushScheduleToCalendar } from '../google/index.js';
 import { saveCalendarId, loadCalendarId } from '../google/index.js';
 import { Upload, CheckCircle, AlertCircle, Loader, X, CalendarCheck } from 'lucide-react';
 
 interface CalendarPushProps {
   workouts: Workout[];
   cardioActivities: CardioActivity[];
+  schedule: ScheduleEntry[];
   onClose: () => void;
   onUpdateSchedule: (entries: ScheduleEntry[]) => void;
 }
@@ -28,7 +29,7 @@ function nextMonday(): string {
 
 type PushStatus = 'idle' | 'pushing' | 'success' | 'error';
 
-export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSchedule }: CalendarPushProps) {
+export function CalendarPush({ workouts, cardioActivities, schedule, onClose, onUpdateSchedule }: CalendarPushProps) {
   // Weekly day → workout mapping (7 entries, empty string = no workout)
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
   // Weekly day → cardio mapping (7 entries, empty string = no cardio)
@@ -104,7 +105,15 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
   }, []);
 
   const hasSlots = daySlots.some((id) => id !== '') || cardioSlots.some((id) => id !== '');
-  const canPush = hasSlots && selectedCalendarId && pushStatus !== 'pushing';
+
+  // Schedule entries from today onward
+  const futureEntries = useMemo(() => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    return schedule.filter((e) => e.date >= todayStr);
+  }, [schedule]);
+
+  const canPush = futureEntries.length > 0 && selectedCalendarId && pushStatus !== 'pushing';
 
   // Generate ScheduleEntry[] from the weekly planner (strength + cardio)
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
@@ -136,33 +145,28 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
   const handlePush = useCallback(async () => {
     if (!canPush) return;
 
-    const slots: WeeklySlot[] = [];
-    for (let i = 0; i < 7; i++) {
-      const wid = daySlots[i];
-      if (wid) {
-        const w = workoutMap.get(wid);
-        if (w) {
-          slots.push({ dayIndex: i, workoutId: wid, workoutName: w.name });
+    // Build entries from schedule (today onward), resolving workout/cardio names
+    const entries = futureEntries
+      .map((e) => {
+        const cardioName = cardioMap.get(e.workoutId);
+        if (cardioName) {
+          return { date: e.date, workoutId: e.workoutId, workoutName: cardioName };
         }
-      }
-      const cid = cardioSlots[i];
-      if (cid) {
-        const name = cardioMap.get(cid);
-        if (name) {
-          slots.push({ dayIndex: i, workoutId: cid, workoutName: name });
-        }
-      }
-    }
+        const w = workoutMap.get(e.workoutId);
+        if (!w) return null;
+        return { date: e.date, workoutId: e.workoutId, workoutName: w.name };
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null);
+
+    if (entries.length === 0) return;
 
     setPushStatus('pushing');
     setPushResult(null);
 
     try {
-      const result = await pushEventsToCalendar({
+      const result = await pushScheduleToCalendar({
         calendarId: selectedCalendarId,
-        slots,
-        startDate,
-        weeks,
+        entries,
       });
       setPushResult(result);
       setPushStatus(result.failed > 0 ? 'error' : 'success');
@@ -175,7 +179,7 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
       });
       setPushStatus('error');
     }
-  }, [canPush, daySlots, cardioSlots, workoutMap, cardioMap, selectedCalendarId, startDate, weeks]);
+  }, [canPush, futureEntries, workoutMap, cardioMap, selectedCalendarId]);
 
   return (
     <div className="calendar-push">
