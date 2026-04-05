@@ -71,7 +71,7 @@ describe('parseHash', () => {
   });
 
   it('returns list for unknown routes', () => {
-    expect(parseHash('#/settings')).toEqual({ view: 'list' });
+    expect(parseHash('#/unknown')).toEqual({ view: 'list' });
     expect(parseHash('#/workout/')).toEqual({ view: 'list' });
     expect(parseHash('#/workout/a/b')).toEqual({ view: 'list' });
   });
@@ -90,6 +90,14 @@ describe('parseHash', () => {
 
   it('parses the progress route without leading slash', () => {
     expect(parseHash('#progress')).toEqual({ view: 'progress' });
+  });
+
+  it('parses the settings route', () => {
+    expect(parseHash('#/settings')).toEqual({ view: 'settings' });
+  });
+
+  it('parses the settings route without leading slash', () => {
+    expect(parseHash('#settings')).toEqual({ view: 'settings' });
   });
 
   it('parses the exercise editor new route', () => {
@@ -164,6 +172,10 @@ describe('routeToHash', () => {
     expect(routeToHash({ view: 'progress' })).toBe('/progress');
   });
 
+  it('returns /settings for settings route', () => {
+    expect(routeToHash({ view: 'settings' })).toBe('/settings');
+  });
+
   it('returns /exercise/new for exercise editor route without exerciseId', () => {
     expect(routeToHash({ view: 'exerciseEditor' })).toBe('/exercise/new');
   });
@@ -190,6 +202,7 @@ describe('routeToHash', () => {
       { view: 'editor', workoutId: 'workout-a' },
       { view: 'exercises' },
       { view: 'progress' },
+      { view: 'settings' },
       { view: 'exerciseEditor' },
       { view: 'exerciseEditor', exerciseId: 'bench' },
     ];

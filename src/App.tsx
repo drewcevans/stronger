@@ -15,6 +15,7 @@ import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView, SessionDetail } from './components/CalendarView.js';
 import type { LogSession } from './components/CalendarView.js';
 import { ProgressView } from './components/ProgressView.js';
+import { SettingsView } from './components/SettingsView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
@@ -368,6 +369,17 @@ function App() {
     navigateTo({ view: 'progress' });
   }, [navigateTo]);
 
+  const handleOpenSettings = useCallback(() => {
+    navigateTo({ view: 'settings' });
+  }, [navigateTo]);
+
+  const handleImportComplete = useCallback((_rowCount: number) => {
+    // Refresh log data so progress charts and calendar history reflect the import
+    if (spreadsheetId) {
+      void loadLogData(spreadsheetId);
+    }
+  }, [spreadsheetId]);
+
   // Editor handlers
   const handleEditWorkout = useCallback((workoutId: string) => {
     navigateTo({ view: 'editor', workoutId });
@@ -554,6 +566,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
         />
         <ExerciseEditor
           existing={editConfig}
@@ -575,6 +588,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
         />
         <ExerciseLibrary
           configs={configs}
@@ -598,6 +612,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
         />
         <WorkoutEditor
           existing={editDef}
@@ -620,6 +635,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
         />
         <CalendarView
           workouts={workouts}
@@ -646,8 +662,30 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
         />
         <ProgressView logRows={logRows} />
+      </>
+    );
+  }
+
+  if (route.view === 'settings' && spreadsheetId) {
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
+        />
+        <SettingsView
+          spreadsheetId={spreadsheetId}
+          onImportComplete={handleImportComplete}
+          appendLogRows={appendLogRows}
+        />
       </>
     );
   }
@@ -671,6 +709,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenSettings={handleOpenSettings}
         />
         <SessionDetail
           session={viewingSession}
@@ -691,6 +730,7 @@ function App() {
         onOpenCalendar={handleOpenCalendar}
         onOpenExercises={handleOpenExercises}
         onOpenProgress={handleOpenProgress}
+        onOpenSettings={handleOpenSettings}
       />
       <WorkoutSelect
         workouts={workouts}
