@@ -1232,6 +1232,17 @@ body {
 	gap: 0.5rem;
 }
 
+.calendar-picker-item-cardio {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: var(--color-accent);
+}
+
+.calendar-workout-link-cardio {
+	color: var(--color-accent);
+}
+
 /* Calendar toolbar (planner + history on one row) */
 .calendar-toolbar {
 	display: flex;

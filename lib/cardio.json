@@ -1,0 +1,15 @@
+[
+	{ "id": "bike", "name": "Bike" },
+	{ "id": "boulder", "name": "Boulder" },
+	{ "id": "climb", "name": "Climb" },
+	{ "id": "hike", "name": "Hike" },
+	{ "id": "kayak", "name": "Kayak" },
+	{ "id": "mtb", "name": "MTB" },
+	{ "id": "pickleball", "name": "Pickleball" },
+	{ "id": "ruck", "name": "Ruck" },
+	{ "id": "run", "name": "Run" },
+	{ "id": "sup", "name": "SUP" },
+	{ "id": "swim", "name": "Swim" },
+	{ "id": "trail-run", "name": "Trail Run" },
+	{ "id": "yoga", "name": "Yoga" }
+]
