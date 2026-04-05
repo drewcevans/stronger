@@ -28,7 +28,7 @@ Stronger is a barbell training tracker built as a single-page React app. It uses
 
 Seven-layer model, each building on the previous:
 
-1. **LiftConfig** — per-lift settings (weights, increments, gear). 9 fields. Stored in the "Exercises" sheet tab.
+1. **LiftConfig** — per-lift settings (weights, increments, gear, category). 10 fields. Stored in the "Exercises" sheet tab.
 2. **SetTemplate / ExerciseTemplate** — the structure of a workout (set types, percentages, rep ranges, roles). Stored in the "Workouts" sheet tab.
 3. **ComputedSet / ComputedExercise** — concrete workout instances with calculated weights. Computed at runtime, never stored.
 4. **Workout** — a named collection of computed exercises with `category` (`'strength' | 'cardio'`) and `favorite` flag.
@@ -42,7 +42,7 @@ The app uses four tabs in the user's spreadsheet. Each tab has a header constant
 
 | Tab name                | Range constant        | Header columns | Column span |
 |-------------------------|-----------------------|----------------|-------------|
-| `Stronger - Exercises`  | `CONFIG_RANGE = A:I`  | 9 (`id` → `gear`) | A–I |
+| `Stronger - Exercises`  | `CONFIG_RANGE = A:J`  | 10 (`id` → `category`) | A–J |
 | `Stronger - Workouts`   | `WORKOUT_DEFS_RANGE = A:N` | 14 (`workoutId` → `favorite`) | A–N |
 | `Stronger - Log`        | `LOG_READ_RANGE = A2:R`, `LOG_HEADER_RANGE = A1:R1`, `LOG_APPEND_RANGE = A2:R2` | 18 (`date` → `cardioWeight`) | A–R |
 | `Stronger - Schedule`   | `SCHEDULE_READ_RANGE = A2:B10000`, `SCHEDULE_FULL_RANGE = A1:B10000` | 2 (`date`, `workoutId`) | A–B |
@@ -63,6 +63,9 @@ Hash-based SPA router. Routes:
 - `#/cardio/<id>` — cardio workout logging
 - `#/calendar` — calendar view
 - `#/edit/<id>` or `#/edit/new` — workout editor
+- `#/exercises` — exercise library
+- `#/exercise/<id>` or `#/exercise/new` — exercise editor
+- `#/progress` — progress charts
 
 When adding a new view, add its route type to the `Route` union, update `parseHash`, and update `routeToHash`.
 
@@ -72,10 +75,15 @@ When adding a new view, add its route type to the `Route` union, update `parseHa
 - `WorkoutView` — strength workout execution (sets, reps, checkboxes)
 - `CardioView` — cardio logging (duration, distance, elevation, weight)
 - `WorkoutEditor` — create/edit workout definitions
-- `CalendarView` — schedule workouts to dates
+- `CalendarView` — schedule workouts to dates, history mode
+- `CalendarPush` — push scheduled workouts to Google Calendar
+- `ProgressView` — SVG line charts for progress metrics (volume, heaviest, e1RM)
 - `ProgressionReview` — post-workout weight increase proposals
+- `ExerciseLibrary` — browse and manage exercises
+- `ExerciseEditor` — create/edit individual exercise configs
 - `GoogleAuth` — OAuth sign-in, sheet connection, nav bar
 - `SetupPage` — first-time setup wizard
+- `MotivationalQuote` — random quotes display
 - `Banner` / `Logo` / `LiftBadge` — branding and visual elements
 
 ### App orchestration (`src/App.tsx`)
