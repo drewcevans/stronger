@@ -188,6 +188,8 @@ export interface DayFlags {
 	travel: boolean;
 	/** Have visitors. */
 	visitors: boolean;
+	/** Blocked – all-day or firm commitment, unavailable. */
+	blocked: boolean;
 }
 
 /** A single schedule entry mapping a date to a workout. */

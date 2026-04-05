@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType, CardioActivity, DayFlags } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users, Ban } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
 
 interface CalendarViewProps {
@@ -527,8 +527,9 @@ export function CalendarView({
 										['elsewhere', Palmtree],
 										['travel', Plane],
 										['visitors', Users],
+										['blocked', Ban],
 									] as [keyof DayFlags, typeof House][]).map(([key, Icon]) => {
-										const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false };
+										const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false, blocked: false };
 										const active = currentFlags[key];
 										return (
 											<button
@@ -537,7 +538,7 @@ export function CalendarView({
 												onClick={() => onUpdateFlags(dayInfo.date, { ...currentFlags, [key]: !active })}
 												aria-label={`Toggle ${key}`}
 											>
-												<Icon size={14} />
+												<Icon size={18} />
 											</button>
 										);
 									})}
@@ -712,8 +713,9 @@ export function CalendarView({
 											['elsewhere', 'Elsewhere', Palmtree],
 											['travel', 'Travel', Plane],
 											['visitors', 'Visitors', Users],
+											['blocked', 'Blocked', Ban],
 										] as const).map(([key, label, Icon]) => {
-											const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false };
+											const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false, blocked: false };
 											return (
 												<label key={key} className="calendar-flag-checkbox">
 													<input
