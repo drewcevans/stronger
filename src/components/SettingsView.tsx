@@ -5,7 +5,7 @@ import type { ImportSummary } from '../model/hevy-import.js';
 
 interface Props {
   spreadsheetId: string;
-  onImportComplete: (rowCount: number) => void;
+  onImportComplete: () => void;
   appendLogRows: (spreadsheetId: string, rows: (string | number | boolean)[][]) => Promise<void>;
 }
 
@@ -51,7 +51,7 @@ export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows }:
       await appendLogRows(spreadsheetId, convertedRows);
       setImportedCount(convertedRows.length);
       setPhase('done');
-      onImportComplete(convertedRows.length);
+      onImportComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to write to Google Sheet.');
       setPhase('error');

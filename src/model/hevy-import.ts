@@ -289,6 +289,9 @@ function isCardioRow(row: HevyRow): boolean {
 /**
  * Convert parsed Hevy rows into Stronger log rows (18-column format).
  * Returns raw arrays ready for appendLogRows().
+ *
+ * Hevy does not track planned vs. actual weight/reps separately, so
+ * both planned and actual columns are set to the same value.
  */
 export function convertHevyRows(
   rows: HevyRow[],

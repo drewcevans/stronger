@@ -373,7 +373,7 @@ function App() {
     navigateTo({ view: 'settings' });
   }, [navigateTo]);
 
-  const handleImportComplete = useCallback((_rowCount: number) => {
+  const handleImportComplete = useCallback(() => {
     // Refresh log data so progress charts and calendar history reflect the import
     if (spreadsheetId) {
       void loadLogData(spreadsheetId);
