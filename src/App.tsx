@@ -407,6 +407,19 @@ function App() {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
 
+  const handleDeleteWorkout = useCallback(
+    (workoutId: string) => {
+      const updatedDefs = definitions.filter((d) => d.id !== workoutId);
+      setDefinitions(updatedDefs);
+      setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
+      if (spreadsheetId) {
+        void writeWorkoutDefs(spreadsheetId, updatedDefs);
+      }
+      navigateTo({ view: 'list' });
+    },
+    [definitions, configs, spreadsheetId, navigateTo],
+  );
+
   // Exercise editor handlers
   const handleEditExercise = useCallback((exerciseId: string) => {
     navigateTo({ view: 'exerciseEditor', exerciseId });
@@ -620,6 +633,7 @@ function App() {
           configs={configs}
           onSave={handleEditorSave}
           onCancel={handleEditorCancel}
+          onDelete={editDef ? handleDeleteWorkout : undefined}
         />
       </>
     );

@@ -28,6 +28,8 @@ interface WorkoutEditorProps {
 	configs: LiftConfig[];
 	onSave: (definition: WorkoutDefinition) => void;
 	onCancel: () => void;
+	/** Called when the user deletes this workout. Only available when editing an existing workout. */
+	onDelete?: (workoutId: string) => void;
 }
 
 const SET_TYPES: SetType[] = ['warmup', 'work', 'backoff', 'joker'];
@@ -110,6 +112,7 @@ export function WorkoutEditor({
 	configs,
 	onSave,
 	onCancel,
+	onDelete,
 }: WorkoutEditorProps) {
 	const [workout, setWorkout] = useState<EditableWorkout>(() =>
 		existing
@@ -122,6 +125,7 @@ export function WorkoutEditor({
 				},
 	);
 	const [saving, setSaving] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState(false);
 
 	const isNew = !existing;
 
@@ -289,6 +293,17 @@ export function WorkoutEditor({
 		);
 		onSave(def);
 	}, [isValid, saving, workout, effectiveId, configs, existing, onSave]);
+
+	// --- Delete ---
+	const handleDelete = useCallback(() => {
+		if (!existing || !onDelete) return;
+		if (!confirmDelete) {
+			setConfirmDelete(true);
+			return;
+		}
+		setConfirmDelete(false);
+		onDelete(existing.id);
+	}, [existing, onDelete, confirmDelete]);
 
 	return (
 		<div className="workout-editor">
@@ -579,6 +594,41 @@ export function WorkoutEditor({
 						<p key={i} className="editor-error">{err}</p>
 					))}
 				</div>
+			)}
+
+			{/* Delete workout */}
+			{!isNew && onDelete && (
+				<section className="editor-section editor-delete-section">
+					{!confirmDelete ? (
+						<button
+							type="button"
+							className="btn-delete-workout"
+							onClick={handleDelete}
+						>
+							<Trash2 size={16} /> Delete Workout
+						</button>
+					) : (
+						<div className="editor-delete-confirm">
+							<span className="editor-delete-confirm-label">
+								Delete "{workout.name}"?
+							</span>
+							<button
+								type="button"
+								className="btn-delete-workout-confirm"
+								onClick={handleDelete}
+							>
+								Confirm Delete
+							</button>
+							<button
+								type="button"
+								className="btn-delete-workout-cancel"
+								onClick={() => setConfirmDelete(false)}
+							>
+								Cancel
+							</button>
+						</div>
+					)}
+				</section>
 			)}
 		</div>
 	);
