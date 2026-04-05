@@ -2148,6 +2148,76 @@ body {
 	margin-bottom: 0.25rem;
 }
 
+/* Delete workout button */
+.editor-delete-section {
+	margin-top: 2rem;
+	border-top: 1px solid var(--color-border);
+	padding-top: 1.5rem;
+}
+
+.btn-delete-workout {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+	justify-content: center;
+	background: none;
+	border: 1px solid var(--color-danger);
+	color: var(--color-danger);
+	cursor: pointer;
+	font-size: 0.875rem;
+	font-weight: 600;
+	padding: 0.625rem 1rem;
+	border-radius: 8px;
+	transition: background 0.15s, color 0.15s;
+}
+
+.btn-delete-workout:active {
+	background: var(--color-danger);
+	color: #fff;
+}
+
+.editor-delete-confirm {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.editor-delete-confirm-label {
+	flex: 1;
+	color: var(--color-danger);
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+
+.btn-delete-workout-confirm {
+	background: var(--color-danger);
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	padding: 0.5rem 1rem;
+	border-radius: 6px;
+	transition: opacity 0.15s;
+}
+
+.btn-delete-workout-confirm:active {
+	opacity: 0.8;
+}
+
+.btn-delete-workout-cancel {
+	background: none;
+	border: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	cursor: pointer;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	padding: 0.5rem 1rem;
+	border-radius: 6px;
+}
+
 /* Edit button on workout cards */
 .workout-card-wrapper {
 	display: flex;
