@@ -53,7 +53,9 @@ jobs:
               continue
             fi
 
-            if [ "$issue_state" != "closed" ]; then
+            # gh returns state in uppercase (CLOSED/OPEN); normalize to lowercase
+            issue_state_lower=$(echo "$issue_state" | tr '[:upper:]' '[:lower:]')
+            if [ "$issue_state_lower" != "closed" ]; then
               echo "  Issue is ${issue_state} — skipping"
               continue
             fi
