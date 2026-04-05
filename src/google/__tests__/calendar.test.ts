@@ -41,18 +41,13 @@ describe('generateEventDates', () => {
 describe('buildDeepLink', () => {
 	const base = 'https://example.github.io/stronger/'
 
-	it('builds a strength workout deep link', () => {
-		const link = buildDeepLink('squat-a', 'strength', base)
+	it('builds a workout deep link', () => {
+		const link = buildDeepLink('squat-a', base)
 		expect(link).toBe('https://example.github.io/stronger/#/workout/squat-a')
 	})
 
-	it('builds a cardio workout deep link', () => {
-		const link = buildDeepLink('running', 'cardio', base)
-		expect(link).toBe('https://example.github.io/stronger/#/cardio/running')
-	})
-
 	it('encodes special characters in workout IDs', () => {
-		const link = buildDeepLink('bench press/heavy', 'strength', base)
+		const link = buildDeepLink('bench press/heavy', base)
 		expect(link).toBe('https://example.github.io/stronger/#/workout/bench%20press%2Fheavy')
 	})
 })

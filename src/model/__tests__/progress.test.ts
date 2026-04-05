@@ -28,7 +28,6 @@ function makeRow(overrides: Partial<ParsedLogRow> = {}): ParsedLogRow {
     actualWeight: 100,
     actualReps: 5,
     completed: true,
-    category: 'strength',
     ...overrides,
   };
 }
@@ -60,14 +59,6 @@ describe('computeVolume', () => {
       makeRow({ actualWeight: 80, actualReps: 8 }),
     ];
     expect(computeVolume(sets)).toBe(640);
-  });
-
-  it('excludes cardio sets', () => {
-    const sets = [
-      makeRow({ category: 'cardio', setType: 'work' }),
-      makeRow({ actualWeight: 100, actualReps: 5 }),
-    ];
-    expect(computeVolume(sets)).toBe(500);
   });
 
   it('returns 0 for empty input', () => {
@@ -167,13 +158,6 @@ describe('getLiftsWithData', () => {
   it('excludes warmup-only lifts', () => {
     const rows = [
       makeRow({ liftId: 'bench', exerciseName: 'Bench', setType: 'warmup' }),
-    ];
-    expect(getLiftsWithData(rows)).toEqual([]);
-  });
-
-  it('excludes cardio rows', () => {
-    const rows = [
-      makeRow({ liftId: 'run', exerciseName: 'Running', category: 'cardio' }),
     ];
     expect(getLiftsWithData(rows)).toEqual([]);
   });

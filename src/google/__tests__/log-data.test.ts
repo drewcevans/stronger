@@ -39,7 +39,6 @@ describe('parseLogRow', () => {
 			actualWeight: 200,
 			actualReps: 6,
 			completed: true,
-			category: 'strength',
 		});
 	});
 
@@ -131,7 +130,6 @@ describe('findPreviousWorkoutSets', () => {
 			actualWeight: 200,
 			actualReps: 6,
 			completed: true,
-			category: 'strength',
 			...overrides,
 		};
 	}
