@@ -290,32 +290,90 @@ export function metersToMiles(meters: number): number {
   return meters / 1609.34;
 }
 
+/** Pad a number to 2 digits. */
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/** Format a Date object as ISO 8601 local date-time (YYYY-MM-DDTHH:MM:SS). */
+function formatLocalISO(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
+/** Format a Date object as ISO 8601 date (YYYY-MM-DD). */
+function formatLocalDate(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
 /**
- * Parse a Hevy timestamp into ISO 8601 local time.
- * Hevy timestamps look like "2025-01-15 08:30:00".
- * We treat them as local time and format as ISO 8601.
+ * Parse a timestamp string into ISO 8601 local date-time.
+ * Handles multiple formats:
+ *   "2025-01-15 08:30:00" → "2025-01-15T08:30:00"
+ *   "2025-01-15T08:30:00" → "2025-01-15T08:30:00" (unchanged)
+ *   "Jan 15, 2025 8:30 AM" → "2025-01-15T08:30:00"
+ *   "15 Jan 2025 08:30" → "2025-01-15T08:30:00"
+ * Returns '' for empty/unparseable input.
  */
-function parseTimestamp(ts: string): string {
+export function toISOTimestamp(ts: string): string {
   if (!ts) return '';
-  // Replace space with T for ISO format
   const trimmed = ts.trim();
-  // If already has T, return as-is
-  if (trimmed.includes('T')) return trimmed;
-  // "2025-01-15 08:30:00" → "2025-01-15T08:30:00"
-  return trimmed.replace(' ', 'T');
+
+  // Fast path: already ISO 8601 with T separator
+  if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) return trimmed;
+
+  // Common Hevy format: "YYYY-MM-DD HH:MM:SS"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(trimmed)) {
+    return trimmed.replace(' ', 'T');
+  }
+
+  // Try Date constructor for other formats (e.g., "Jan 15, 2025 8:30 AM")
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return formatLocalISO(d);
+  }
+
+  // Fallback: return as-is
+  return trimmed;
+}
+
+/**
+ * Parse a date string into ISO 8601 date (YYYY-MM-DD).
+ * Handles multiple formats:
+ *   "2025-01-15" → "2025-01-15" (unchanged)
+ *   "Jan 15, 2025" → "2025-01-15"
+ *   "01/15/2025" → "2025-01-15"
+ * Returns '' for empty/unparseable input.
+ */
+export function toISODate(dateStr: string): string {
+  if (!dateStr) return '';
+  const trimmed = dateStr.trim();
+
+  // Fast path: already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.substring(0, 10);
+
+  // Try Date constructor for other formats
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    return formatLocalDate(d);
+  }
+
+  // Fallback: return first 10 chars
+  return trimmed.substring(0, 10);
 }
 
 /**
  * Extract a YYYY-MM-DD date string from either a Workout Date column
  * or by parsing from the Workout Start timestamp.
+ * All values are normalized to ISO 8601 format.
  */
 function extractDate(row: HevyRow): string {
   if (row.workoutDate) {
-    // workoutDate should already be YYYY-MM-DD
-    return row.workoutDate.trim().substring(0, 10);
+    return toISODate(row.workoutDate);
   }
   if (row.workoutStart) {
-    return row.workoutStart.trim().substring(0, 10);
+    // Parse as a full timestamp, then extract the date portion
+    const ts = toISOTimestamp(row.workoutStart);
+    return ts.substring(0, 10);
   }
   return '';
 }
@@ -351,8 +409,8 @@ export function convertHevyRows(
 ): (string | number | boolean)[][] {
   return rows.map((row) => {
     const date = extractDate(row);
-    const startTime = parseTimestamp(row.workoutStart);
-    const endTime = parseTimestamp(row.workoutEnd);
+    const startTime = toISOTimestamp(row.workoutStart);
+    const endTime = toISOTimestamp(row.workoutEnd);
     const workoutId = slugify(row.workoutName);
     const exerciseName = stripParentheticals(row.exerciseName);
     const liftId = slugify(exerciseName);
