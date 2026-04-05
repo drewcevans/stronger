@@ -226,9 +226,9 @@ function CardioSection({ activities, onSave }: { activities: CardioActivity[]; o
 		const trimmed = editName.trim();
 		if (!trimmed || !editingId) return;
 		const newId = nameToCardioId(trimmed);
-		const updated = activities.map((a) =>
-			a.id === editingId ? { id: newId, name: trimmed } : a,
-		);
+		const updated = activities
+			.map((a) => a.id === editingId ? { id: newId, name: trimmed } : a)
+			.sort((a, b) => a.name.localeCompare(b.name));
 		onSave(updated);
 		setEditingId(null);
 		setEditName('');
@@ -285,7 +285,10 @@ function CardioSection({ activities, onSave }: { activities: CardioActivity[]; o
 										className="cardio-edit-input"
 										value={editName}
 										onChange={(e) => setEditName(e.target.value)}
-										onKeyDown={(e) => { if (e.key === 'Enter') handleEditSave(); if (e.key === 'Escape') handleEditCancel(); }}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter') handleEditSave();
+											if (e.key === 'Escape') handleEditCancel();
+										}}
 										autoFocus
 									/>
 									<button className="btn-cardio-action btn-cardio-confirm" onClick={handleEditSave} aria-label="Save"><Check size={14} /></button>
@@ -306,7 +309,10 @@ function CardioSection({ activities, onSave }: { activities: CardioActivity[]; o
 								className="cardio-edit-input"
 								value={newName}
 								onChange={(e) => setNewName(e.target.value)}
-								onKeyDown={(e) => { if (e.key === 'Enter') handleAddSave(); if (e.key === 'Escape') handleAddCancel(); }}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') handleAddSave();
+									if (e.key === 'Escape') handleAddCancel();
+								}}
 								placeholder="Activity name"
 								autoFocus
 							/>
