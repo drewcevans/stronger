@@ -1256,7 +1256,7 @@ body {
 	padding: 0.125rem;
 	cursor: pointer;
 	color: var(--color-text-muted);
-	opacity: 0.25;
+	opacity: 0.5;
 	transition: opacity 0.15s, color 0.15s;
 	display: flex;
 	align-items: center;
