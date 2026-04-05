@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Workout, LiftConfig } from '../model/index.ts'
+import type { Workout, LiftConfig, CardioActivity } from '../model/index.ts'
 import { buildWorkoutsFromConfigs, workoutDefinitions } from '../data/sample-workouts.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 import {
@@ -22,8 +22,13 @@ import {
 	writeDefaultWorkoutDefs,
 	verifyLogTab,
 	createLogTab,
+	verifyCardioTab,
+	createCardioTab,
+	readCardioActivities,
+	writeDefaultCardioActivities,
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
+import { defaultCardioActivities } from '../data/sample-workouts.ts'
 import { Dumbbell, Calendar, LogOut, Library, TrendingUp, Settings } from 'lucide-react'
 
 type Phase =
@@ -35,7 +40,7 @@ type Phase =
 	| 'error' // something went wrong
 
 interface Props {
-	onConnected: (workouts: Workout[], configs: LiftConfig[], spreadsheetId: string, definitions: WorkoutDefinition[]) => void
+	onConnected: (workouts: Workout[], configs: LiftConfig[], spreadsheetId: string, definitions: WorkoutDefinition[], cardioActivities: CardioActivity[]) => void
 	onDisconnected: () => void
 	onNeedsSetup?: (spreadsheetId: string) => void
 	onOpenCalendar?: () => void
@@ -123,6 +128,11 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 				if (!logTabExists) {
 					await createLogTab(spreadsheetId)
 				}
+				// Ensure cardio tab exists
+				const cardioTabExists = await verifyCardioTab(spreadsheetId)
+				if (!cardioTabExists) {
+					await createCardioTab(spreadsheetId)
+				}
 
 				setPhase('connected')
 				if (onNeedsSetup) {
@@ -143,6 +153,12 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 				await createLogTab(spreadsheetId)
 			}
 
+			// Ensure cardio tab exists
+			const cardioTabExists = await verifyCardioTab(spreadsheetId)
+			if (!cardioTabExists) {
+				await createCardioTab(spreadsheetId)
+			}
+
 			// Build a lift-name lookup for exercise display names
 			const liftNames = new Map(configs.map((c) => [c.id, c.name]))
 
@@ -152,9 +168,16 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 				defs = workoutDefinitions
 			}
 
+			// Read cardio activities — if empty, seed with defaults
+			let cardio = await readCardioActivities(spreadsheetId)
+			if (!cardio) {
+				await writeDefaultCardioActivities(spreadsheetId, defaultCardioActivities)
+				cardio = defaultCardioActivities
+			}
+
 			const workouts = buildWorkoutsFromConfigs(configs, defs)
 			setPhase('connected')
-			onConnected(workouts, configs, spreadsheetId, defs)
+			onConnected(workouts, configs, spreadsheetId, defs, cardio)
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Unable to access the sheet.',

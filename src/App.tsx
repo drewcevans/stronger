@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry } from './model/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, CardioActivity } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions, defaultCardioActivities } from './data/sample-workouts.js';
@@ -35,15 +35,17 @@ function App() {
   const [logRows, setLogRows] = useState<ParsedLogRow[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
+  const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
 
   const handleConnected = useCallback(
-    (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[]) => {
+    (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[], cardio: CardioActivity[]) => {
       setWorkouts(loadedWorkouts);
       setConfigs(loadedConfigs);
       setDefinitions(defs);
       setSpreadsheetId(sheetId);
       setSheetConnected(true);
       setNeedsSetup(false);
+      setCardioActivities(cardio);
       // Fire-and-forget: load schedule and log data
       void loadScheduleData(sheetId);
       void loadLogData(sheetId);
@@ -75,6 +77,14 @@ function App() {
       }
       setDefinitions(defs);
 
+      // Read or seed default cardio activities
+      let cardio = await readCardioActivities(spreadsheetId);
+      if (!cardio) {
+        await writeDefaultCardioActivities(spreadsheetId, defaultCardioActivities);
+        cardio = [...defaultCardioActivities];
+      }
+      setCardioActivities(cardio);
+
       const builtWorkouts = buildWorkoutsFromConfigs(configs, defs);
       setWorkouts(builtWorkouts);
       setNeedsSetup(false);
@@ -99,6 +109,7 @@ function App() {
     setSchedule([]);
     setLogRows([]);
     setNeedsSetup(false);
+    setCardioActivities([]);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
@@ -382,6 +393,16 @@ function App() {
     [definitions, configs, spreadsheetId],
   );
 
+  const handleCardioSave = useCallback(
+    (updated: CardioActivity[]) => {
+      setCardioActivities(updated);
+      if (spreadsheetId) {
+        void writeCardioActivities(spreadsheetId, updated);
+      }
+    },
+    [spreadsheetId],
+  );
+
   const handleEditorCancel = useCallback(() => {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
@@ -614,7 +635,7 @@ function App() {
         />
         <CalendarView
           workouts={workouts}
-          cardioActivities={defaultCardioActivities}
+          cardioActivities={cardioActivities}
           schedule={schedule}
           logRows={logRows}
           onAssign={handleScheduleAssign}
@@ -719,6 +740,8 @@ function App() {
         onEdit={handleEditWorkout}
         onNew={handleNewWorkout}
         onToggleFavorite={handleToggleFavorite}
+        cardioActivities={cardioActivities}
+        onCardioSave={handleCardioSave}
       />
     </>
   );

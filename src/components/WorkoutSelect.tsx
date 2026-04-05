@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { Workout, ScheduleEntry } from '../model/index.js';
+import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
 import type { LogSession } from './CalendarView.js';
 import { groupLogByDate } from './CalendarView.js';
 import { Banner } from './Banner.js';
 import { MotivationalQuote } from './MotivationalQuote.js';
-import { BicepsFlexed, ChevronDown, Pencil, Plus, Star } from 'lucide-react';
+import { BicepsFlexed, ChevronDown, Pencil, Plus, Star, Bike, Trash2, Check, X } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -17,6 +17,8 @@ interface WorkoutSelectProps {
 	onEdit?: (workoutId: string) => void;
 	onNew?: () => void;
 	onToggleFavorite?: (workoutId: string, favorite: boolean) => void;
+	cardioActivities?: CardioActivity[];
+	onCardioSave?: (activities: CardioActivity[]) => void;
 }
 
 function WorkoutCard({
@@ -69,7 +71,7 @@ function todayDateString(): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onViewSession, onEdit, onNew, onToggleFavorite }: WorkoutSelectProps) {
+export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onViewSession, onEdit, onNew, onToggleFavorite, cardioActivities, onCardioSave }: WorkoutSelectProps) {
 	const { favorites, others } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
@@ -186,10 +188,143 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 					)}
 				</div>
 			)}
+			{cardioActivities && onCardioSave && (
+				<CardioSection activities={cardioActivities} onSave={onCardioSave} />
+			)}
 			{missingLiftIds && missingLiftIds.length > 0 && (
 				<p className="config-warning">
 					Missing lift configs: {missingLiftIds.join(', ')}
 				</p>
+			)}
+		</div>
+	);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cardio section                                                     */
+/* ------------------------------------------------------------------ */
+
+/** Generate a kebab-case id from a name. */
+function nameToCardioId(name: string): string {
+	return name.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
+function CardioSection({ activities, onSave }: { activities: CardioActivity[]; onSave: (a: CardioActivity[]) => void }) {
+	const [open, setOpen] = useState(false);
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editName, setEditName] = useState('');
+	const [adding, setAdding] = useState(false);
+	const [newName, setNewName] = useState('');
+
+	const handleEdit = (a: CardioActivity) => {
+		setEditingId(a.id);
+		setEditName(a.name);
+		setAdding(false);
+	};
+
+	const handleEditSave = () => {
+		const trimmed = editName.trim();
+		if (!trimmed || !editingId) return;
+		const newId = nameToCardioId(trimmed);
+		const updated = activities
+			.map((a) => a.id === editingId ? { id: newId, name: trimmed } : a)
+			.sort((a, b) => a.name.localeCompare(b.name));
+		onSave(updated);
+		setEditingId(null);
+		setEditName('');
+	};
+
+	const handleEditCancel = () => {
+		setEditingId(null);
+		setEditName('');
+	};
+
+	const handleDelete = (id: string) => {
+		onSave(activities.filter((a) => a.id !== id));
+	};
+
+	const handleAddStart = () => {
+		setAdding(true);
+		setNewName('');
+		setEditingId(null);
+	};
+
+	const handleAddSave = () => {
+		const trimmed = newName.trim();
+		if (!trimmed) return;
+		const id = nameToCardioId(trimmed);
+		if (activities.some((a) => a.id === id)) return;
+		onSave([...activities, { id, name: trimmed }].sort((a, b) => a.name.localeCompare(b.name)));
+		setAdding(false);
+		setNewName('');
+	};
+
+	const handleAddCancel = () => {
+		setAdding(false);
+		setNewName('');
+	};
+
+	return (
+		<div className="cardio-section">
+			<button
+				className="btn-cardio-toggle"
+				onClick={() => setOpen(!open)}
+				aria-expanded={open}
+			>
+				<Bike size={18} />
+				Cardio
+				<ChevronDown size={16} className={`more-chevron${open ? ' more-chevron-open' : ''}`} />
+			</button>
+			{open && (
+				<div className="cardio-list">
+					{activities.map((a) => (
+						<div key={a.id} className="cardio-item">
+							{editingId === a.id ? (
+								<div className="cardio-edit-row">
+									<input
+										className="cardio-edit-input"
+										value={editName}
+										onChange={(e) => setEditName(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter') handleEditSave();
+											if (e.key === 'Escape') handleEditCancel();
+										}}
+										autoFocus
+									/>
+									<button className="btn-cardio-action btn-cardio-confirm" onClick={handleEditSave} aria-label="Save"><Check size={14} /></button>
+									<button className="btn-cardio-action btn-cardio-cancel" onClick={handleEditCancel} aria-label="Cancel"><X size={14} /></button>
+								</div>
+							) : (
+								<>
+									<span className="cardio-name">{a.name}</span>
+									<button className="btn-cardio-action" onClick={() => handleEdit(a)} aria-label={`Edit ${a.name}`}><Pencil size={14} /></button>
+									<button className="btn-cardio-action btn-cardio-delete" onClick={() => handleDelete(a.id)} aria-label={`Delete ${a.name}`}><Trash2 size={14} /></button>
+								</>
+							)}
+						</div>
+					))}
+					{adding ? (
+						<div className="cardio-edit-row cardio-add-row">
+							<input
+								className="cardio-edit-input"
+								value={newName}
+								onChange={(e) => setNewName(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') handleAddSave();
+									if (e.key === 'Escape') handleAddCancel();
+								}}
+								placeholder="Activity name"
+								autoFocus
+							/>
+							<button className="btn-cardio-action btn-cardio-confirm" onClick={handleAddSave} aria-label="Save"><Check size={14} /></button>
+							<button className="btn-cardio-action btn-cardio-cancel" onClick={handleAddCancel} aria-label="Cancel"><X size={14} /></button>
+						</div>
+					) : (
+						<button className="btn-new-cardio" onClick={handleAddStart}>
+							<Plus size={16} /> New Activity
+						</button>
+					)}
+				</div>
 			)}
 		</div>
 	);

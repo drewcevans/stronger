@@ -5,8 +5,8 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry } from '../model/types.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, CardioActivity } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -1268,5 +1268,152 @@ export async function writeSchedule(
 		range: SCHEDULE_FULL_RANGE,
 		valueInputOption: 'RAW',
 		resource: { values: rows },
+	})
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cardio tab – constants                                             */
+/* ------------------------------------------------------------------ */
+
+/** A1 range for the cardio tab (open-ended rows, 2 columns). */
+const CARDIO_RANGE = `'${CARDIO_TAB_NAME}'!A:B`
+
+const CARDIO_HEADER: string[] = ['id', 'name']
+
+/* ------------------------------------------------------------------ */
+/*  Cardio tab – serialization                                         */
+/* ------------------------------------------------------------------ */
+
+/** Convert a {@link CardioActivity} to a spreadsheet row. */
+export function cardioActivityToRow(activity: CardioActivity): string[] {
+	return [activity.id, activity.name]
+}
+
+/**
+ * Parse a single raw cardio row (string array) into a {@link CardioActivity}.
+ * Returns `null` for incomplete rows.
+ */
+export function parseCardioRow(row: string[]): CardioActivity | null {
+	if (!row || row.length < 2) return null
+	const id = (row[0] ?? '').trim()
+	const name = (row[1] ?? '').trim()
+	if (!id || !name) return null
+	return { id, name }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cardio tab – read/write                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Check if the cardio tab exists in the spreadsheet.
+ */
+export async function verifyCardioTab(
+	spreadsheetId: string,
+): Promise<boolean> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.get({
+		spreadsheetId,
+	})
+	const sheets = response.result.sheets ?? []
+	return sheets.some(
+		(s) => s.properties.title === CARDIO_TAB_NAME,
+	)
+}
+
+/**
+ * Create the cardio tab inside the given spreadsheet.
+ */
+export async function createCardioTab(
+	spreadsheetId: string,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	await gapi.client.sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		resource: {
+			requests: [{ addSheet: { properties: { title: CARDIO_TAB_NAME } } }],
+		},
+	})
+}
+
+/**
+ * Read the cardio tab and return parsed cardio activities.
+ * Returns `null` if the tab is empty or contains no valid rows.
+ */
+export async function readCardioActivities(
+	spreadsheetId: string,
+): Promise<CardioActivity[] | null> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: CARDIO_RANGE,
+	})
+
+	const allRows = response.result.values
+	if (!allRows || allRows.length <= 1) return null
+
+	const parsed = allRows.slice(1)
+		.map(parseCardioRow)
+		.filter((r): r is CardioActivity => r !== null)
+
+	return parsed.length > 0 ? parsed : null
+}
+
+/**
+ * Write the header + default cardio activities to the cardio tab.
+ * Used on first connection when the tab is empty.
+ */
+export async function writeDefaultCardioActivities(
+	spreadsheetId: string,
+	activities: CardioActivity[],
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const allRows: string[][] = [
+		CARDIO_HEADER,
+		...activities.map(cardioActivityToRow),
+	]
+
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: CARDIO_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: allRows },
+	})
+}
+
+/**
+ * Write the full set of cardio activities to the cardio tab.
+ * Clears existing data first, then writes header + all rows.
+ */
+export async function writeCardioActivities(
+	spreadsheetId: string,
+	activities: CardioActivity[],
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const allRows: string[][] = [
+		CARDIO_HEADER,
+		...activities.map(cardioActivityToRow),
+	]
+
+	await gapi.client.sheets.spreadsheets.values.clear({
+		spreadsheetId,
+		range: CARDIO_RANGE,
+	})
+
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: CARDIO_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: allRows },
 	})
 }
