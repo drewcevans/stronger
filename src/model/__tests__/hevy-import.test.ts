@@ -8,6 +8,8 @@ import {
   kgToLbs,
   metersToMiles,
   stripParentheticals,
+  toISOTimestamp,
+  toISODate,
 } from '../hevy-import.js';
 
 /* ------------------------------------------------------------------ */
@@ -33,6 +35,68 @@ describe('stripParentheticals', () => {
 
   it('handles parenthetical in the middle', () => {
     expect(stripParentheticals('A (B) C')).toBe('A C');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  toISOTimestamp                                                      */
+/* ------------------------------------------------------------------ */
+
+describe('toISOTimestamp', () => {
+  it('returns empty string for empty input', () => {
+    expect(toISOTimestamp('')).toBe('');
+  });
+
+  it('passes through ISO 8601 with T separator', () => {
+    expect(toISOTimestamp('2025-01-15T08:30:00')).toBe('2025-01-15T08:30:00');
+  });
+
+  it('converts space-separated YYYY-MM-DD HH:MM:SS', () => {
+    expect(toISOTimestamp('2025-01-15 08:30:00')).toBe('2025-01-15T08:30:00');
+  });
+
+  it('converts "Mon DD, YYYY H:MM AM/PM" format', () => {
+    const result = toISOTimestamp('Jan 15, 2025 8:30:00 AM');
+    expect(result).toBe('2025-01-15T08:30:00');
+  });
+
+  it('converts "DD Mon YYYY HH:MM:SS" format', () => {
+    const result = toISOTimestamp('15 Jan 2025 08:30:00');
+    expect(result).toBe('2025-01-15T08:30:00');
+  });
+
+  it('handles whitespace around the value', () => {
+    expect(toISOTimestamp('  2025-01-15 08:30:00  ')).toBe('2025-01-15T08:30:00');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  toISODate                                                          */
+/* ------------------------------------------------------------------ */
+
+describe('toISODate', () => {
+  it('returns empty string for empty input', () => {
+    expect(toISODate('')).toBe('');
+  });
+
+  it('passes through YYYY-MM-DD', () => {
+    expect(toISODate('2025-01-15')).toBe('2025-01-15');
+  });
+
+  it('extracts date from YYYY-MM-DD HH:MM:SS', () => {
+    expect(toISODate('2025-01-15 08:30:00')).toBe('2025-01-15');
+  });
+
+  it('converts "Mon DD, YYYY" format', () => {
+    expect(toISODate('Jan 15, 2025')).toBe('2025-01-15');
+  });
+
+  it('converts "DD Mon YYYY" format', () => {
+    expect(toISODate('15 Jan 2025')).toBe('2025-01-15');
+  });
+
+  it('handles whitespace around the value', () => {
+    expect(toISODate('  2025-01-15  ')).toBe('2025-01-15');
   });
 });
 
@@ -348,6 +412,25 @@ describe('convertHevyRows', () => {
     );
     const rows = convertHevyRows(parseHevyCsv(tsv));
     expect(rows[0][0]).toBe('2025-01-15');
+  });
+
+  it('converts non-ISO timestamps to ISO 8601', () => {
+    const csv = makeHevyCsv(
+      'Push Day,15 Jan 2025 08:30:00,15 Jan 2025 09:45:00,,Bench Press (Barbell),1,90,6,,,metric,normal,Barbell,,,75 min,"Jan 15, 2025"',
+    );
+    const rows = convertHevyRows(parseHevyCsv(csv));
+    expect(rows[0][0]).toBe('2025-01-15');                   // date
+    expect(rows[0][1]).toBe('2025-01-15T08:30:00');           // startTime
+    expect(rows[0][2]).toBe('2025-01-15T09:45:00');           // endTime
+  });
+
+  it('converts non-ISO start_time when workoutDate is absent', () => {
+    const csv = makeHevyCsv(
+      'Push Day,15 Jan 2025 08:30:00,15 Jan 2025 09:45:00,,Bench Press (Barbell),1,90,6,,,metric,normal,Barbell,,,,',
+    );
+    const rows = convertHevyRows(parseHevyCsv(csv));
+    expect(rows[0][0]).toBe('2025-01-15');                   // date from parsed startTime
+    expect(rows[0][1]).toBe('2025-01-15T08:30:00');           // startTime
   });
 });
 
