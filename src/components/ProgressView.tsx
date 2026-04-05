@@ -24,13 +24,13 @@ const RANGE_LABELS: Record<TimeRange, string> = {
 };
 
 /** The four main barbell lifts shown prominently at the top. */
-const BIG_FOUR = ['squat', 'bench', 'deadlift', 'press'] as const;
+const BIG_FOUR = ['squat', 'bench-press', 'deadlift', 'overhead-press'] as const;
 
 const BIG_FOUR_LABELS: Record<string, string> = {
   squat: 'Squat',
-  bench: 'Bench Press',
+  'bench-press': 'Bench Press',
   deadlift: 'Deadlift',
-  press: 'Press',
+  'overhead-press': 'Overhead Press',
 };
 
 /* ------------------------------------------------------------------ */
@@ -332,7 +332,8 @@ function ProgressChart({
 function formatDate(iso: string): string {
   const parts = iso.split('-');
   if (parts.length < 3) return iso;
-  return `${parts[1]}/${parts[2]}`;
+  const year = parts[0].slice(2); // 2-digit year
+  return `${parseInt(parts[1])}/${parseInt(parts[2])}/${year}`;
 }
 
 function formatValue(v: number): string {
