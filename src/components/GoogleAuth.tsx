@@ -203,7 +203,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 						setError(
 							retryErr instanceof Error
 								? retryErr.message
-								: 'Unable to access the sheet.',
+								: 'Unable to access the sheet after re-authenticating. Please check your permissions.',
 						)
 						setPhase('error')
 						return

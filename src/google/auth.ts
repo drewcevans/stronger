@@ -93,7 +93,7 @@ export function getTokenClient(
 		error_callback: (err) => {
 			if (pendingErrorHandler) {
 				pendingErrorHandler(
-					new Error(err.message ?? err.type ?? 'Auth flow cancelled'),
+					new Error(err.message ?? err.type ?? 'Authentication flow failed'),
 				)
 				pendingErrorHandler = null
 			}
