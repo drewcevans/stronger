@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
+import { useWakeLock } from '../hooks/useWakeLock.js';
 import { saveDraft } from '../hooks/useWorkoutDraft.js';
 
 interface WorkoutViewProps {
@@ -61,6 +62,8 @@ function initResults(workout: Workout): SetResult[][] {
 }
 
 export function WorkoutView({ workout, previousSets, startTime, draftResults, onBack, onFinish }: WorkoutViewProps) {
+	useWakeLock();
+
 	const [results, setResults] = useState<SetResult[][]>(() => {
 		// Restore from draft if shapes match; otherwise start fresh.
 		if (draftResults && draftResults.length === workout.exercises.length) {
