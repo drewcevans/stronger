@@ -121,6 +121,19 @@ export interface GapiClient {
 				calendarId: string
 				resource: CalendarEventResource
 			}) => Promise<CalendarEventResponse>
+			update: (params: {
+				calendarId: string
+				eventId: string
+				resource: CalendarEventResource
+			}) => Promise<CalendarEventResponse>
+			get: (params: {
+				calendarId: string
+				eventId: string
+			}) => Promise<{ result: CalendarEventItem }>
+			delete: (params: {
+				calendarId: string
+				eventId: string
+			}) => Promise<unknown>
 			list: (params: {
 				calendarId: string
 				timeMin?: string
@@ -209,9 +222,12 @@ export interface CalendarEventsListResponse {
 }
 
 export interface CalendarEventItem {
+	id?: string
 	summary?: string
+	description?: string
 	start?: { date?: string; dateTime?: string }
 	end?: { date?: string; dateTime?: string }
+	status?: string
 }
 
 /* ------------------------------------------------------------------ */

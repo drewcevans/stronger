@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity } from './model/index.js';
 import { computeProgression } from './model/index.js';
 import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings } from './google/index.js';
+import { syncScheduleWithCalendar } from './google/index.js';
+import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions, defaultCardioActivities } from './data/sample-workouts.js';
@@ -338,6 +340,33 @@ function App() {
       }
     },
     [workouts, handleSelectWorkout],
+  );
+
+  const handleSyncCalendar = useCallback(
+    async (calendarId: string): Promise<CalendarSyncResult> => {
+      const resolveWorkoutName = (workoutId: string): string | null => {
+        if (workoutId.startsWith('cardio:')) {
+          const cardioId = workoutId.slice('cardio:'.length);
+          const c = cardioActivities.find((a) => a.id === cardioId);
+          return c?.name ?? null;
+        }
+        const w = workouts.find((wk) => wk.id === workoutId);
+        return w?.name ?? null;
+      };
+
+      const { updatedSchedule, result } = await syncScheduleWithCalendar(
+        calendarId,
+        schedule,
+        resolveWorkoutName,
+      );
+
+      setSchedule(updatedSchedule);
+      if (spreadsheetId) {
+        void writeSchedule(spreadsheetId, updatedSchedule);
+      }
+      return result;
+    },
+    [schedule, workouts, cardioActivities, spreadsheetId],
   );
 
   const handleUpdateLogRows = useCallback(
@@ -729,6 +758,7 @@ function App() {
           onDeleteSession={handleDeleteSession}
           onBulkSchedule={handleBulkSchedule}
           onUpdateFlags={handleUpdateFlags}
+          onSyncCalendar={handleSyncCalendar}
         />
       </>
     );

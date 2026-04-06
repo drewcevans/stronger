@@ -43,3 +43,12 @@ If an event is deleted from Google Calendar, the corresponding entry is removed 
 - Depends on spec 014 (deep-link router) for URLs in calendar events and spec 016 (in-app calendar view) for the schedule data and UI surface.
 - The sheet's schedule zone needs an additional column for the event ID (e.g., `[date, workoutId, calendarEventId]`). Rows without an event ID are new and need to be pushed; rows with an ID are checked against the calendar for changes.
 - The Google Calendar Events API supports `list` with `updatedMin` filtering, which can make incremental sync efficient. But a simple full-read approach is fine for the initial implementation given the small data volume.
+
+## Implementation Decisions
+
+- Schedule tab expanded from 7 columns (A:G) to 8 columns (A:H) with `calendarEventId` at column H.
+- The sync function queries a ±30 day window around the schedule date range to catch events moved outside the original range.
+- Old schedule rows (pre-dating this change) have no `calendarEventId` and are treated as new entries on first sync — they get pushed to Google Calendar and receive an event ID.
+- Flag-only rows (no workoutId) are excluded from sync entirely since they have no corresponding calendar event.
+- The CalendarSync UI is a separate component from CalendarPush, shown via a "Sync" toolbar button. Both panels collapse each other when opened (mutual exclusion).
+- The existing one-way push functionality (CalendarPush) is preserved alongside the new two-way sync.

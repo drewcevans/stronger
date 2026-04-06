@@ -1765,6 +1765,13 @@ body {
 	margin: 0.25rem 0 0;
 }
 
+.calendar-sync-description {
+	font-size: 0.8125rem;
+	color: rgba(255, 255, 255, 0.5);
+	line-height: 1.4;
+	margin: 0;
+}
+
 @keyframes spin {
 	to { transform: rotate(360deg); }
 }

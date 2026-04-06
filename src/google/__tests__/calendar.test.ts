@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateEventDates, buildDeepLink } from '../calendar.ts'
+import { generateEventDates, buildDeepLink, getEventDate } from '../calendar.ts'
 
 describe('generateEventDates', () => {
 	it('generates one date per week for Monday (dayIndex 0)', () => {
@@ -49,5 +49,27 @@ describe('buildDeepLink', () => {
 	it('encodes special characters in workout IDs', () => {
 		const link = buildDeepLink('bench press/heavy', base)
 		expect(link).toBe('https://example.github.io/stronger/#/workout/bench%20press%2Fheavy')
+	})
+})
+
+describe('getEventDate', () => {
+	it('extracts date from all-day event', () => {
+		expect(getEventDate({ start: { date: '2026-04-10' } })).toBe('2026-04-10')
+	})
+
+	it('extracts date from timed event', () => {
+		expect(getEventDate({ start: { dateTime: '2026-04-10T14:00:00Z' } })).toBe('2026-04-10')
+	})
+
+	it('prefers date over dateTime', () => {
+		expect(getEventDate({ start: { date: '2026-04-10', dateTime: '2026-04-11T09:00:00Z' } })).toBe('2026-04-10')
+	})
+
+	it('returns undefined when start is missing', () => {
+		expect(getEventDate({})).toBeUndefined()
+	})
+
+	it('returns undefined when start has no date fields', () => {
+		expect(getEventDate({ start: {} })).toBeUndefined()
 	})
 })

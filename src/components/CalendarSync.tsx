@@ -1,0 +1,171 @@
+import { useState, useEffect, useCallback } from 'react';
+import type { CalendarListEntry } from '../google/index.js';
+import type { CalendarSyncResult } from '../google/index.js';
+import { listWritableCalendars, saveCalendarId, loadCalendarId } from '../google/index.js';
+import { RefreshCw, X, Loader, CheckCircle, AlertCircle } from 'lucide-react';
+
+interface CalendarSyncProps {
+  onSync: (calendarId: string) => Promise<CalendarSyncResult>;
+  onClose: () => void;
+}
+
+type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
+export function CalendarSync({ onSync, onClose }: CalendarSyncProps) {
+  const [calendars, setCalendars] = useState<CalendarListEntry[]>([]);
+  const [selectedCalendarId, setSelectedCalendarId] = useState('');
+  const [loadingCalendars, setLoadingCalendars] = useState(true);
+  const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncResult, setSyncResult] = useState<CalendarSyncResult | null>(null);
+
+  // Load user's writable calendars on mount
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingCalendars(true);
+    setCalendarError(null);
+
+    listWritableCalendars()
+      .then((cals) => {
+        if (cancelled) return;
+        setCalendars(cals);
+        const saved = loadCalendarId();
+        const savedCal = saved ? cals.find((c) => c.id === saved) : null;
+        const primary = cals.find((c) => c.primary);
+        setSelectedCalendarId(savedCal?.id ?? primary?.id ?? cals[0]?.id ?? '');
+        setLoadingCalendars(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCalendarError(err instanceof Error ? err.message : String(err));
+        setLoadingCalendars(false);
+      });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const canSync = selectedCalendarId && syncStatus !== 'syncing';
+
+  const handleSync = useCallback(async () => {
+    if (!canSync) return;
+
+    setSyncStatus('syncing');
+    setSyncResult(null);
+
+    try {
+      const result = await onSync(selectedCalendarId);
+      setSyncResult(result);
+      setSyncStatus(result.errors.length > 0 ? 'error' : 'success');
+    } catch (err) {
+      setSyncResult({
+        created: 0,
+        updated: 0,
+        deleted: 0,
+        pulledDateChanges: 0,
+        pulledDeletions: 0,
+        errors: [err instanceof Error ? err.message : String(err)],
+      });
+      setSyncStatus('error');
+    }
+  }, [canSync, selectedCalendarId, onSync]);
+
+  /** Build a human-readable summary of what the sync did. */
+  function buildSummary(r: CalendarSyncResult): string {
+    const parts: string[] = [];
+    if (r.created > 0) parts.push(`${r.created} pushed`);
+    if (r.pulledDateChanges > 0) parts.push(`${r.pulledDateChanges} date${r.pulledDateChanges !== 1 ? 's' : ''} updated`);
+    if (r.pulledDeletions > 0) parts.push(`${r.pulledDeletions} removed (deleted in calendar)`);
+    if (r.deleted > 0) parts.push(`${r.deleted} calendar event${r.deleted !== 1 ? 's' : ''} cleaned up`);
+    if (parts.length === 0) return 'Everything is in sync.';
+    return parts.join(', ') + '.';
+  }
+
+  return (
+    <div className="calendar-push">
+      <div className="calendar-push-header">
+        <h3>Sync with Calendar</h3>
+        <button className="calendar-push-close" onClick={onClose} aria-label="Close">
+          <X size={18} />
+        </button>
+      </div>
+
+      <div className="calendar-push-section">
+        <p className="calendar-sync-description">
+          Two-way sync pushes new schedule entries to Google Calendar and pulls back any date changes or deletions made there.
+        </p>
+      </div>
+
+      {/* Calendar picker */}
+      <div className="calendar-push-section">
+        <label className="calendar-push-label" htmlFor="sync-calendar">
+          Target calendar
+        </label>
+        {loadingCalendars ? (
+          <div className="calendar-push-loading">
+            <Loader size={16} className="spin" /> Loading calendars…
+          </div>
+        ) : calendarError ? (
+          <div className="calendar-push-error">
+            <AlertCircle size={16} /> {calendarError}
+          </div>
+        ) : calendars.length === 0 ? (
+          <div className="calendar-push-error">
+            <AlertCircle size={16} /> No writable calendars found
+          </div>
+        ) : (
+          <select
+            id="sync-calendar"
+            className="calendar-push-select"
+            value={selectedCalendarId}
+            onChange={(e) => {
+              setSelectedCalendarId(e.target.value);
+              saveCalendarId(e.target.value);
+            }}
+          >
+            {calendars.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.summary}{c.primary ? ' (primary)' : ''}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      {/* Sync button */}
+      <button
+        className="calendar-push-btn"
+        onClick={handleSync}
+        disabled={!canSync}
+      >
+        {syncStatus === 'syncing' ? (
+          <>
+            <Loader size={16} className="spin" /> Syncing…
+          </>
+        ) : (
+          <>
+            <RefreshCw size={16} /> Sync with Calendar
+          </>
+        )}
+      </button>
+
+      {/* Result feedback */}
+      {syncResult && syncStatus === 'success' && (
+        <div className="calendar-push-feedback calendar-push-feedback-success">
+          <CheckCircle size={16} />
+          {buildSummary(syncResult)}
+        </div>
+      )}
+      {syncResult && syncStatus === 'error' && (
+        <div className="calendar-push-feedback calendar-push-feedback-error">
+          <AlertCircle size={16} />
+          <div>
+            <p>{buildSummary(syncResult)}</p>
+            {syncResult.errors.slice(0, 3).map((err, i) => (
+              <p key={i} className="calendar-push-error-detail">{err}</p>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

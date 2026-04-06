@@ -200,6 +200,8 @@ export interface ScheduleEntry {
 	workoutId: string;
 	/** Optional day-level flags (only meaningful on the first row for a given date). */
 	flags?: DayFlags;
+	/** Google Calendar event ID linking this entry to a calendar event. */
+	calendarEventId?: string;
 }
 
 // ---------------------------------------------------------------------------
