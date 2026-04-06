@@ -6,7 +6,7 @@
 
 Spec 027 established a pipeline that writes Garmin activity data (via Strava) into the "Stronger - Garmin" sheet tab. This spec adds a UI view to chart that data — giving a visual answer to questions like "how much am I running this month?" and "am I on track for my annual mileage goal?"
 
-The view shows four metrics — **duration**, **distance**, **miles**, and **elevation gain** — each in its own chart. Each metric is optional per activity row (some activities may have distance but no elevation, etc.), and a chart is only shown when there is data for it.
+The view shows three metrics — **distance** (miles), **elevation gain** (feet), and **duration** (hours) — each in its own chart. Each metric is optional per activity row (some activities may have distance but no elevation, etc.), and a chart is only shown when there is data for it.
 
 ### Chart design
 
@@ -37,7 +37,7 @@ Goals are set inline — tapping a "Set goal" icon near the chart opens a simple
 
 - [ ] A "Garmin" view is accessible from the app's navigation (route: `#/garmin`)
 - [ ] The view reads activity data from the "Stronger - Garmin" sheet tab
-- [ ] Four metric charts are displayed: duration, distance, miles, elevation gain
+- [ ] Three metric charts are displayed: distance (miles), elevation gain (feet), duration (hours)
 - [ ] Charts with no data for a metric are hidden
 - [ ] A time range selector offers: Week, Month, Quarter, Year, All
 - [ ] Bar chart shows aggregated values per time bucket (daily for week, weekly for month/quarter/year, monthly for all)
@@ -89,7 +89,7 @@ Tab name: `Stronger - Goals`
 
 | Column | Description |
 |--------|-------------|
-| `metric` | `duration`, `distance`, `miles`, or `elevationGain` |
+| `metric` | `duration`, `distance`, or `elevationGain` |
 | `value` | Numeric annual goal value (in display units: hours, miles, feet) |
 
 Range: `A:B` (2 columns). One row per metric. Writing a new goal overwrites the existing row for that metric.
