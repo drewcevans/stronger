@@ -460,18 +460,30 @@ export function CalendarView({
 		);
 	}
 
+	const handleTogglePush = () => {
+		const opening = !showPush;
+		setShowPush(opening);
+		if (opening) setShowSync(false);
+	};
+
+	const handleToggleSync = () => {
+		const opening = !showSync;
+		setShowSync(opening);
+		if (opening) setShowPush(false);
+	};
+
 	return (
 		<div className="calendar-view">
 			<div className="calendar-toolbar">
 				<button
 					className={`calendar-toolbar-btn${showPush ? ' calendar-toolbar-btn-active' : ''}`}
-					onClick={() => { setShowPush(!showPush); if (!showPush) setShowSync(false); }}
+					onClick={handleTogglePush}
 				>
 					<CalendarCog size={16} /> Planner
 				</button>
 				<button
 					className={`calendar-toolbar-btn${showSync ? ' calendar-toolbar-btn-active' : ''}`}
-					onClick={() => { setShowSync(!showSync); if (!showSync) setShowPush(false); }}
+					onClick={handleToggleSync}
 				>
 					<RefreshCw size={16} /> Sync
 				</button>

@@ -99,6 +99,18 @@ function buildExistingEventKeys(events: CalendarEventItem[]): Set<string> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Date formatting                                                    */
+/* ------------------------------------------------------------------ */
+
+/** Format a Date object as a YYYY-MM-DD string. */
+function formatDateISO(d: Date): string {
+	const yyyy = d.getFullYear()
+	const mm = String(d.getMonth() + 1).padStart(2, '0')
+	const dd = String(d.getDate()).padStart(2, '0')
+	return `${yyyy}-${mm}-${dd}`
+}
+
+/* ------------------------------------------------------------------ */
 /*  Event creation                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -177,7 +189,7 @@ export async function pushScheduleToCalendar(
 	const startDate = dates[0]
 	const [ey, em, ed] = dates[dates.length - 1].split('-').map(Number)
 	const rangeEnd = new Date(ey, em - 1, ed + 1)
-	const endDate = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, '0')}-${String(rangeEnd.getDate()).padStart(2, '0')}`
+	const endDate = formatDateISO(rangeEnd)
 
 	// Fetch existing events in the range to avoid duplicates.
 	let existingKeys: Set<string>
@@ -236,7 +248,7 @@ export async function pushEventsToCalendar(
 	// Compute the end date of the entire range for the existing-event query.
 	const [sy, sm, sd] = request.startDate.split('-').map(Number)
 	const rangeEnd = new Date(sy, sm - 1, sd + request.weeks * 7)
-	const endDate = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, '0')}-${String(rangeEnd.getDate()).padStart(2, '0')}`
+	const endDate = formatDateISO(rangeEnd)
 
 	// Fetch existing events in the range to avoid duplicates.
 	let existingKeys: Set<string>
@@ -371,8 +383,8 @@ export async function syncScheduleWithCalendar(
 	const [ly, lm, ld] = lastDate.split('-').map(Number)
 	const rangeStart = new Date(fy, fm - 1, fd - 30)
 	const rangeEnd = new Date(ly, lm - 1, ld + 31)
-	const startStr = `${rangeStart.getFullYear()}-${String(rangeStart.getMonth() + 1).padStart(2, '0')}-${String(rangeStart.getDate()).padStart(2, '0')}`
-	const endStr = `${rangeEnd.getFullYear()}-${String(rangeEnd.getMonth() + 1).padStart(2, '0')}-${String(rangeEnd.getDate()).padStart(2, '0')}`
+	const startStr = formatDateISO(rangeStart)
+	const endStr = formatDateISO(rangeEnd)
 
 	// Fetch all calendar events in the range
 	let calendarEvents: CalendarEventItem[]
