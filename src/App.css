@@ -3185,7 +3185,7 @@ body {
 
 .garmin-goal-line {
 	fill: none;
-	stroke: rgba(255, 255, 255, 0.25);
+	stroke: rgba(255, 255, 255, 0.4);
 	stroke-width: 1.5;
 	stroke-dasharray: 6 4;
 }
