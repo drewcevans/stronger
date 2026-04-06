@@ -75,6 +75,8 @@ export {
 	generateEventDates,
 	pushEventsToCalendar,
 	pushScheduleToCalendar,
+	getEventDate,
+	syncScheduleWithCalendar,
 } from './calendar.ts'
 export type {
 	WeeklySlot,
@@ -82,4 +84,6 @@ export type {
 	CalendarPushResult,
 	ScheduleCalendarEntry,
 	SchedulePushRequest,
+	CalendarSyncResult,
+	WorkoutNameResolver,
 } from './calendar.ts'

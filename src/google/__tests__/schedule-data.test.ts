@@ -96,6 +96,7 @@ describe('scheduleEntryToRow', () => {
 			'',
 			'',
 			'',
+			'',
 		])
 	})
 
@@ -106,7 +107,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: 'A',
 				flags: { home: true, elsewhere: false, travel: true, visitors: false, blocked: false },
 			}),
-		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', ''])
+		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', '', ''])
 	})
 
 	it('converts a flag-only row', () => {
@@ -116,7 +117,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: '',
 				flags: { home: false, elsewhere: true, travel: false, visitors: true, blocked: false },
 			}),
-		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE', ''])
+		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE', '', ''])
 	})
 
 	it('converts a blocked flag row', () => {
@@ -126,7 +127,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: '',
 				flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
 			}),
-		).toEqual(['2025-01-15', '', '', '', '', '', 'TRUE'])
+		).toEqual(['2025-01-15', '', '', '', '', '', 'TRUE', ''])
 	})
 
 	it('round-trips through parseScheduleRow', () => {
@@ -159,5 +160,62 @@ describe('scheduleEntryToRow', () => {
 		}
 		const row = scheduleEntryToRow(entry)
 		expect(parseScheduleRow(row)).toEqual(entry)
+	})
+
+	it('converts a schedule entry with calendarEventId', () => {
+		expect(
+			scheduleEntryToRow({
+				date: '2025-01-15',
+				workoutId: 'A',
+				calendarEventId: 'abc123',
+			}),
+		).toEqual(['2025-01-15', 'A', '', '', '', '', '', 'abc123'])
+	})
+
+	it('round-trips entries with calendarEventId', () => {
+		const entry = {
+			date: '2025-01-15',
+			workoutId: 'A',
+			calendarEventId: 'event-xyz',
+		}
+		const row = scheduleEntryToRow(entry)
+		expect(parseScheduleRow(row)).toEqual(entry)
+	})
+})
+
+/* ------------------------------------------------------------------ */
+/*  parseScheduleRow – calendarEventId                                  */
+/* ------------------------------------------------------------------ */
+
+describe('parseScheduleRow – calendarEventId', () => {
+	it('parses calendarEventId from column 7', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', '', '', '', '', '', 'evt-id'])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+			calendarEventId: 'evt-id',
+		})
+	})
+
+	it('omits calendarEventId when column 7 is empty', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', '', '', '', '', '', ''])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+		})
+	})
+
+	it('omits calendarEventId when column 7 is missing', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A'])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+		})
+	})
+
+	it('parses calendarEventId alongside flags', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', 'TRUE', '', '', '', '', 'cal-event'])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+			flags: { home: true, elsewhere: false, travel: false, visitors: false, blocked: false },
+			calendarEventId: 'cal-event',
+		})
 	})
 })

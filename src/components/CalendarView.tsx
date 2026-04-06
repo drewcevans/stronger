@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType, CardioActivity, DayFlags } from '../model/index.js';
-import type { ParsedLogRow } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users, Ban } from 'lucide-react';
+import type { ParsedLogRow, CalendarSyncResult } from '../google/index.js';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users, Ban, RefreshCw, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
+import { CalendarSync } from './CalendarSync.js';
 
 interface CalendarViewProps {
 	workouts: Workout[];
@@ -25,6 +26,7 @@ interface CalendarViewProps {
 	) => void;
 	onBulkSchedule: (entries: ScheduleEntry[]) => void;
 	onUpdateFlags: (date: string, flags: DayFlags) => void;
+	onSyncCalendar: (calendarId: string) => Promise<CalendarSyncResult>;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -296,9 +298,11 @@ export function CalendarView({
 	onDeleteSession,
 	onBulkSchedule,
 	onUpdateFlags,
+	onSyncCalendar,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
 	const [showPush, setShowPush] = useState(false);
+	const [showSync, setShowSync] = useState(false);
 	const [historyMode, setHistoryMode] = useState(false);
 	const [pastDays, setPastDays] = useState<string[]>([]);
 	const [activeSession, setActiveSession] = useState<LogSession | null>(null);
@@ -461,9 +465,15 @@ export function CalendarView({
 			<div className="calendar-toolbar">
 				<button
 					className={`calendar-toolbar-btn${showPush ? ' calendar-toolbar-btn-active' : ''}`}
-					onClick={() => setShowPush(!showPush)}
+					onClick={() => { setShowPush(!showPush); if (!showPush) setShowSync(false); }}
 				>
 					<CalendarCog size={16} /> Planner
+				</button>
+				<button
+					className={`calendar-toolbar-btn${showSync ? ' calendar-toolbar-btn-active' : ''}`}
+					onClick={() => { setShowSync(!showSync); if (!showSync) setShowPush(false); }}
+				>
+					<RefreshCw size={16} /> Sync
 				</button>
 				<button
 					className={`calendar-toolbar-btn${historyMode ? ' calendar-toolbar-btn-active' : ''}`}
@@ -480,6 +490,12 @@ export function CalendarView({
 					schedule={schedule}
 					onClose={() => setShowPush(false)}
 					onUpdateSchedule={onBulkSchedule}
+				/>
+			)}
+			{showSync && (
+				<CalendarSync
+					onSync={onSyncCalendar}
+					onClose={() => setShowSync(false)}
 				/>
 			)}
 
