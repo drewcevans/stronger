@@ -5,8 +5,9 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME } from './config.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
 import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, GarminActivity } from '../model/types.ts'
+import type { GarminGoal, GarminMetric } from '../model/garmin.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -1595,4 +1596,158 @@ export async function readGarminActivities(
 	return rawRows
 		.map(parseGarminRow)
 		.filter((r): r is GarminActivity => r !== null)
+}
+
+/* ------------------------------------------------------------------ */
+/*  Settings tab – constants                                           */
+/* ------------------------------------------------------------------ */
+
+/** A1 range for the settings tab (open-ended rows, 2 columns). */
+const SETTINGS_RANGE = `'${SETTINGS_TAB_NAME}'!A:B`
+
+const SETTINGS_HEADER: string[] = ['key', 'value']
+
+/* ------------------------------------------------------------------ */
+/*  Settings tab – CRUD                                                */
+/* ------------------------------------------------------------------ */
+
+/** Check whether the settings tab exists in the spreadsheet. */
+export async function verifySettingsTab(
+	spreadsheetId: string,
+): Promise<boolean> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.get({
+		spreadsheetId,
+	})
+	const sheets = response.result.sheets ?? []
+	return sheets.some(
+		(s: { properties?: { title?: string } }) =>
+			s.properties?.title === SETTINGS_TAB_NAME,
+	)
+}
+
+/** Create the settings tab. Header row is written on first save via {@link writeSettings}. */
+export async function createSettingsTab(
+	spreadsheetId: string,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	await gapi.client.sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		resource: {
+			requests: [{ addSheet: { properties: { title: SETTINGS_TAB_NAME } } }],
+		},
+	})
+}
+
+/**
+ * Read all settings from the settings tab as a key/value map.
+ * Returns an empty map if the tab is empty or has only a header.
+ * Rows with empty keys or values are skipped.
+ */
+export async function readSettings(
+	spreadsheetId: string,
+): Promise<Map<string, string>> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: SETTINGS_RANGE,
+	})
+
+	const allRows = response.result.values
+	if (!allRows || allRows.length <= 1) return new Map()
+
+	const result = new Map<string, string>()
+	for (const row of allRows.slice(1)) {
+		if (!row || row.length < 2) continue
+		const key = (row[0] ?? '').trim()
+		const value = (row[1] ?? '').trim()
+		if (key && value) {
+			result.set(key, value)
+		}
+	}
+	return result
+}
+
+/**
+ * Write all settings to the settings tab (full overwrite).
+ * Clears existing data first, then writes header + rows.
+ */
+export async function writeSettings(
+	spreadsheetId: string,
+	settings: Map<string, string>,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const allRows: string[][] = [
+		SETTINGS_HEADER,
+		...[...settings.entries()].map(([key, value]) => [key, value]),
+	]
+
+	await gapi.client.sheets.spreadsheets.values.clear({
+		spreadsheetId,
+		range: SETTINGS_RANGE,
+	})
+
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: SETTINGS_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: allRows },
+	})
+}
+
+/* ------------------------------------------------------------------ */
+/*  Settings tab – goal helpers                                        */
+/* ------------------------------------------------------------------ */
+
+/** Key prefix used for goal entries in the settings tab. */
+const GOAL_KEY_PREFIX = 'goal.'
+
+/** Valid goal metric values. */
+const VALID_GOAL_METRICS = new Set(['distance', 'elevationGain', 'duration'])
+
+/**
+ * Extract {@link GarminGoal} entries from a settings map.
+ * Goal keys use the format `goal.<metric>` (e.g. `goal.distance`).
+ */
+export function goalsFromSettings(settings: Map<string, string>): GarminGoal[] {
+	const goals: GarminGoal[] = []
+	for (const [key, raw] of settings) {
+		if (!key.startsWith(GOAL_KEY_PREFIX)) continue
+		const metric = key.slice(GOAL_KEY_PREFIX.length)
+		if (!VALID_GOAL_METRICS.has(metric)) continue
+		const value = Number(raw)
+		if (!isFinite(value) || value <= 0) continue
+		goals.push({ metric: metric as GarminMetric, value })
+	}
+	return goals
+}
+
+/**
+ * Merge {@link GarminGoal} entries into a settings map.
+ * Removes any existing `goal.*` keys and replaces them with the new goals.
+ * Returns the updated map (mutates the input).
+ */
+export function goalsToSettings(
+	goals: GarminGoal[],
+	settings: Map<string, string>,
+): Map<string, string> {
+	// Remove old goal keys
+	for (const key of [...settings.keys()]) {
+		if (key.startsWith(GOAL_KEY_PREFIX)) {
+			settings.delete(key)
+		}
+	}
+	// Add new goal keys
+	for (const g of goals) {
+		settings.set(`${GOAL_KEY_PREFIX}${g.metric}`, String(g.value))
+	}
+	return settings
 }
