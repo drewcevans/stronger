@@ -734,30 +734,6 @@ export function CalendarView({
 											<X size={16} />
 										</button>
 									</div>
-									<div className="calendar-flag-checkboxes">
-										{([
-											['home', 'Home', House],
-											['elsewhere', 'Elsewhere', Palmtree],
-											['travel', 'Travel', Plane],
-											['visitors', 'Visitors', Users],
-											['blocked', 'Blocked', Ban],
-										] as const).map(([key, label, Icon]) => {
-											const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false, blocked: false };
-											return (
-												<label key={key} className="calendar-flag-checkbox">
-													<input
-														type="checkbox"
-														checked={currentFlags[key]}
-														onChange={(e) => {
-															onUpdateFlags(dayInfo.date, { ...currentFlags, [key]: e.target.checked });
-														}}
-													/>
-													<Icon size={14} />
-													{label}
-												</label>
-											);
-										})}
-									</div>
 									<div className="calendar-picker-list">
 										{cardioActivities.length > 0 && workouts.length > 0 && (
 											<div className="calendar-picker-divider">Strength</div>
