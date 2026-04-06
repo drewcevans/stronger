@@ -5,8 +5,8 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity } from '../model/types.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME } from './config.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, GarminActivity } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -1440,4 +1440,159 @@ export async function writeCardioActivities(
 		valueInputOption: 'RAW',
 		resource: { values: allRows },
 	})
+}
+
+/* ------------------------------------------------------------------ */
+/*  Garmin tab – constants                                             */
+/* ------------------------------------------------------------------ */
+
+/** A1 range for the Garmin tab (open-ended rows, 10 columns). */
+export const GARMIN_SYNC_RANGE = `'${GARMIN_TAB_NAME}'!A:J`
+
+/** A1 range for the Garmin tab header (row 1). */
+const GARMIN_HEADER_RANGE = `'${GARMIN_TAB_NAME}'!A1:J1`
+
+/** A1 range for reading Garmin data (row 2 onward, open-ended). */
+const GARMIN_READ_RANGE = `'${GARMIN_TAB_NAME}'!A2:J`
+
+export const GARMIN_HEADER: string[] = [
+	'date',
+	'stravaId',
+	'activityType',
+	'name',
+	'duration',
+	'distance',
+	'elevationGain',
+	'calories',
+	'avgHR',
+	'maxHR',
+]
+
+/* ------------------------------------------------------------------ */
+/*  Garmin tab – serialization                                         */
+/* ------------------------------------------------------------------ */
+
+/** Convert a {@link GarminActivity} to a spreadsheet row. */
+export function garminActivityToRow(activity: GarminActivity): string[] {
+	return [
+		activity.date,
+		activity.stravaId,
+		activity.activityType,
+		activity.name,
+		String(activity.duration),
+		String(activity.distance),
+		String(activity.elevationGain),
+		String(activity.calories),
+		String(activity.avgHR),
+		String(activity.maxHR),
+	]
+}
+
+/**
+ * Parse a single raw Garmin row (string array) into a {@link GarminActivity}.
+ * Returns `null` for incomplete or invalid rows.
+ */
+export function parseGarminRow(row: string[]): GarminActivity | null {
+	if (!row || row.length < 10) return null
+
+	const date = (row[0] ?? '').trim()
+	const stravaId = (row[1] ?? '').trim()
+	const activityType = (row[2] ?? '').trim()
+	const name = (row[3] ?? '').trim()
+	const rawDuration = (row[4] ?? '').trim()
+	const rawDistance = (row[5] ?? '').trim()
+	const rawElevationGain = (row[6] ?? '').trim()
+	const rawCalories = (row[7] ?? '').trim()
+	const rawAvgHR = (row[8] ?? '').trim()
+	const rawMaxHR = (row[9] ?? '').trim()
+
+	if (!date || !stravaId || !activityType) return null
+	// Basic date format validation: YYYY-MM-DD
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null
+
+	const duration = Number(rawDuration)
+	const distance = Number(rawDistance)
+	const elevationGain = Number(rawElevationGain)
+	const calories = Number(rawCalories)
+	const avgHR = Number(rawAvgHR)
+	const maxHR = Number(rawMaxHR)
+
+	if (!Number.isFinite(duration) || duration < 0) return null
+	if (!Number.isFinite(distance) || distance < 0) return null
+	if (!Number.isFinite(elevationGain) || elevationGain < 0) return null
+	if (!Number.isFinite(calories) || calories < 0) return null
+	if (!Number.isFinite(avgHR) || avgHR < 0) return null
+	if (!Number.isFinite(maxHR) || maxHR < 0) return null
+
+	return { date, stravaId, activityType, name, duration, distance, elevationGain, calories, avgHR, maxHR }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Garmin tab – read/write                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Check if the Garmin tab exists in the spreadsheet.
+ */
+export async function verifyGarminTab(
+	spreadsheetId: string,
+): Promise<boolean> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.get({
+		spreadsheetId,
+	})
+	const sheets = response.result.sheets ?? []
+	return sheets.some(
+		(s) => s.properties.title === GARMIN_TAB_NAME,
+	)
+}
+
+/**
+ * Create the Garmin tab inside the given spreadsheet and write the header row.
+ */
+export async function createGarminTab(
+	spreadsheetId: string,
+): Promise<void> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	await gapi.client.sheets.spreadsheets.batchUpdate({
+		spreadsheetId,
+		resource: {
+			requests: [{ addSheet: { properties: { title: GARMIN_TAB_NAME } } }],
+		},
+	})
+
+	// Write header to row 1
+	await gapi.client.sheets.spreadsheets.values.update({
+		spreadsheetId,
+		range: GARMIN_HEADER_RANGE,
+		valueInputOption: 'RAW',
+		resource: { values: [GARMIN_HEADER] },
+	})
+}
+
+/**
+ * Read the Garmin tab and return parsed activities.
+ * Returns an empty array if no valid rows exist.
+ */
+export async function readGarminActivities(
+	spreadsheetId: string,
+): Promise<GarminActivity[]> {
+	const gapi = window.gapi
+	if (!gapi) throw new Error('gapi not loaded')
+
+	const response = await gapi.client.sheets.spreadsheets.values.get({
+		spreadsheetId,
+		range: GARMIN_READ_RANGE,
+	})
+
+	const rawRows = response.result.values
+	if (!rawRows || rawRows.length === 0) return []
+
+	return rawRows
+		.map(parseGarminRow)
+		.filter((r): r is GarminActivity => r !== null)
 }
