@@ -1,19 +1,22 @@
 import { useState, useCallback, useRef } from 'react';
-import { Upload, FileText, AlertTriangle, Check, Loader, Unlink } from 'lucide-react';
+import { Upload, FileText, AlertTriangle, Check, Loader, Unlink, Sliders } from 'lucide-react';
 import { parseHevyCsv, convertHevyRows, computeImportSummary } from '../model/hevy-import.js';
 import { clearSheetId } from '../google/storage.js';
 import type { ImportSummary } from '../model/hevy-import.js';
+import type { AppSettings } from '../model/index.js';
 
 interface Props {
   spreadsheetId: string;
   onImportComplete: () => void;
   appendLogRows: (spreadsheetId: string, rows: (string | number | boolean)[][]) => Promise<void>;
   onDisconnectSheet: () => void;
+  appSettings: AppSettings;
+  onAppSettingChange: (key: keyof AppSettings, value: boolean) => void;
 }
 
 type ImportPhase = 'idle' | 'preview' | 'importing' | 'done' | 'error';
 
-export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows, onDisconnectSheet }: Props) {
+export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows, onDisconnectSheet, appSettings, onAppSettingChange }: Props) {
   const [phase, setPhase] = useState<ImportPhase>('idle');
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [convertedRows, setConvertedRows] = useState<(string | number | boolean)[][] | null>(null);
@@ -76,6 +79,55 @@ export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows, o
       <h2 className="settings-title">Settings</h2>
 
       <div className="settings-section">
+        <h3 className="settings-section-title">
+          <Sliders size={18} />
+          Workout Preferences
+        </h3>
+
+        <label className="settings-toggle-row">
+          <span className="settings-toggle-label">
+            <span className="settings-toggle-name">Rest Timer</span>
+            <span className="settings-toggle-description">Show a count-up timer between sets</span>
+          </span>
+          <input
+            type="checkbox"
+            className="settings-toggle-input"
+            checked={appSettings.showRestTimer}
+            onChange={(e) => onAppSettingChange('showRestTimer', e.target.checked)}
+          />
+          <span className="settings-toggle-switch" />
+        </label>
+
+        <label className="settings-toggle-row">
+          <span className="settings-toggle-label">
+            <span className="settings-toggle-name">Set Comments</span>
+            <span className="settings-toggle-description">Show rep ranges and notes on sets</span>
+          </span>
+          <input
+            type="checkbox"
+            className="settings-toggle-input"
+            checked={appSettings.showSetComments}
+            onChange={(e) => onAppSettingChange('showSetComments', e.target.checked)}
+          />
+          <span className="settings-toggle-switch" />
+        </label>
+
+        <label className="settings-toggle-row">
+          <span className="settings-toggle-label">
+            <span className="settings-toggle-name">Keep Screen On</span>
+            <span className="settings-toggle-description">Prevent phone from sleeping during workouts</span>
+          </span>
+          <input
+            type="checkbox"
+            className="settings-toggle-input"
+            checked={appSettings.keepScreenOn}
+            onChange={(e) => onAppSettingChange('keepScreenOn', e.target.checked)}
+          />
+          <span className="settings-toggle-switch" />
+        </label>
+      </div>
+
+      <div className="settings-section" style={{ marginTop: '1.5rem' }}>
         <h3 className="settings-section-title">
           <Upload size={18} />
           Import from Hevy

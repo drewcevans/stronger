@@ -6,7 +6,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, GarminActivity } from '../model/types.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, GarminActivity, AppSettings } from '../model/types.ts'
 import type { GarminGoal, GarminMetric } from '../model/garmin.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
@@ -1751,6 +1751,64 @@ export function goalsToSettings(
 	// Add new goal keys
 	for (const g of goals) {
 		settings.set(`${GOAL_KEY_PREFIX}${g.metric}`, String(g.value))
+	}
+	return settings
+}
+
+/* ------------------------------------------------------------------ */
+/*  Settings tab – app settings helpers                                */
+/* ------------------------------------------------------------------ */
+
+/** Default app settings (all features enabled). */
+export const DEFAULT_APP_SETTINGS: AppSettings = {
+	showRestTimer: true,
+	showSetComments: true,
+	keepScreenOn: true,
+}
+
+/** Settings key prefix for app-level settings. */
+const APP_SETTING_PREFIX = 'app.'
+
+/** Map of app setting keys to their AppSettings field names. */
+const APP_SETTING_KEYS: Record<string, keyof AppSettings> = {
+	'app.showRestTimer': 'showRestTimer',
+	'app.showSetComments': 'showSetComments',
+	'app.keepScreenOn': 'keepScreenOn',
+}
+
+/**
+ * Extract {@link AppSettings} from a settings map.
+ * Missing keys default to the values in {@link DEFAULT_APP_SETTINGS}.
+ */
+export function appSettingsFromMap(settings: Map<string, string>): AppSettings {
+	const result = { ...DEFAULT_APP_SETTINGS }
+	for (const [key, field] of Object.entries(APP_SETTING_KEYS)) {
+		const raw = settings.get(key)
+		if (raw !== undefined) {
+			result[field] = raw === 'true'
+		}
+	}
+	return result
+}
+
+/**
+ * Merge {@link AppSettings} into a settings map.
+ * Removes any existing `app.*` keys and replaces them.
+ * Returns the updated map (mutates the input).
+ */
+export function appSettingsToMap(
+	appSettings: AppSettings,
+	settings: Map<string, string>,
+): Map<string, string> {
+	// Remove old app setting keys
+	for (const key of [...settings.keys()]) {
+		if (key.startsWith(APP_SETTING_PREFIX)) {
+			settings.delete(key)
+		}
+	}
+	// Add new app setting keys
+	for (const [key, field] of Object.entries(APP_SETTING_KEYS)) {
+		settings.set(key, String(appSettings[field]))
 	}
 	return settings
 }

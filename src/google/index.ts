@@ -66,6 +66,9 @@ export {
 	writeSettings,
 	goalsFromSettings,
 	goalsToSettings,
+	DEFAULT_APP_SETTINGS,
+	appSettingsFromMap,
+	appSettingsToMap,
 } from './sheets.ts'
 export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
 export type { CalendarListEntry } from './types.ts'

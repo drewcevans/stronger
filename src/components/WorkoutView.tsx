@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
-import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
+import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout, AppSettings } from '../model/index.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { saveDraft } from '../hooks/useWorkoutDraft.js';
 import { useRestTimer, resolveTimerExercise, formatElapsed } from '../hooks/useRestTimer.js';
@@ -11,6 +11,8 @@ interface WorkoutViewProps {
 	startTime: string;
 	/** Pre-filled results restored from a draft (e.g. after page refresh). */
 	draftResults?: SetResult[][] | null;
+	/** User-configurable app settings. */
+	appSettings: AppSettings;
 	onBack: () => void;
 	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
@@ -62,8 +64,8 @@ function initResults(workout: Workout): SetResult[][] {
 	);
 }
 
-export function WorkoutView({ workout, previousSets, startTime, draftResults, onBack, onFinish }: WorkoutViewProps) {
-	useWakeLock();
+export function WorkoutView({ workout, previousSets, startTime, draftResults, appSettings, onBack, onFinish }: WorkoutViewProps) {
+	useWakeLock(appSettings.keepScreenOn);
 
 	const [results, setResults] = useState<SetResult[][]>(() => {
 		// Restore from draft if shapes match; otherwise start fresh.
@@ -117,7 +119,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 		);
 
 		// Start rest timer when a set is checked as complete
-		if (patch.completed === true) {
+		if (patch.completed === true && appSettings.showRestTimer) {
 			const totalSetsPerExercise = results.map((ex) => ex.length);
 			const targetExercise = resolveTimerExercise(exerciseIdx, setIdx, totalSetsPerExercise);
 			restTimer.start(targetExercise);
@@ -206,7 +208,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 				<section key={exerciseIdx} className="exercise-card">
 					<h2 className="exercise-name">
 						{exercise.name}
-						{restTimer.exerciseIdx === exerciseIdx && (
+						{appSettings.showRestTimer && restTimer.exerciseIdx === exerciseIdx && (
 							<span className="rest-timer">{formatElapsed(restTimer.elapsed)}</span>
 						)}
 						<span className={`role-tag role-${exercise.role}`}>{exercise.role}</span>
@@ -356,7 +358,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 											</div>
 										</label>
 									</div>
-									{comment && (
+									{appSettings.showSetComments && comment && (
 										<p className="set-comment">
 											{comment}
 										</p>

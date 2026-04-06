@@ -2922,6 +2922,76 @@ body {
 	margin: 0 0 1rem;
 }
 
+/* Toggle switch rows */
+.settings-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 0;
+	cursor: pointer;
+	border-bottom: 1px solid var(--color-border);
+	position: relative;
+}
+
+.settings-toggle-row:last-of-type {
+	border-bottom: none;
+}
+
+.settings-toggle-label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.settings-toggle-name {
+	color: var(--color-text);
+	font-size: 0.9375rem;
+	font-weight: 500;
+}
+
+.settings-toggle-description {
+	color: var(--color-text-muted);
+	font-size: 0.75rem;
+}
+
+.settings-toggle-input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.settings-toggle-switch {
+	position: relative;
+	flex-shrink: 0;
+	width: 44px;
+	height: 24px;
+	background: var(--color-border);
+	border-radius: 12px;
+	transition: background 0.2s;
+}
+
+.settings-toggle-switch::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 20px;
+	height: 20px;
+	background: var(--color-text-muted);
+	border-radius: 50%;
+	transition: transform 0.2s, background 0.2s;
+}
+
+.settings-toggle-input:checked + .settings-toggle-switch {
+	background: var(--color-primary);
+}
+
+.settings-toggle-input:checked + .settings-toggle-switch::after {
+	transform: translateX(20px);
+	background: #000;
+}
+
 .btn-danger {
 	padding: 0.75rem 1.5rem;
 	border: 1px solid var(--color-accent);
