@@ -639,7 +639,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <ExerciseEditor
@@ -662,7 +662,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <ExerciseLibrary
@@ -687,7 +687,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <WorkoutEditor
@@ -712,7 +712,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <CalendarView
@@ -742,7 +742,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <ProgressView logRows={logRows} />
@@ -760,7 +760,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <GarminView
@@ -782,7 +782,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <SettingsView
@@ -814,7 +814,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+          onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
           onOpenSettings={handleOpenSettings}
         />
         <SessionDetail
@@ -836,7 +836,7 @@ function App() {
         onOpenCalendar={handleOpenCalendar}
         onOpenExercises={handleOpenExercises}
         onOpenProgress={handleOpenProgress}
-        onOpenGarmin={handleOpenGarmin}
+        onOpenGarmin={garminActivities.length > 0 ? handleOpenGarmin : undefined}
         onOpenSettings={handleOpenSettings}
       />
       <WorkoutSelect
