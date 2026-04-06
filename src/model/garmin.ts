@@ -57,6 +57,12 @@ export interface MetricChartData {
   cumulative: number[];
   /** Prorated goal value for the selected time range, or null if no goal */
   proratedGoal: number | null;
+  /**
+   * Linear goal trajectory at each bucket (same length as buckets).
+   * Shows where cumulative progress should be if progressing linearly
+   * toward the prorated goal. Empty array when no goal is set.
+   */
+  goalTrajectory: number[];
   /** Display unit label */
   unit: string;
   /** Total across all buckets */
@@ -339,6 +345,7 @@ export function buildMetricChartData(
       buckets: [],
       cumulative: [],
       proratedGoal: null,
+      goalTrajectory: [],
       unit: METRIC_UNITS[metric],
       total: 0,
     };
@@ -375,11 +382,18 @@ export function buildMetricChartData(
 
   const proratedGoal = goal !== null ? prorateGoal(goal, range, today) : null;
 
+  // Goal trajectory: linear ramp from 0 to proratedGoal through each bucket
+  const goalTrajectory: number[] =
+    proratedGoal !== null
+      ? buckets.map((_, i) => proratedGoal * ((i + 1) / buckets.length))
+      : [];
+
   return {
     metric,
     buckets,
     cumulative,
     proratedGoal,
+    goalTrajectory,
     unit: METRIC_UNITS[metric],
     total: running,
   };

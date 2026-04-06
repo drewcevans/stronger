@@ -278,6 +278,35 @@ describe('buildMetricChartData', () => {
     expect(data.proratedGoal!).toBeGreaterThan(0);
   });
 
+  it('computes goalTrajectory as linear ramp through buckets', () => {
+    const today = new Date(2025, 5, 18);
+    const activities = [
+      makeActivity({ date: '2025-01-15', distance: 5000 }),
+      makeActivity({ date: '2025-06-18', distance: 10000 }),
+    ];
+    const data = buildMetricChartData(activities, 'distance', '2025', 1200, today);
+    // Year range with 12 buckets, goal = 1200 miles
+    expect(data.goalTrajectory).toHaveLength(12);
+    expect(data.goalTrajectory[0]).toBeCloseTo(100, 1);   // 1200 * 1/12
+    expect(data.goalTrajectory[5]).toBeCloseTo(600, 1);   // 1200 * 6/12
+    expect(data.goalTrajectory[11]).toBeCloseTo(1200, 1); // 1200 * 12/12
+  });
+
+  it('returns empty goalTrajectory when no goal is set', () => {
+    const today = new Date(2025, 5, 18);
+    const activities = [makeActivity({ date: '2025-06-16', distance: 5000 })];
+    const data = buildMetricChartData(activities, 'distance', 'month', null, today);
+    expect(data.goalTrajectory).toEqual([]);
+  });
+
+  it('returns empty goalTrajectory for past year', () => {
+    const today = new Date(2025, 5, 18);
+    const activities = [makeActivity({ date: '2024-06-16', distance: 5000 })];
+    const data = buildMetricChartData(activities, 'distance', '2024', 1000, today);
+    // prorateGoal returns null for past years
+    expect(data.goalTrajectory).toEqual([]);
+  });
+
   it('handles duration metric', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', duration: 7200 })]; // 2 hours

@@ -260,7 +260,7 @@ function MetricChart({
   const plotW = viewBoxWidth - CHART_PADDING.left - CHART_PADDING.right;
   const plotH = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
 
-  const { buckets, cumulative, proratedGoal } = data;
+  const { buckets, cumulative, proratedGoal, goalTrajectory } = data;
   const n = buckets.length;
   if (n === 0) return null;
 
@@ -303,10 +303,12 @@ function MetricChart({
     .map((v, i) => `${xCenter(i)},${yCum(v)}`)
     .join(' ');
 
-  // Goal line points (linear from 0 to prorated goal)
-  const goalPoints =
-    proratedGoal !== null
-      ? `${CHART_PADDING.left},${yCum(0)} ${CHART_PADDING.left + plotW},${yCum(proratedGoal)}`
+  // Goal trajectory polyline (linear ramp through bucket centers)
+  const goalTrajectoryPoints =
+    goalTrajectory.length > 0
+      ? goalTrajectory
+          .map((v, i) => `${xCenter(i)},${yCum(v)}`)
+          .join(' ')
       : null;
 
   return (
@@ -421,10 +423,10 @@ function MetricChart({
             />
           ))}
 
-          {/* Goal line */}
-          {goalPoints && (
+          {/* Goal trajectory line */}
+          {goalTrajectoryPoints && (
             <polyline
-              points={goalPoints}
+              points={goalTrajectoryPoints}
               className="garmin-goal-line"
             />
           )}
