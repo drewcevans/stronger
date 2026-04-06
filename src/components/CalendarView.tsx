@@ -499,7 +499,6 @@ export function CalendarView({
 				<CalendarPush
 					workouts={workouts}
 					cardioActivities={cardioActivities}
-					schedule={schedule}
 					onClose={() => setShowPush(false)}
 					onUpdateSchedule={onBulkSchedule}
 				/>

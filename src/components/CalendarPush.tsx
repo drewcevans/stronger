@@ -1,14 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
-import type { CalendarListEntry, CalendarPushResult } from '../google/index.js';
-import { listWritableCalendars, pushScheduleToCalendar } from '../google/index.js';
-import { saveCalendarId, loadCalendarId } from '../google/index.js';
-import { Upload, CheckCircle, AlertCircle, Loader, X, CalendarCheck } from 'lucide-react';
+import { CheckCircle, X, CalendarCheck } from 'lucide-react';
 
 interface CalendarPushProps {
   workouts: Workout[];
   cardioActivities: CardioActivity[];
-  schedule: ScheduleEntry[];
   onClose: () => void;
   onUpdateSchedule: (entries: ScheduleEntry[]) => void;
 }
@@ -27,64 +23,11 @@ function nextMonday(): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-type PushStatus = 'idle' | 'pushing' | 'success' | 'error';
-
-export function CalendarPush({ workouts, cardioActivities, schedule, onClose, onUpdateSchedule }: CalendarPushProps) {
+export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSchedule }: CalendarPushProps) {
   // Weekly day → activity mapping (7 entries, empty string = rest day)
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
   const [weeks, setWeeks] = useState(4);
   const [startDate, setStartDate] = useState(nextMonday);
-
-  // Calendar list
-  const [calendars, setCalendars] = useState<CalendarListEntry[]>([]);
-  const [selectedCalendarId, setSelectedCalendarId] = useState('');
-  const [loadingCalendars, setLoadingCalendars] = useState(true);
-  const [calendarError, setCalendarError] = useState<string | null>(null);
-
-  // Push status
-  const [pushStatus, setPushStatus] = useState<PushStatus>('idle');
-  const [pushResult, setPushResult] = useState<CalendarPushResult | null>(null);
-
-  // Workout lookup map
-  const workoutMap = useMemo(() => {
-    const map = new Map<string, Workout>();
-    for (const w of workouts) map.set(w.id, w);
-    return map;
-  }, [workouts]);
-
-  // Cardio lookup map
-  const cardioMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const c of cardioActivities) map.set(`cardio:${c.id}`, c.name);
-    return map;
-  }, [cardioActivities]);
-
-  // Load user's writable calendars on mount
-  useEffect(() => {
-    let cancelled = false;
-    setLoadingCalendars(true);
-    setCalendarError(null);
-
-    listWritableCalendars()
-      .then((cals) => {
-        if (cancelled) return;
-        setCalendars(cals);
-        // Use the saved calendar if it still exists, otherwise fall back
-        // to the primary calendar or the first writable one.
-        const saved = loadCalendarId();
-        const savedCal = saved ? cals.find((c) => c.id === saved) : null;
-        const primary = cals.find((c) => c.primary);
-        setSelectedCalendarId(savedCal?.id ?? primary?.id ?? cals[0]?.id ?? '');
-        setLoadingCalendars(false);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setCalendarError(err instanceof Error ? err.message : String(err));
-        setLoadingCalendars(false);
-      });
-
-    return () => { cancelled = true; };
-  }, []);
 
   const handleDayChange = useCallback((dayIndex: number, workoutId: string) => {
     setDaySlots((prev) => {
@@ -95,15 +38,6 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
   }, []);
 
   const hasSlots = daySlots.some((id) => id !== '');
-
-  // Schedule entries from today onward
-  const futureEntries = useMemo(() => {
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    return schedule.filter((e) => e.date >= todayStr);
-  }, [schedule]);
-
-  const canPush = futureEntries.length > 0 && selectedCalendarId && pushStatus !== 'pushing';
 
   // Generate ScheduleEntry[] from the weekly planner
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
@@ -129,45 +63,6 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
     setScheduleUpdated(true);
     setTimeout(() => setScheduleUpdated(false), 2000);
   }, [generateScheduleEntries, onUpdateSchedule]);
-
-  const handlePush = useCallback(async () => {
-    if (!canPush) return;
-
-    // Build entries from schedule (today onward), resolving workout/cardio names
-    const entries = futureEntries
-      .map((e) => {
-        const cardioName = cardioMap.get(e.workoutId);
-        if (cardioName) {
-          return { date: e.date, workoutId: e.workoutId, workoutName: cardioName };
-        }
-        const w = workoutMap.get(e.workoutId);
-        if (!w) return null;
-        return { date: e.date, workoutId: e.workoutId, workoutName: w.name };
-      })
-      .filter((e): e is NonNullable<typeof e> => e !== null);
-
-    if (entries.length === 0) return;
-
-    setPushStatus('pushing');
-    setPushResult(null);
-
-    try {
-      const result = await pushScheduleToCalendar({
-        calendarId: selectedCalendarId,
-        entries,
-      });
-      setPushResult(result);
-      setPushStatus(result.failed > 0 ? 'error' : 'success');
-    } catch (err) {
-      setPushResult({
-        created: 0,
-        skipped: 0,
-        failed: 1,
-        errors: [err instanceof Error ? err.message : String(err)],
-      });
-      setPushStatus('error');
-    }
-  }, [canPush, futureEntries, workoutMap, cardioMap, selectedCalendarId]);
 
   return (
     <div className="calendar-push">
@@ -262,88 +157,6 @@ export function CalendarPush({ workouts, cardioActivities, schedule, onClose, on
           </>
         )}
       </button>
-
-      {/* Divider */}
-      <div className="calendar-push-divider" />
-
-      {/* Push to Google Calendar */}
-      <div className="calendar-push-section">
-        <label className="calendar-push-label">Push to Google Calendar</label>
-      </div>
-
-      {/* Calendar picker */}
-      <div className="calendar-push-section">
-        <label className="calendar-push-label" htmlFor="push-calendar">
-          Target calendar
-        </label>
-        {loadingCalendars ? (
-          <div className="calendar-push-loading">
-            <Loader size={16} className="spin" /> Loading calendars…
-          </div>
-        ) : calendarError ? (
-          <div className="calendar-push-error">
-            <AlertCircle size={16} /> {calendarError}
-          </div>
-        ) : calendars.length === 0 ? (
-          <div className="calendar-push-error">
-            <AlertCircle size={16} /> No writable calendars found
-          </div>
-        ) : (
-          <select
-            id="push-calendar"
-            className="calendar-push-select"
-            value={selectedCalendarId}
-            onChange={(e) => {
-              setSelectedCalendarId(e.target.value);
-              saveCalendarId(e.target.value);
-            }}
-          >
-            {calendars.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.summary}{c.primary ? ' (primary)' : ''}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* Push button */}
-      <button
-        className="calendar-push-btn"
-        onClick={handlePush}
-        disabled={!canPush}
-      >
-        {pushStatus === 'pushing' ? (
-          <>
-            <Loader size={16} className="spin" /> Pushing…
-          </>
-        ) : (
-          <>
-            <Upload size={16} /> Push to Calendar
-          </>
-        )}
-      </button>
-
-      {/* Result feedback */}
-      {pushResult && pushStatus === 'success' && (
-        <div className="calendar-push-feedback calendar-push-feedback-success">
-          <CheckCircle size={16} />
-          Created {pushResult.created} event{pushResult.created !== 1 ? 's' : ''}{pushResult.skipped > 0 ? `, skipped ${pushResult.skipped} duplicate${pushResult.skipped !== 1 ? 's' : ''}` : ''}.
-        </div>
-      )}
-      {pushResult && pushStatus === 'error' && (
-        <div className="calendar-push-feedback calendar-push-feedback-error">
-          <AlertCircle size={16} />
-          <div>
-            <p>
-              Created {pushResult.created}, skipped {pushResult.skipped}, failed {pushResult.failed}.
-            </p>
-            {pushResult.errors.slice(0, 3).map((err, i) => (
-              <p key={i} className="calendar-push-error-detail">{err}</p>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
