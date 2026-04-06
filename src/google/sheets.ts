@@ -1655,7 +1655,7 @@ export async function verifyGoalsTab(
 	)
 }
 
-/** Create the goals tab (empty, with no header — header is written on first save). */
+/** Create the goals tab. Header row is written on first save via {@link writeGoals}. */
 export async function createGoalsTab(
 	spreadsheetId: string,
 ): Promise<void> {

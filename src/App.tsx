@@ -426,14 +426,15 @@ function App() {
 
   const handleGarminGoalChange = useCallback((metric: GarminMetric, value: number | null) => {
     setGarminGoals((prev) => {
-      const filtered = prev.filter((g) => g.metric !== metric);
+      const updated = prev.filter((g) => g.metric !== metric);
       if (value !== null) {
-        filtered.push({ metric, value });
+        updated.push({ metric, value });
       }
       if (spreadsheetId) {
-        void writeGoals(spreadsheetId, filtered);
+        // Fire-and-forget write, matching cardio/schedule pattern
+        void writeGoals(spreadsheetId, updated).catch(() => {});
       }
-      return filtered;
+      return updated;
     });
   }, [spreadsheetId]);
 
