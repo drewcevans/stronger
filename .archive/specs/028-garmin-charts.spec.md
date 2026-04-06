@@ -83,16 +83,18 @@ This spec consumes: `date`, `activityType`, `duration` (seconds), `distance` (me
 
 > **Note**: The exact Garmin tab schema may evolve as spec 027 is implemented. The charting code should parse what's available and degrade gracefully if columns are missing.
 
-### Goals tab (new)
+### Settings tab (new)
 
-Tab name: `Stronger - Goals`
+Tab name: `Stronger - Settings`
+
+A general-purpose key/value store for app settings, including goals.
 
 | Column | Description |
 |--------|-------------|
-| `metric` | `duration`, `distance`, or `elevationGain` |
-| `value` | Numeric annual goal value (in display units: hours, miles, feet) |
+| `key` | Setting identifier (e.g. `goal.distance`, `goal.elevationGain`, `goal.duration`) |
+| `value` | Setting value as a string |
 
-Range: `A:B` (2 columns). One row per metric. Writing a new goal overwrites the existing row for that metric.
+Range: `A:B` (2 columns). Goal entries use a `goal.` prefix on the key (e.g. `goal.distance = 1000`). Additional non-goal settings can be added as new key/value rows without schema changes.
 
 ### Units and display
 
@@ -127,7 +129,7 @@ Conversions are display-only — storage remains in metric (matching Strava API 
 - **Mock data first**: Initial implementation uses `src/data/mock-garmin.ts` which generates ~6 months of synthetic activities (Run, Ride, Hike, Trail Run) using a deterministic PRNG. Goals also use mock defaults (1500 mi, 200k ft, 500 hrs). Will switch to real Garmin sheet data once spec 027 is fully implemented.
 - **Nav icon**: Uses `Activity` from lucide-react. Title shows "Activities" since the view shows all synced activities, not just Garmin-branded ones.
 - **Goal storage**: Currently in-memory only (state resets on reload). Sheet-backed goal persistence (via "Stronger - Goals" tab) deferred until real data integration.
-- **Goal persistence (implemented)**: Goals are now persisted to the "Stronger - Goals" sheet tab (2 columns: `metric`, `value`). The tab is auto-created on first visit. Goals are loaded alongside Garmin activities in `loadGarminData` and written on every change via fire-and-forget. Serialization/parsing in `sheets.ts` with 15 unit tests in `goals-data.test.ts`.
+- **Goal persistence (implemented)**: Goals are persisted via a general-purpose "Stronger - Settings" key/value sheet tab. Goal entries use `goal.<metric>` keys (e.g. `goal.distance`). The settings tab is auto-created on first visit and loaded alongside Garmin activities. `goalsFromSettings()` / `goalsToSettings()` handle conversion. 14 unit tests in `settings-data.test.ts`.
 - **Model/view split**: Chart logic is in `src/model/garmin.ts` (pure functions, 31 unit tests). Component is in `src/components/GarminView.tsx`. This mirrors the existing `progress.ts` / `ProgressView.tsx` pattern.
 - **SVG approach**: Hand-rolled SVG with viewBox for responsiveness, matching the existing progress charts style. niceTicksFor helper is duplicated (same algorithm as ProgressView) — could be extracted later.
 - **Filter UX**: Collapsible chip-based filter for activity types. "All" toggle for convenience. Filter only appears when more than one activity type exists.

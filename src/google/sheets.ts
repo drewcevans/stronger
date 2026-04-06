@@ -5,7 +5,7 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, GOALS_TAB_NAME } from './config.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
 import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, GarminActivity } from '../model/types.ts'
 import type { GarminGoal, GarminMetric } from '../model/garmin.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
@@ -1599,47 +1599,20 @@ export async function readGarminActivities(
 }
 
 /* ------------------------------------------------------------------ */
-/*  Goals tab – constants                                              */
+/*  Settings tab – constants                                           */
 /* ------------------------------------------------------------------ */
 
-/** A1 range for the goals tab (open-ended rows, 2 columns). */
-const GOALS_RANGE = `'${GOALS_TAB_NAME}'!A:B`
+/** A1 range for the settings tab (open-ended rows, 2 columns). */
+const SETTINGS_RANGE = `'${SETTINGS_TAB_NAME}'!A:B`
 
-const GOALS_HEADER: string[] = ['metric', 'value']
-
-/* ------------------------------------------------------------------ */
-/*  Goals tab – serialization                                          */
-/* ------------------------------------------------------------------ */
-
-/** Valid goal metric values. */
-const VALID_GOAL_METRICS = new Set(['distance', 'elevationGain', 'duration'])
-
-/** Convert a {@link GarminGoal} to a spreadsheet row. */
-export function garminGoalToRow(goal: GarminGoal): string[] {
-	return [goal.metric, String(goal.value)]
-}
-
-/**
- * Parse a single raw goals row (string array) into a {@link GarminGoal}.
- * Returns `null` for incomplete or invalid rows.
- */
-export function parseGoalRow(row: string[]): GarminGoal | null {
-	if (!row || row.length < 2) return null
-	const metric = (row[0] ?? '').trim()
-	const rawValue = (row[1] ?? '').trim()
-	if (!metric || !rawValue) return null
-	if (!VALID_GOAL_METRICS.has(metric)) return null
-	const value = Number(rawValue)
-	if (!isFinite(value) || value <= 0) return null
-	return { metric: metric as GarminMetric, value }
-}
+const SETTINGS_HEADER: string[] = ['key', 'value']
 
 /* ------------------------------------------------------------------ */
-/*  Goals tab – CRUD                                                   */
+/*  Settings tab – CRUD                                                */
 /* ------------------------------------------------------------------ */
 
-/** Check whether the goals tab exists in the spreadsheet. */
-export async function verifyGoalsTab(
+/** Check whether the settings tab exists in the spreadsheet. */
+export async function verifySettingsTab(
 	spreadsheetId: string,
 ): Promise<boolean> {
 	const gapi = window.gapi
@@ -1651,12 +1624,12 @@ export async function verifyGoalsTab(
 	const sheets = response.result.sheets ?? []
 	return sheets.some(
 		(s: { properties?: { title?: string } }) =>
-			s.properties?.title === GOALS_TAB_NAME,
+			s.properties?.title === SETTINGS_TAB_NAME,
 	)
 }
 
-/** Create the goals tab. Header row is written on first save via {@link writeGoals}. */
-export async function createGoalsTab(
+/** Create the settings tab. Header row is written on first save via {@link writeSettings}. */
+export async function createSettingsTab(
 	spreadsheetId: string,
 ): Promise<void> {
 	const gapi = window.gapi
@@ -1665,59 +1638,116 @@ export async function createGoalsTab(
 	await gapi.client.sheets.spreadsheets.batchUpdate({
 		spreadsheetId,
 		resource: {
-			requests: [{ addSheet: { properties: { title: GOALS_TAB_NAME } } }],
+			requests: [{ addSheet: { properties: { title: SETTINGS_TAB_NAME } } }],
 		},
 	})
 }
 
 /**
- * Read all goals from the goals tab.
- * Returns an empty array if the tab is empty or has only a header.
+ * Read all settings from the settings tab as a key/value map.
+ * Returns an empty map if the tab is empty or has only a header.
+ * Rows with empty keys or values are skipped.
  */
-export async function readGoals(
+export async function readSettings(
 	spreadsheetId: string,
-): Promise<GarminGoal[]> {
+): Promise<Map<string, string>> {
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
 
 	const response = await gapi.client.sheets.spreadsheets.values.get({
 		spreadsheetId,
-		range: GOALS_RANGE,
+		range: SETTINGS_RANGE,
 	})
 
 	const allRows = response.result.values
-	if (!allRows || allRows.length <= 1) return []
+	if (!allRows || allRows.length <= 1) return new Map()
 
-	return allRows.slice(1)
-		.map(parseGoalRow)
-		.filter((r): r is GarminGoal => r !== null)
+	const result = new Map<string, string>()
+	for (const row of allRows.slice(1)) {
+		if (!row || row.length < 2) continue
+		const key = (row[0] ?? '').trim()
+		const value = (row[1] ?? '').trim()
+		if (key && value) {
+			result.set(key, value)
+		}
+	}
+	return result
 }
 
 /**
- * Write all goals to the goals tab (full overwrite).
+ * Write all settings to the settings tab (full overwrite).
  * Clears existing data first, then writes header + rows.
  */
-export async function writeGoals(
+export async function writeSettings(
 	spreadsheetId: string,
-	goals: GarminGoal[],
+	settings: Map<string, string>,
 ): Promise<void> {
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
 
 	const allRows: string[][] = [
-		GOALS_HEADER,
-		...goals.map(garminGoalToRow),
+		SETTINGS_HEADER,
+		...[...settings.entries()].map(([key, value]) => [key, value]),
 	]
 
 	await gapi.client.sheets.spreadsheets.values.clear({
 		spreadsheetId,
-		range: GOALS_RANGE,
+		range: SETTINGS_RANGE,
 	})
 
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
-		range: GOALS_RANGE,
+		range: SETTINGS_RANGE,
 		valueInputOption: 'RAW',
 		resource: { values: allRows },
 	})
+}
+
+/* ------------------------------------------------------------------ */
+/*  Settings tab – goal helpers                                        */
+/* ------------------------------------------------------------------ */
+
+/** Key prefix used for goal entries in the settings tab. */
+const GOAL_KEY_PREFIX = 'goal.'
+
+/** Valid goal metric values. */
+const VALID_GOAL_METRICS = new Set(['distance', 'elevationGain', 'duration'])
+
+/**
+ * Extract {@link GarminGoal} entries from a settings map.
+ * Goal keys use the format `goal.<metric>` (e.g. `goal.distance`).
+ */
+export function goalsFromSettings(settings: Map<string, string>): GarminGoal[] {
+	const goals: GarminGoal[] = []
+	for (const [key, raw] of settings) {
+		if (!key.startsWith(GOAL_KEY_PREFIX)) continue
+		const metric = key.slice(GOAL_KEY_PREFIX.length)
+		if (!VALID_GOAL_METRICS.has(metric)) continue
+		const value = Number(raw)
+		if (!isFinite(value) || value <= 0) continue
+		goals.push({ metric: metric as GarminMetric, value })
+	}
+	return goals
+}
+
+/**
+ * Merge {@link GarminGoal} entries into a settings map.
+ * Removes any existing `goal.*` keys and replaces them with the new goals.
+ * Returns the updated map (mutates the input).
+ */
+export function goalsToSettings(
+	goals: GarminGoal[],
+	settings: Map<string, string>,
+): Map<string, string> {
+	// Remove old goal keys
+	for (const key of [...settings.keys()]) {
+		if (key.startsWith(GOAL_KEY_PREFIX)) {
+			settings.delete(key)
+		}
+	}
+	// Add new goal keys
+	for (const g of goals) {
+		settings.set(`${GOAL_KEY_PREFIX}${g.metric}`, String(g.value))
+	}
+	return settings
 }

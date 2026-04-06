@@ -58,17 +58,17 @@ export {
 	readGarminActivities,
 	GARMIN_SYNC_RANGE,
 	GARMIN_HEADER,
-	garminGoalToRow,
-	parseGoalRow,
-	verifyGoalsTab,
-	createGoalsTab,
-	readGoals,
-	writeGoals,
+	verifySettingsTab,
+	createSettingsTab,
+	readSettings,
+	writeSettings,
+	goalsFromSettings,
+	goalsToSettings,
 } from './sheets.ts'
 export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
 export type { CalendarListEntry } from './types.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
-export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, GOALS_TAB_NAME } from './config.ts'
+export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
 export {
 	listWritableCalendars,
 	buildDeepLink,

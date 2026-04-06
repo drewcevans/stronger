@@ -1,7 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifyGoalsTab, createGoalsTab, readGoals, writeGoals } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions, defaultCardioActivities } from './data/sample-workouts.js';
@@ -40,6 +40,7 @@ function App() {
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
   const [garminActivities, setGarminActivities] = useState<GarminActivity[]>([]);
   const [garminGoals, setGarminGoals] = useState<GarminGoal[]>([]);
+  const settingsRef = useRef(new Map<string, string>());
 
   const handleConnected = useCallback(
     (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[], cardio: CardioActivity[]) => {
@@ -246,14 +247,15 @@ function App() {
       // Silently ignore — Garmin data is optional
     }
     try {
-      const goalsTabExists = await verifyGoalsTab(sheetId);
-      if (!goalsTabExists) {
-        await createGoalsTab(sheetId);
+      const settingsTabExists = await verifySettingsTab(sheetId);
+      if (!settingsTabExists) {
+        await createSettingsTab(sheetId);
       }
-      const goals = await readGoals(sheetId);
-      setGarminGoals(goals);
+      const settings = await readSettings(sheetId);
+      settingsRef.current = settings;
+      setGarminGoals(goalsFromSettings(settings));
     } catch {
-      // Silently ignore — goals data is optional
+      // Silently ignore — settings data is optional
     }
   }, []);
 
@@ -431,8 +433,9 @@ function App() {
         updated.push({ metric, value });
       }
       if (spreadsheetId) {
-        // Fire-and-forget write, matching cardio/schedule pattern
-        void writeGoals(spreadsheetId, updated).catch(() => {});
+        // Merge goals into settings and write the full settings map
+        goalsToSettings(updated, settingsRef.current);
+        void writeSettings(spreadsheetId, settingsRef.current).catch(() => {});
       }
       return updated;
     });
