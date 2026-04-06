@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
+import { useWakeLock } from '../hooks/useWakeLock.js';
 
 interface WorkoutViewProps {
 	workout: Workout;
@@ -57,6 +58,8 @@ function initResults(workout: Workout): SetResult[][] {
 }
 
 export function WorkoutView({ workout, previousSets, onBack, onFinish }: WorkoutViewProps) {
+	useWakeLock();
+
 	const [results, setResults] = useState<SetResult[][]>(() =>
 		initResults(workout),
 	);
