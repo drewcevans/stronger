@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity } from './model/index.js';
+import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
 import { syncScheduleWithCalendar } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
@@ -44,6 +44,7 @@ function App() {
   const [garminActivities, setGarminActivities] = useState<GarminActivity[]>([]);
   const [garminGoals, setGarminGoals] = useState<GarminGoal[]>([]);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const settingsRef = useRef(new Map<string, string>());
 
   const handleConnected = useCallback(
@@ -266,6 +267,7 @@ function App() {
       const settings = await readSettings(sheetId);
       settingsRef.current = settings;
       setGarminGoals(goalsFromSettings(settings));
+      setAppSettings(appSettingsFromMap(settings));
     } catch {
       // Silently ignore — settings data is optional
     }
@@ -480,6 +482,17 @@ function App() {
     });
   }, [spreadsheetId]);
 
+  const handleAppSettingChange = useCallback((key: keyof AppSettings, value: boolean) => {
+    setAppSettings((prev) => {
+      const updated = { ...prev, [key]: value };
+      if (spreadsheetId) {
+        appSettingsToMap(updated, settingsRef.current);
+        void writeSettings(spreadsheetId, settingsRef.current).catch(() => {});
+      }
+      return updated;
+    });
+  }, [spreadsheetId]);
+
   const handleImportComplete = useCallback(() => {
     // Refresh log data so progress charts and calendar history reflect the import
     if (spreadsheetId) {
@@ -672,6 +685,7 @@ function App() {
         previousSets={previousSets}
         startTime={startTime ?? new Date().toISOString()}
         draftResults={draftResults}
+        appSettings={appSettings}
         onBack={handleBack}
         onFinish={handleFinish}
       />
@@ -843,6 +857,8 @@ function App() {
           onImportComplete={handleImportComplete}
           appendLogRows={appendLogRows}
           onDisconnectSheet={handleDisconnected}
+          appSettings={appSettings}
+          onAppSettingChange={handleAppSettingChange}
         />
       </>
     );

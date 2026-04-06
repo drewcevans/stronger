@@ -1,4 +1,5 @@
 export type {
+	AppSettings,
 	CardioActivity,
 	ComputedExercise,
 	ComputedSet,
