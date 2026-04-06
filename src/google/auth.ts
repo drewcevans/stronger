@@ -64,6 +64,13 @@ export async function initGapiClient(): Promise<void> {
 let tokenClient: TokenClient | null = null
 
 /**
+ * Handler invoked by GIS when the OAuth flow itself fails (e.g. user
+ * closes the popup, popup blocked, or other pre-consent errors).
+ * Set by `signIn()` so the promise can be rejected.
+ */
+let pendingErrorHandler: ((err: Error) => void) | null = null
+
+/**
  * Create (or return existing) GIS token client.
  *
  * `onToken` is called each time the user completes authentication.
@@ -83,6 +90,14 @@ export function getTokenClient(
 		client_id: GOOGLE_CLIENT_ID,
 		scope: OAUTH_SCOPES,
 		callback: onToken,
+		error_callback: (err) => {
+			if (pendingErrorHandler) {
+				pendingErrorHandler(
+					new Error(err.message ?? err.type ?? 'Auth flow cancelled'),
+				)
+				pendingErrorHandler = null
+			}
+		},
 	})
 	return tokenClient
 }
@@ -91,13 +106,33 @@ export function getTokenClient(
 /*  Sign-in / sign-out                                                 */
 /* ------------------------------------------------------------------ */
 
+/** Timeout for the sign-in promise (ms). */
+const SIGN_IN_TIMEOUT_MS = 60_000
+
 /**
  * Prompt the user to sign in via Google OAuth.
  * Resolves with the access token on success.
+ *
+ * The promise will reject if:
+ * - the user closes the popup / denies consent (via GIS error_callback)
+ * - GIS returns an error in the token response
+ * - the flow doesn't complete within 60 seconds
  */
 export function signIn(): Promise<string> {
 	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => {
+			pendingErrorHandler = null
+			reject(new Error('Sign-in timed out. Please try again.'))
+		}, SIGN_IN_TIMEOUT_MS)
+
+		pendingErrorHandler = (err) => {
+			clearTimeout(timer)
+			reject(err)
+		}
+
 		const client = getTokenClient((resp) => {
+			clearTimeout(timer)
+			pendingErrorHandler = null
 			if (resp.error) {
 				reject(new Error(resp.error_description ?? resp.error))
 			} else {
@@ -109,6 +144,9 @@ export function signIn(): Promise<string> {
 	})
 }
 
+/** Timeout for the revoke call (ms). */
+const REVOKE_TIMEOUT_MS = 5_000
+
 /**
  * Sign out: revoke the current token and clear it from gapi.
  */
@@ -118,7 +156,13 @@ export function signOut(): Promise<void> {
 		const gapi = window.gapi
 		const token = gapi?.client.getToken()
 		if (token) {
+			const timer = setTimeout(() => {
+				gapi?.client.setToken(null)
+				resolve()
+			}, REVOKE_TIMEOUT_MS)
+
 			window.google?.accounts.oauth2.revoke(token.access_token, () => {
+				clearTimeout(timer)
 				gapi?.client.setToken(null)
 				resolve()
 			})
@@ -146,4 +190,30 @@ export function restoreToken(): boolean {
 
 	gapi.client.setToken({ access_token: accessToken })
 	return true
+}
+
+/**
+ * Clear a stale token from both the cookie and gapi client.
+ * Use when a stored token turns out to be expired / revoked.
+ */
+export function clearAuth(): void {
+	clearToken()
+	window.gapi?.client.setToken(null)
+}
+
+/**
+ * Check whether an error thrown by gapi.client is a 401 auth error,
+ * indicating the access token has expired or been revoked.
+ */
+export function isAuthError(err: unknown): boolean {
+	if (err && typeof err === 'object') {
+		const e = err as Record<string, unknown>
+		if (e.status === 401) return true
+		const result = e.result as Record<string, unknown> | undefined
+		if (result?.error) {
+			const apiError = result.error as Record<string, unknown>
+			if (apiError.code === 401) return true
+		}
+	}
+	return false
 }
