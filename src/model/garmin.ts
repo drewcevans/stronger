@@ -91,6 +91,35 @@ export const METRIC_LABELS: Record<GarminMetric, string> = {
 };
 
 /* ------------------------------------------------------------------ */
+/*  Activity classification                                            */
+/* ------------------------------------------------------------------ */
+
+/** Activity type used by Strava/Garmin for strength workouts. */
+export const STRENGTH_ACTIVITY_TYPE = 'Weight Training';
+
+/** Check if an activity type is strength training. */
+export function isStrengthTraining(activityType: string): boolean {
+  return activityType === STRENGTH_ACTIVITY_TYPE;
+}
+
+/** Split activities into cardio and strength training. */
+export function splitActivities(activities: GarminActivity[]): {
+  cardio: GarminActivity[];
+  strength: GarminActivity[];
+} {
+  const cardio: GarminActivity[] = [];
+  const strength: GarminActivity[] = [];
+  for (const a of activities) {
+    if (isStrengthTraining(a.activityType)) {
+      strength.push(a);
+    } else {
+      cardio.push(a);
+    }
+  }
+  return { cardio, strength };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Time range helpers                                                 */
 /* ------------------------------------------------------------------ */
 

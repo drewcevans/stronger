@@ -16,6 +16,7 @@ export function generateMockGarminActivities(): GarminActivity[] {
     { type: 'Ride', distRange: [15000, 80000], elevRange: [100, 1500], durRange: [2400, 10800] },
     { type: 'Hike', distRange: [5000, 20000], elevRange: [200, 1500], durRange: [3600, 14400] },
     { type: 'Trail Run', distRange: [4000, 15000], elevRange: [100, 800], durRange: [1800, 5400] },
+    { type: 'Weight Training', distRange: [0, 0], elevRange: [0, 0], durRange: [2700, 5400] },
   ];
 
   // Use a simple seeded random for reproducibility

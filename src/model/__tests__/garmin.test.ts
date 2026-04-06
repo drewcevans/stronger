@@ -9,6 +9,9 @@ import {
   prorateGoal,
   buildMetricChartData,
   formatMetricValue,
+  isStrengthTraining,
+  splitActivities,
+  STRENGTH_ACTIVITY_TYPE,
 } from '../garmin.js';
 import type { GarminActivity } from '../garmin.js';
 
@@ -303,5 +306,57 @@ describe('formatMetricValue', () => {
   it('formats duration with appropriate precision', () => {
     expect(formatMetricValue(1.5, 'duration')).toBe('1.50');
     expect(formatMetricValue(25.3, 'duration')).toBe('25.3');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  isStrengthTraining                                                 */
+/* ------------------------------------------------------------------ */
+
+describe('isStrengthTraining', () => {
+  it('returns true for Weight Training', () => {
+    expect(isStrengthTraining(STRENGTH_ACTIVITY_TYPE)).toBe(true);
+  });
+
+  it('returns false for cardio types', () => {
+    expect(isStrengthTraining('Run')).toBe(false);
+    expect(isStrengthTraining('Ride')).toBe(false);
+    expect(isStrengthTraining('Hike')).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  splitActivities                                                    */
+/* ------------------------------------------------------------------ */
+
+describe('splitActivities', () => {
+  it('separates strength from cardio', () => {
+    const activities = [
+      makeActivity({ activityType: 'Run' }),
+      makeActivity({ activityType: 'Weight Training', distance: 0, elevationGain: 0 }),
+      makeActivity({ activityType: 'Hike' }),
+      makeActivity({ activityType: 'Weight Training', distance: 0, elevationGain: 0 }),
+    ];
+    const { cardio, strength } = splitActivities(activities);
+    expect(cardio).toHaveLength(2);
+    expect(strength).toHaveLength(2);
+    expect(cardio.every(a => a.activityType !== 'Weight Training')).toBe(true);
+    expect(strength.every(a => a.activityType === 'Weight Training')).toBe(true);
+  });
+
+  it('returns all as cardio when no strength activities', () => {
+    const activities = [
+      makeActivity({ activityType: 'Run' }),
+      makeActivity({ activityType: 'Ride' }),
+    ];
+    const { cardio, strength } = splitActivities(activities);
+    expect(cardio).toHaveLength(2);
+    expect(strength).toHaveLength(0);
+  });
+
+  it('handles empty input', () => {
+    const { cardio, strength } = splitActivities([]);
+    expect(cardio).toHaveLength(0);
+    expect(strength).toHaveLength(0);
   });
 });

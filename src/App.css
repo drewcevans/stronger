@@ -3053,6 +3053,15 @@ body {
 	color: var(--color-primary);
 }
 
+/* Section titles (Cardio / Strength Training) */
+.garmin-section-title {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin: 16px 0 8px;
+}
+
 /* Chart card */
 .garmin-chart-card {
 	background: var(--color-surface);

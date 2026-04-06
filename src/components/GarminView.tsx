@@ -13,6 +13,7 @@ import {
   formatMetricValue,
   METRIC_LABELS,
   METRIC_UNITS,
+  splitActivities,
 } from '../model/garmin.js';
 import { Target, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -40,6 +41,9 @@ const TIME_RANGES: { value: GarminTimeRange; label: string }[] = [
 
 const METRICS: GarminMetric[] = ['distance', 'elevationGain', 'duration'];
 
+/** Cardio charts show all three metrics; strength only shows duration. */
+const STRENGTH_METRICS: GarminMetric[] = ['duration'];
+
 const CHART_HEIGHT = 220;
 const CHART_PADDING = { top: 16, right: 56, bottom: 32, left: 52 };
 
@@ -51,8 +55,17 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
   const [range, setRange] = useState<GarminTimeRange>('month');
   const [filterOpen, setFilterOpen] = useState(false);
 
-  // Activity type filter state
-  const allTypes = useMemo(() => getActivityTypes(activities), [activities]);
+  // Split into cardio (everything except strength) and strength training
+  const { cardio: cardioActivities, strength: strengthActivities } = useMemo(
+    () => splitActivities(activities),
+    [activities],
+  );
+
+  // Activity type filter applies to cardio only (strength is shown separately)
+  const allTypes = useMemo(
+    () => getActivityTypes(cardioActivities),
+    [cardioActivities],
+  );
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(() => new Set(allTypes));
 
   // Keep filter in sync when new types appear
@@ -72,9 +85,19 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
 
   const today = useMemo(() => new Date(), []);
 
-  const filtered = useMemo(
-    () => filterActivities(activities, range, selectedTypes, today),
-    [activities, range, selectedTypes, today],
+  // Cardio: filtered by type + range
+  const filteredCardio = useMemo(
+    () => filterActivities(cardioActivities, range, selectedTypes, today),
+    [cardioActivities, range, selectedTypes, today],
+  );
+
+  // Strength: filtered by range only (all strength activities included)
+  const filteredStrength = useMemo(
+    () => {
+      const allStrength = new Set(getActivityTypes(strengthActivities));
+      return filterActivities(strengthActivities, range, allStrength, today);
+    },
+    [strengthActivities, range, today],
   );
 
   const goalMap = useMemo(() => {
@@ -83,12 +106,20 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
     return m;
   }, [goals]);
 
-  const chartDataList = useMemo(
+  const cardioCharts = useMemo(
     () =>
       METRICS.map((metric) =>
-        buildMetricChartData(filtered, metric, range, goalMap.get(metric) ?? null, today),
+        buildMetricChartData(filteredCardio, metric, range, goalMap.get(metric) ?? null, today),
       ).filter((d) => d.buckets.length > 0),
-    [filtered, range, goalMap, today],
+    [filteredCardio, range, goalMap, today],
+  );
+
+  const strengthCharts = useMemo(
+    () =>
+      STRENGTH_METRICS.map((metric) =>
+        buildMetricChartData(filteredStrength, metric, range, null, today),
+      ).filter((d) => d.buckets.length > 0),
+    [filteredStrength, range, today],
   );
 
   const toggleType = useCallback((type: string) => {
@@ -138,7 +169,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
         ))}
       </div>
 
-      {/* Activity type filter */}
+      {/* Activity type filter (cardio only) */}
       {allTypes.length > 1 && (
         <div className="garmin-filter">
           <button
@@ -170,18 +201,38 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
         </div>
       )}
 
-      {/* Metric charts */}
-      {chartDataList.length === 0 ? (
+      {/* Cardio charts */}
+      {cardioCharts.length > 0 && (
+        <>
+          <h3 className="garmin-section-title">Cardio</h3>
+          {cardioCharts.map((data) => (
+            <MetricChart
+              key={data.metric}
+              data={data}
+              goal={goalMap.get(data.metric) ?? null}
+              onGoalChange={onGoalChange}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Strength training chart */}
+      {strengthCharts.length > 0 && (
+        <>
+          <h3 className="garmin-section-title">Strength Training</h3>
+          {strengthCharts.map((data) => (
+            <MetricChart
+              key={`strength-${data.metric}`}
+              data={data}
+              goal={null}
+              onGoalChange={undefined}
+            />
+          ))}
+        </>
+      )}
+
+      {cardioCharts.length === 0 && strengthCharts.length === 0 && (
         <p className="garmin-empty">No data for the selected filters and time range.</p>
-      ) : (
-        chartDataList.map((data) => (
-          <MetricChart
-            key={data.metric}
-            data={data}
-            goal={goalMap.get(data.metric) ?? null}
-            onGoalChange={onGoalChange}
-          />
-        ))
       )}
     </div>
   );
