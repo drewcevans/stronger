@@ -69,9 +69,14 @@ function activityToRow(activity) {
 	const date = activity.start_date_local
 		? activity.start_date_local.slice(0, 10) // "YYYY-MM-DD"
 		: ''
+	const stravaId = activity.id != null ? String(activity.id) : ''
+
+	// Skip activities missing required fields — these would fail to parse when read back
+	if (!date || !stravaId) return null
+
 	return [
 		date,
-		String(activity.id ?? ''),
+		stravaId,
 		activity.type ?? '',
 		activity.name ?? '',
 		String(activity.moving_time ?? 0),
@@ -294,7 +299,7 @@ async function main() {
 	// 6. Convert and filter new activities
 	const newRows = activities
 		.map(activityToRow)
-		.filter((row) => !existingIds.has(row[1])) // row[1] = stravaId
+		.filter((row) => row !== null && !existingIds.has(row[1])) // row[1] = stravaId
 
 	if (newRows.length === 0) {
 		console.log('No new activities to sync.')
