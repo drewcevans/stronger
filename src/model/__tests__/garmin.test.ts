@@ -9,6 +9,7 @@ import {
   prorateGoal,
   buildMetricChartData,
   formatMetricValue,
+  getTimeRangeOptions,
   isStrengthTraining,
   splitActivities,
   STRENGTH_ACTIVITY_TYPE,
@@ -53,14 +54,6 @@ describe('toDisplayUnit', () => {
 /* ------------------------------------------------------------------ */
 
 describe('getRangeStart', () => {
-  it('returns Monday for week range', () => {
-    // 2025-06-18 is a Wednesday
-    const today = new Date(2025, 5, 18);
-    const start = getRangeStart('week', today);
-    expect(start.getDay()).toBe(1); // Monday
-    expect(start.getDate()).toBe(16);
-  });
-
   it('returns first of month for month range', () => {
     const today = new Date(2025, 5, 18);
     const start = getRangeStart('month', today);
@@ -68,46 +61,44 @@ describe('getRangeStart', () => {
     expect(start.getMonth()).toBe(5);
   });
 
-  it('returns first of quarter for quarter range', () => {
-    // June is Q2 → starts April
+  it('returns Jan 1 for a year range', () => {
     const today = new Date(2025, 5, 18);
-    const start = getRangeStart('quarter', today);
-    expect(start.getMonth()).toBe(3); // April
-    expect(start.getDate()).toBe(1);
-  });
-
-  it('returns Jan 1 for year range', () => {
-    const today = new Date(2025, 5, 18);
-    const start = getRangeStart('year', today);
+    const start = getRangeStart('2025', today);
     expect(start.getMonth()).toBe(0);
     expect(start.getDate()).toBe(1);
+    expect(start.getFullYear()).toBe(2025);
   });
 
-  it('returns epoch for all range', () => {
-    const start = getRangeStart('all');
-    expect(start.getFullYear()).toBe(1970);
+  it('returns Jan 1 of specified year even if not current year', () => {
+    const today = new Date(2025, 5, 18);
+    const start = getRangeStart('2023', today);
+    expect(start.getFullYear()).toBe(2023);
+    expect(start.getMonth()).toBe(0);
+    expect(start.getDate()).toBe(1);
   });
 });
 
 describe('getRangeEnd', () => {
-  it('returns Sunday for week range', () => {
-    const today = new Date(2025, 5, 18);
-    const end = getRangeEnd('week', today);
-    expect(end.getDay()).toBe(0); // Sunday
-    expect(end.getDate()).toBe(22);
-  });
-
   it('returns last day of month for month range', () => {
     const today = new Date(2025, 5, 18); // June
     const end = getRangeEnd('month', today);
     expect(end.getDate()).toBe(30);
   });
 
-  it('returns last day of quarter for quarter range', () => {
-    const today = new Date(2025, 5, 18); // Q2 ends June 30
-    const end = getRangeEnd('quarter', today);
-    expect(end.getMonth()).toBe(5);
-    expect(end.getDate()).toBe(30);
+  it('returns Dec 31 for a year range', () => {
+    const today = new Date(2025, 5, 18);
+    const end = getRangeEnd('2025', today);
+    expect(end.getMonth()).toBe(11);
+    expect(end.getDate()).toBe(31);
+    expect(end.getFullYear()).toBe(2025);
+  });
+
+  it('returns Dec 31 of specified past year', () => {
+    const today = new Date(2025, 5, 18);
+    const end = getRangeEnd('2023', today);
+    expect(end.getFullYear()).toBe(2023);
+    expect(end.getMonth()).toBe(11);
+    expect(end.getDate()).toBe(31);
   });
 });
 
@@ -141,9 +132,9 @@ describe('filterActivities', () => {
     const activities = [
       makeActivity({ date: '2025-06-16', activityType: 'Run' }),
       makeActivity({ date: '2025-06-17', activityType: 'Hike' }),
-      makeActivity({ date: '2025-01-01', activityType: 'Run' }), // out of range
+      makeActivity({ date: '2025-01-01', activityType: 'Run' }), // out of month range
     ];
-    const result = filterActivities(activities, 'week', new Set(['Run']), today);
+    const result = filterActivities(activities, 'month', new Set(['Run']), today);
     expect(result).toHaveLength(1);
     expect(result[0].date).toBe('2025-06-16');
   });
@@ -154,8 +145,19 @@ describe('filterActivities', () => {
       makeActivity({ date: '2025-06-16', activityType: 'Run' }),
       makeActivity({ date: '2025-06-17', activityType: 'Hike' }),
     ];
-    const result = filterActivities(activities, 'week', new Set(['Run', 'Hike']), today);
+    const result = filterActivities(activities, 'month', new Set(['Run', 'Hike']), today);
     expect(result).toHaveLength(2);
+  });
+
+  it('filters by year range', () => {
+    const today = new Date(2025, 5, 18);
+    const activities = [
+      makeActivity({ date: '2025-03-01', activityType: 'Run' }),
+      makeActivity({ date: '2024-12-01', activityType: 'Run' }), // different year
+    ];
+    const result = filterActivities(activities, '2025', new Set(['Run']), today);
+    expect(result).toHaveLength(1);
+    expect(result[0].date).toBe('2025-03-01');
   });
 });
 
@@ -164,13 +166,6 @@ describe('filterActivities', () => {
 /* ------------------------------------------------------------------ */
 
 describe('generateBucketSlots', () => {
-  it('generates 7 day slots for week', () => {
-    const slots = generateBucketSlots('week');
-    expect(slots).toHaveLength(7);
-    expect(slots[0].label).toBe('Mon');
-    expect(slots[6].label).toBe('Sun');
-  });
-
   it('generates weekly slots for month', () => {
     const today = new Date(2025, 5, 15); // June 2025
     const slots = generateBucketSlots('month', today);
@@ -179,11 +174,20 @@ describe('generateBucketSlots', () => {
     expect(slots[0].label).toMatch(/^W\d+$/);
   });
 
-  it('generates monthly slots for all', () => {
+  it('generates 12 monthly slots for a year', () => {
     const today = new Date(2025, 5, 15);
-    const slots = generateBucketSlots('all', today);
-    expect(slots.length).toBeGreaterThan(0);
-    expect(slots[0].label).toMatch(/^[A-Z][a-z]+ '\d{2}$/);
+    const slots = generateBucketSlots('2025', today);
+    expect(slots).toHaveLength(12);
+    expect(slots[0].label).toBe('Jan');
+    expect(slots[11].label).toBe('Dec');
+  });
+
+  it('generates 12 monthly slots for a past year', () => {
+    const today = new Date(2025, 5, 15);
+    const slots = generateBucketSlots('2023', today);
+    expect(slots).toHaveLength(12);
+    expect(slots[0].label).toBe('Jan');
+    expect(slots[11].label).toBe('Dec');
   });
 });
 
@@ -192,8 +196,15 @@ describe('generateBucketSlots', () => {
 /* ------------------------------------------------------------------ */
 
 describe('prorateGoal', () => {
-  it('returns null for all range', () => {
-    expect(prorateGoal(1000, 'all')).toBeNull();
+  it('returns null for past year range', () => {
+    const today = new Date(2025, 5, 15);
+    expect(prorateGoal(1000, '2024', today)).toBeNull();
+  });
+
+  it('returns full goal for current year range', () => {
+    const today = new Date(2025, 5, 15);
+    const result = prorateGoal(1000, '2025', today);
+    expect(result).toBe(1000);
   });
 
   it('prorates annual goal to a month', () => {
@@ -202,22 +213,6 @@ describe('prorateGoal', () => {
     // 30 days / 365 days * 1000 ≈ 82.19
     expect(result).toBeGreaterThan(70);
     expect(result).toBeLessThan(100);
-  });
-
-  it('prorates annual goal to a week', () => {
-    const today = new Date(2025, 5, 15);
-    const result = prorateGoal(1000, 'week', today);
-    // 7 days / 365 days * 1000 ≈ 19.18
-    expect(result).toBeGreaterThan(15);
-    expect(result).toBeLessThan(25);
-  });
-
-  it('returns full goal for year range', () => {
-    const today = new Date(2025, 5, 15);
-    const result = prorateGoal(1000, 'year', today);
-    // Year range spans all 365 days; small rounding from inclusive bounds
-    expect(result!).toBeGreaterThan(990);
-    expect(result!).toBeLessThan(1010);
   });
 });
 
@@ -228,36 +223,48 @@ describe('prorateGoal', () => {
 describe('buildMetricChartData', () => {
   it('returns empty buckets when no activities have data for metric', () => {
     const activities = [makeActivity({ distance: 0 })];
-    const data = buildMetricChartData(activities, 'distance', 'week', null);
+    const data = buildMetricChartData(activities, 'distance', 'month', null);
     expect(data.buckets).toHaveLength(0);
     expect(data.total).toBe(0);
   });
 
-  it('aggregates distance into daily buckets for week view', () => {
-    const today = new Date(2025, 5, 18); // Wednesday
+  it('aggregates distance into weekly buckets for month view', () => {
+    const today = new Date(2025, 5, 18); // June 2025
     const activities = [
-      makeActivity({ date: '2025-06-16', distance: 5000 }),  // Monday
-      makeActivity({ date: '2025-06-16', distance: 3000 }),  // Monday (another)
-      makeActivity({ date: '2025-06-18', distance: 10000 }), // Wednesday
+      makeActivity({ date: '2025-06-02', distance: 5000 }),
+      makeActivity({ date: '2025-06-03', distance: 3000 }),
+      makeActivity({ date: '2025-06-18', distance: 10000 }),
     ];
-    const data = buildMetricChartData(activities, 'distance', 'week', null, today);
-    expect(data.buckets).toHaveLength(7);
-    // Monday bucket should have sum of 5000 + 3000 = 8000m in miles
+    const data = buildMetricChartData(activities, 'distance', 'month', null, today);
+    expect(data.buckets.length).toBeGreaterThanOrEqual(4);
+    expect(data.total).toBeCloseTo(toDisplayUnit('distance', 18000), 1);
+  });
+
+  it('aggregates into monthly buckets for year view', () => {
+    const today = new Date(2025, 5, 18);
+    const activities = [
+      makeActivity({ date: '2025-01-15', distance: 5000 }),
+      makeActivity({ date: '2025-01-20', distance: 3000 }),
+      makeActivity({ date: '2025-06-18', distance: 10000 }),
+    ];
+    const data = buildMetricChartData(activities, 'distance', '2025', null, today);
+    expect(data.buckets).toHaveLength(12);
+    // January bucket
     expect(data.buckets[0].value).toBeCloseTo(toDisplayUnit('distance', 8000), 1);
-    // Wednesday
-    expect(data.buckets[2].value).toBeCloseTo(toDisplayUnit('distance', 10000), 1);
-    // Other days = 0
-    expect(data.buckets[1].value).toBe(0);
+    // June bucket
+    expect(data.buckets[5].value).toBeCloseTo(toDisplayUnit('distance', 10000), 1);
+    // Other months = 0
+    expect(data.buckets[2].value).toBe(0);
   });
 
   it('computes cumulative values', () => {
     const today = new Date(2025, 5, 18);
     const activities = [
-      makeActivity({ date: '2025-06-16', distance: 5000 }),
-      makeActivity({ date: '2025-06-18', distance: 10000 }),
+      makeActivity({ date: '2025-01-15', distance: 5000 }),
+      makeActivity({ date: '2025-03-10', distance: 10000 }),
     ];
-    const data = buildMetricChartData(activities, 'distance', 'week', null, today);
-    // Cumulative: [Mon, Tue, Wed, ...]
+    const data = buildMetricChartData(activities, 'distance', '2025', null, today);
+    // Cumulative: Jan, Feb (no change), Mar, ...
     expect(data.cumulative[0]).toBeCloseTo(toDisplayUnit('distance', 5000), 1);
     expect(data.cumulative[1]).toBeCloseTo(toDisplayUnit('distance', 5000), 1); // no change
     expect(data.cumulative[2]).toBeCloseTo(toDisplayUnit('distance', 15000), 1);
@@ -266,7 +273,7 @@ describe('buildMetricChartData', () => {
   it('includes prorated goal when provided', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', distance: 5000 })];
-    const data = buildMetricChartData(activities, 'distance', 'week', 1000, today);
+    const data = buildMetricChartData(activities, 'distance', 'month', 1000, today);
     expect(data.proratedGoal).not.toBeNull();
     expect(data.proratedGoal!).toBeGreaterThan(0);
   });
@@ -274,17 +281,35 @@ describe('buildMetricChartData', () => {
   it('handles duration metric', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', duration: 7200 })]; // 2 hours
-    const data = buildMetricChartData(activities, 'duration', 'week', null, today);
-    expect(data.buckets[0].value).toBeCloseTo(2.0, 1);
+    const data = buildMetricChartData(activities, 'duration', 'month', null, today);
+    // Find the bucket containing the activity
+    const totalDuration = data.buckets.reduce((sum, b) => sum + b.value, 0);
+    expect(totalDuration).toBeCloseTo(2.0, 1);
     expect(data.unit).toBe('hours');
   });
 
   it('handles elevationGain metric', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', elevationGain: 500 })]; // 500m
-    const data = buildMetricChartData(activities, 'elevationGain', 'week', null, today);
-    expect(data.buckets[0].value).toBeCloseTo(toDisplayUnit('elevationGain', 500), 0);
+    const data = buildMetricChartData(activities, 'elevationGain', 'month', null, today);
+    const totalElevation = data.buckets.reduce((sum, b) => sum + b.value, 0);
+    expect(totalElevation).toBeCloseTo(toDisplayUnit('elevationGain', 500), 0);
     expect(data.unit).toBe('feet');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  getTimeRangeOptions                                                */
+/* ------------------------------------------------------------------ */
+
+describe('getTimeRangeOptions', () => {
+  it('returns This Month plus 6 years going back', () => {
+    const today = new Date(2025, 5, 15);
+    const options = getTimeRangeOptions(today);
+    expect(options).toHaveLength(7);
+    expect(options[0]).toEqual({ value: 'month', label: 'This Month' });
+    expect(options[1]).toEqual({ value: '2025', label: '2025' });
+    expect(options[6]).toEqual({ value: '2020', label: '2020' });
   });
 });
 

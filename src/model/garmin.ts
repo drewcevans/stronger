@@ -34,7 +34,12 @@ export interface GarminGoal {
 
 export type GarminMetric = 'distance' | 'elevationGain' | 'duration';
 
-export type GarminTimeRange = 'week' | 'month' | 'quarter' | 'year' | 'all';
+/**
+ * Time range selector for activity charts.
+ * - 'month': the current calendar month
+ * - A 4-digit year string (e.g. '2026'): that full calendar year
+ */
+export type GarminTimeRange = string;
 
 /** A single bar in the chart (one time bucket). */
 export interface ChartBucket {
@@ -123,67 +128,42 @@ export function splitActivities(activities: GarminActivity[]): {
 /*  Time range helpers                                                 */
 /* ------------------------------------------------------------------ */
 
+/** Parse a year from a range string, or null if it's 'month'. */
+function parseYearRange(range: GarminTimeRange): number | null {
+  if (range === 'month') return null;
+  const year = parseInt(range, 10);
+  return year >= 2000 ? year : null;
+}
+
 /** Get the start date (inclusive) for a time range anchored to today. */
 export function getRangeStart(range: GarminTimeRange, today: Date = new Date()): Date {
   const d = new Date(today);
   d.setHours(0, 0, 0, 0);
 
-  switch (range) {
-    case 'week': {
-      // ISO week: Monday = 1
-      const day = d.getDay();
-      const diff = day === 0 ? 6 : day - 1; // days since Monday
-      d.setDate(d.getDate() - diff);
-      return d;
-    }
-    case 'month':
-      d.setDate(1);
-      return d;
-    case 'quarter': {
-      const qMonth = Math.floor(d.getMonth() / 3) * 3;
-      d.setMonth(qMonth, 1);
-      return d;
-    }
-    case 'year':
-      d.setMonth(0, 1);
-      return d;
-    case 'all':
-      return new Date(0); // epoch
+  const year = parseYearRange(range);
+  if (year !== null) {
+    // Specific year: Jan 1
+    return new Date(year, 0, 1);
   }
+  // 'month': first of current month
+  d.setDate(1);
+  return d;
 }
 
 /** Get the end date (inclusive) for a time range anchored to today. */
 export function getRangeEnd(range: GarminTimeRange, today: Date = new Date()): Date {
-  const d = new Date(today);
-  d.setHours(23, 59, 59, 999);
-
-  switch (range) {
-    case 'week': {
-      const start = getRangeStart('week', today);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-      return end;
-    }
-    case 'month': {
-      const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-      end.setHours(23, 59, 59, 999);
-      return end;
-    }
-    case 'quarter': {
-      const qMonth = Math.floor(d.getMonth() / 3) * 3 + 2;
-      const end = new Date(d.getFullYear(), qMonth + 1, 0);
-      end.setHours(23, 59, 59, 999);
-      return end;
-    }
-    case 'year': {
-      const end = new Date(d.getFullYear(), 11, 31);
-      end.setHours(23, 59, 59, 999);
-      return end;
-    }
-    case 'all':
-      return d;
+  const year = parseYearRange(range);
+  if (year !== null) {
+    // Specific year: Dec 31
+    const end = new Date(year, 11, 31);
+    end.setHours(23, 59, 59, 999);
+    return end;
   }
+  // 'month': last day of current month
+  const d = new Date(today);
+  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  end.setHours(23, 59, 59, 999);
+  return end;
 }
 
 /* ------------------------------------------------------------------ */
@@ -223,10 +203,19 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Day-of-week labels for weekly view */
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** Build the list of time range options: This Month, then the current year and 5 prior years. */
+export function getTimeRangeOptions(today: Date = new Date()): { value: GarminTimeRange; label: string }[] {
+  const currentYear = today.getFullYear();
+  return [
+    { value: 'month', label: 'This Month' },
+    ...Array.from({ length: 6 }, (_, i) => ({
+      value: String(currentYear - i),
+      label: String(currentYear - i),
+    })),
+  ];
+}
 
 /** Get ISO week number for a date. */
 function getISOWeek(d: Date): number {
@@ -240,25 +229,16 @@ function getISOWeek(d: Date): number {
 
 /**
  * Assign a bucket key to an activity based on the time range.
- * - week: day index (0=Mon..6=Sun)
- * - month/quarter/year: ISO week number "W{n}"
- * - all: month "YYYY-MM"
+ * - month: ISO week number "W{n}"
+ * - year: month index "0"-"11"
  */
 function getBucketKey(dateStr: string, range: GarminTimeRange): string {
   const d = new Date(dateStr + 'T00:00:00');
-  switch (range) {
-    case 'week': {
-      const day = d.getDay();
-      const idx = day === 0 ? 6 : day - 1;
-      return String(idx);
-    }
-    case 'month':
-    case 'quarter':
-    case 'year':
-      return `W${getISOWeek(d)}`;
-    case 'all':
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  if (range === 'month') {
+    return `W${getISOWeek(d)}`;
   }
+  // Year range → monthly buckets
+  return String(d.getMonth());
 }
 
 /** Generate all expected bucket keys and labels for a time range. */
@@ -266,54 +246,33 @@ export function generateBucketSlots(
   range: GarminTimeRange,
   today: Date = new Date(),
 ): { key: string; label: string }[] {
-  const start = getRangeStart(range, today);
-  const end = getRangeEnd(range, today);
-
-  switch (range) {
-    case 'week':
-      return DAY_LABELS.map((label, i) => ({ key: String(i), label }));
-
-    case 'month':
-    case 'quarter':
-    case 'year': {
-      const slots: { key: string; label: string }[] = [];
-      const seen = new Set<string>();
-      const cursor = new Date(start);
-      while (cursor <= end) {
-        const wk = getISOWeek(cursor);
-        const key = `W${wk}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          slots.push({ key, label: `W${wk}` });
-        }
-        cursor.setDate(cursor.getDate() + 7);
+  if (range === 'month') {
+    // Weekly buckets for the current month
+    const start = getRangeStart(range, today);
+    const end = getRangeEnd(range, today);
+    const slots: { key: string; label: string }[] = [];
+    const seen = new Set<string>();
+    const cursor = new Date(start);
+    while (cursor <= end) {
+      const wk = getISOWeek(cursor);
+      const key = `W${wk}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        slots.push({ key, label: `W${wk}` });
       }
-      // Also check the end date's week
-      const endWk = getISOWeek(end);
-      const endKey = `W${endWk}`;
-      if (!seen.has(endKey)) {
-        slots.push({ key: endKey, label: `W${endWk}` });
-      }
-      return slots;
+      cursor.setDate(cursor.getDate() + 7);
     }
-
-    case 'all': {
-      const slots: { key: string; label: string }[] = [];
-      const cursor = new Date(start);
-      // If start is epoch, use the current year minus 1 as a reasonable start
-      if (cursor.getFullYear() < 2000) {
-        cursor.setFullYear(today.getFullYear() - 1);
-        cursor.setMonth(0, 1);
-      }
-      while (cursor <= end) {
-        const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-        const label = `${MONTH_LABELS[cursor.getMonth()]} '${String(cursor.getFullYear()).slice(2)}`;
-        slots.push({ key, label });
-        cursor.setMonth(cursor.getMonth() + 1);
-      }
-      return slots;
+    // Also check the end date's week
+    const endWk = getISOWeek(end);
+    const endKey = `W${endWk}`;
+    if (!seen.has(endKey)) {
+      slots.push({ key: endKey, label: `W${endWk}` });
     }
+    return slots;
   }
+
+  // Year range → 12 monthly buckets
+  return MONTH_LABELS.map((label, i) => ({ key: String(i), label }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -322,20 +281,25 @@ export function generateBucketSlots(
 
 /**
  * Prorate an annual goal to the selected time range.
- * Returns null for 'all' (goals are not meaningful for unbounded ranges).
+ * Returns the full goal for the current year, prorated for month,
+ * or null for past years.
  */
 export function prorateGoal(
   annualGoal: number,
   range: GarminTimeRange,
   today: Date = new Date(),
 ): number | null {
-  if (range === 'all') return null;
+  const year = parseYearRange(range);
+  if (year !== null) {
+    // Current year → full goal; past years → no goal
+    return year === today.getFullYear() ? annualGoal : null;
+  }
 
+  // 'month': prorate by days
   const start = getRangeStart(range, today);
   const end = getRangeEnd(range, today);
   const rangeDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24) + 1;
 
-  // Use actual days in the year for accuracy
   const yearStart = new Date(today.getFullYear(), 0, 1);
   const yearEnd = new Date(today.getFullYear(), 11, 31);
   const yearDays = (yearEnd.getTime() - yearStart.getTime()) / (1000 * 60 * 60 * 24) + 1;
