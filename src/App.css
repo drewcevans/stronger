@@ -3035,6 +3035,32 @@ body {
 	font-weight: 600;
 }
 
+/* Aggregation selector */
+.garmin-agg-group {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+.garmin-agg-btn {
+	flex: 1;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: rgba(255, 255, 255, 0.6);
+	padding: 5px 4px;
+	border-radius: 6px;
+	font-size: 0.75rem;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.garmin-agg-btn.active {
+	background: var(--color-accent);
+	color: #fff;
+	border-color: var(--color-accent);
+	font-weight: 600;
+}
+
 /* Activity type filter */
 .garmin-filter {
 	margin-bottom: 12px;

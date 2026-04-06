@@ -41,6 +41,9 @@ export type GarminMetric = 'distance' | 'elevationGain' | 'duration';
  */
 export type GarminTimeRange = string;
 
+/** Bucket aggregation granularity for charts. */
+export type GarminAggregation = 'day' | 'week' | 'month';
+
 /** A single bar in the chart (one time bucket). */
 export interface ChartBucket {
   /** Human-readable label for the bucket (e.g. "Mon", "W3", "Jan") */
@@ -234,51 +237,73 @@ function getISOWeek(d: Date): number {
 }
 
 /**
- * Assign a bucket key to an activity based on the time range.
- * - month: ISO week number "W{n}"
- * - year: month index "0"-"11"
+ * Assign a bucket key to an activity based on the aggregation level.
+ * - day: ISO date "YYYY-MM-DD"
+ * - week: ISO week number "W{n}"
+ * - month: month index "0"-"11"
  */
-function getBucketKey(dateStr: string, range: GarminTimeRange): string {
+function getBucketKey(dateStr: string, aggregation: GarminAggregation): string {
+  if (aggregation === 'day') return dateStr;
   const d = new Date(dateStr + 'T00:00:00');
-  if (range === 'month') {
-    return `W${getISOWeek(d)}`;
-  }
-  // Year range → monthly buckets
-  return String(d.getMonth());
+  return aggregation === 'week' ? `W${getISOWeek(d)}` : String(d.getMonth());
 }
 
-/** Generate all expected bucket keys and labels for a time range. */
+/** Generate all expected bucket keys and labels for a time range and aggregation. */
 export function generateBucketSlots(
   range: GarminTimeRange,
+  aggregation: GarminAggregation = 'week',
   today: Date = new Date(),
 ): { key: string; label: string }[] {
-  if (range === 'month') {
-    // Weekly buckets for the current month
-    const start = getRangeStart(range, today);
-    const end = getRangeEnd(range, today);
-    const slots: { key: string; label: string }[] = [];
-    const seen = new Set<string>();
-    const cursor = new Date(start);
-    while (cursor <= end) {
-      const wk = getISOWeek(cursor);
-      const key = `W${wk}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        slots.push({ key, label: `W${wk}` });
-      }
-      cursor.setDate(cursor.getDate() + 7);
-    }
-    // Also check the end date's week
-    const endWk = getISOWeek(end);
-    const endKey = `W${endWk}`;
-    if (!seen.has(endKey)) {
-      slots.push({ key: endKey, label: `W${endWk}` });
-    }
-    return slots;
-  }
+  const start = getRangeStart(range, today);
+  const end = getRangeEnd(range, today);
 
-  // Year range → 12 monthly buckets
-  return MONTH_LABELS.map((label, i) => ({ key: String(i), label }));
+  switch (aggregation) {
+    case 'day': {
+      const slots: { key: string; label: string }[] = [];
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        const key = toISODate(cursor);
+        const label = range === 'month'
+          ? String(cursor.getDate())
+          : `${cursor.getMonth() + 1}/${cursor.getDate()}`;
+        slots.push({ key, label });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      return slots;
+    }
+
+    case 'week': {
+      const slots: { key: string; label: string }[] = [];
+      const seen = new Set<string>();
+      const cursor = new Date(start);
+      while (cursor <= end) {
+        const wk = getISOWeek(cursor);
+        const key = `W${wk}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          slots.push({ key, label: `W${wk}` });
+        }
+        cursor.setDate(cursor.getDate() + 7);
+      }
+      // Also check the end date's week
+      const endWk = getISOWeek(end);
+      const endKey = `W${endWk}`;
+      if (!seen.has(endKey)) {
+        slots.push({ key: endKey, label: `W${endWk}` });
+      }
+      return slots;
+    }
+
+    case 'month': {
+      if (range === 'month') {
+        // Just one bucket for the single month
+        const monthIdx = start.getMonth();
+        return [{ key: String(monthIdx), label: MONTH_LABELS[monthIdx] }];
+      }
+      // Year range → 12 monthly buckets
+      return MONTH_LABELS.map((label, i) => ({ key: String(i), label }));
+    }
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -322,9 +347,10 @@ export function prorateGoal(
  *
  * @param activities - Already filtered by date range and activity type
  * @param metric - Which metric to aggregate
- * @param range - Time range (determines bucket granularity)
+ * @param range - Time range (determines date boundaries)
  * @param goal - Annual goal value in display units, or null
  * @param today - Reference date for range calculations
+ * @param aggregation - Bucket granularity (day/week/month)
  */
 export function buildMetricChartData(
   activities: GarminActivity[],
@@ -332,6 +358,7 @@ export function buildMetricChartData(
   range: GarminTimeRange,
   goal: number | null,
   today: Date = new Date(),
+  aggregation: GarminAggregation = 'week',
 ): MetricChartData {
   // Check if any activity has data for this metric
   const hasData = activities.some((a) => {
@@ -351,7 +378,7 @@ export function buildMetricChartData(
     };
   }
 
-  const slots = generateBucketSlots(range, today);
+  const slots = generateBucketSlots(range, aggregation, today);
 
   // Aggregate into buckets
   const bucketMap = new Map<string, number>();
@@ -363,7 +390,7 @@ export function buildMetricChartData(
     const raw = activity[metric];
     if (typeof raw !== 'number' || raw <= 0) continue;
     const displayVal = toDisplayUnit(metric, raw);
-    const key = getBucketKey(activity.date, range);
+    const key = getBucketKey(activity.date, aggregation);
     bucketMap.set(key, (bucketMap.get(key) ?? 0) + displayVal);
   }
 
@@ -373,12 +400,25 @@ export function buildMetricChartData(
   }));
 
   // Cumulative
-  const cumulative: number[] = [];
+  const fullCumulative: number[] = [];
   let running = 0;
   for (const b of buckets) {
     running += b.value;
-    cumulative.push(running);
+    fullCumulative.push(running);
   }
+
+  // Truncate cumulative for in-progress time periods:
+  // Only show cumulative up to the bucket containing today.
+  const rangeEnd = getRangeEnd(range, today);
+  let activeBucketCount = buckets.length;
+  if (today < rangeEnd) {
+    const todayKey = getBucketKey(toISODate(today), aggregation);
+    const currentIdx = slots.findIndex((s) => s.key === todayKey);
+    if (currentIdx >= 0) {
+      activeBucketCount = currentIdx + 1;
+    }
+  }
+  const cumulative = fullCumulative.slice(0, activeBucketCount);
 
   const proratedGoal = goal !== null ? prorateGoal(goal, range, today) : null;
 

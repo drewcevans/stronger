@@ -14,7 +14,7 @@ import {
   splitActivities,
   STRENGTH_ACTIVITY_TYPE,
 } from '../garmin.js';
-import type { GarminActivity } from '../garmin.js';
+import type { GarminActivity, GarminAggregation } from '../garmin.js';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -166,28 +166,60 @@ describe('filterActivities', () => {
 /* ------------------------------------------------------------------ */
 
 describe('generateBucketSlots', () => {
-  it('generates weekly slots for month', () => {
+  it('generates weekly slots for month (default aggregation)', () => {
     const today = new Date(2025, 5, 15); // June 2025
-    const slots = generateBucketSlots('month', today);
+    const slots = generateBucketSlots('month', 'week', today);
     expect(slots.length).toBeGreaterThanOrEqual(4);
     expect(slots.length).toBeLessThanOrEqual(6);
     expect(slots[0].label).toMatch(/^W\d+$/);
   });
 
-  it('generates 12 monthly slots for a year', () => {
+  it('generates 12 monthly slots for a year with month aggregation', () => {
     const today = new Date(2025, 5, 15);
-    const slots = generateBucketSlots('2025', today);
+    const slots = generateBucketSlots('2025', 'month', today);
     expect(slots).toHaveLength(12);
     expect(slots[0].label).toBe('Jan');
     expect(slots[11].label).toBe('Dec');
   });
 
-  it('generates 12 monthly slots for a past year', () => {
+  it('generates 12 monthly slots for a past year with month aggregation', () => {
     const today = new Date(2025, 5, 15);
-    const slots = generateBucketSlots('2023', today);
+    const slots = generateBucketSlots('2023', 'month', today);
     expect(slots).toHaveLength(12);
     expect(slots[0].label).toBe('Jan');
     expect(slots[11].label).toBe('Dec');
+  });
+
+  it('generates daily slots for month range', () => {
+    const today = new Date(2025, 5, 15); // June 2025 (30 days)
+    const slots = generateBucketSlots('month', 'day', today);
+    expect(slots).toHaveLength(30);
+    expect(slots[0].label).toBe('1');
+    expect(slots[29].label).toBe('30');
+  });
+
+  it('generates daily slots for year range', () => {
+    const today = new Date(2025, 5, 15);
+    const slots = generateBucketSlots('2025', 'day', today);
+    expect(slots).toHaveLength(365);
+    expect(slots[0].label).toBe('1/1');
+    expect(slots[364].label).toBe('12/31');
+  });
+
+  it('generates weekly slots for year range', () => {
+    const today = new Date(2025, 5, 15);
+    const slots = generateBucketSlots('2025', 'week', today);
+    // A year has 52-53 ISO weeks overlapping
+    expect(slots.length).toBeGreaterThanOrEqual(52);
+    expect(slots.length).toBeLessThanOrEqual(54);
+    expect(slots[0].label).toMatch(/^W\d+$/);
+  });
+
+  it('generates single bucket for month range with month aggregation', () => {
+    const today = new Date(2025, 5, 15); // June 2025
+    const slots = generateBucketSlots('month', 'month', today);
+    expect(slots).toHaveLength(1);
+    expect(slots[0].label).toBe('Jun');
   });
 });
 
@@ -235,7 +267,7 @@ describe('buildMetricChartData', () => {
       makeActivity({ date: '2025-06-03', distance: 3000 }),
       makeActivity({ date: '2025-06-18', distance: 10000 }),
     ];
-    const data = buildMetricChartData(activities, 'distance', 'month', null, today);
+    const data = buildMetricChartData(activities, 'distance', 'month', null, today, 'week');
     expect(data.buckets.length).toBeGreaterThanOrEqual(4);
     expect(data.total).toBeCloseTo(toDisplayUnit('distance', 18000), 1);
   });
@@ -247,7 +279,7 @@ describe('buildMetricChartData', () => {
       makeActivity({ date: '2025-01-20', distance: 3000 }),
       makeActivity({ date: '2025-06-18', distance: 10000 }),
     ];
-    const data = buildMetricChartData(activities, 'distance', '2025', null, today);
+    const data = buildMetricChartData(activities, 'distance', '2025', null, today, 'month');
     expect(data.buckets).toHaveLength(12);
     // January bucket
     expect(data.buckets[0].value).toBeCloseTo(toDisplayUnit('distance', 8000), 1);
@@ -263,17 +295,58 @@ describe('buildMetricChartData', () => {
       makeActivity({ date: '2025-01-15', distance: 5000 }),
       makeActivity({ date: '2025-03-10', distance: 10000 }),
     ];
-    const data = buildMetricChartData(activities, 'distance', '2025', null, today);
+    const data = buildMetricChartData(activities, 'distance', '2025', null, today, 'month');
     // Cumulative: Jan, Feb (no change), Mar, ...
     expect(data.cumulative[0]).toBeCloseTo(toDisplayUnit('distance', 5000), 1);
     expect(data.cumulative[1]).toBeCloseTo(toDisplayUnit('distance', 5000), 1); // no change
     expect(data.cumulative[2]).toBeCloseTo(toDisplayUnit('distance', 15000), 1);
   });
 
+  it('truncates cumulative for in-progress current year', () => {
+    const today = new Date(2025, 5, 18); // June 18, 2025
+    const activities = [
+      makeActivity({ date: '2025-01-15', distance: 5000 }),
+      makeActivity({ date: '2025-03-10', distance: 10000 }),
+    ];
+    const data = buildMetricChartData(activities, 'distance', '2025', null, today, 'month');
+    // Buckets should still be 12 (full year)
+    expect(data.buckets).toHaveLength(12);
+    // Cumulative should only go up to June (index 5), so 6 entries
+    expect(data.cumulative).toHaveLength(6);
+    // Cumulative values should be correct for the active months
+    expect(data.cumulative[0]).toBeCloseTo(toDisplayUnit('distance', 5000), 1);
+    expect(data.cumulative[5]).toBeCloseTo(toDisplayUnit('distance', 15000), 1);
+  });
+
+  it('does not truncate cumulative for a past year', () => {
+    const today = new Date(2025, 5, 18);
+    const activities = [
+      makeActivity({ date: '2024-01-15', distance: 5000 }),
+      makeActivity({ date: '2024-06-10', distance: 10000 }),
+    ];
+    const data = buildMetricChartData(activities, 'distance', '2024', null, today, 'month');
+    // Past year: cumulative should cover all 12 months
+    expect(data.buckets).toHaveLength(12);
+    expect(data.cumulative).toHaveLength(12);
+  });
+
+  it('truncates cumulative for in-progress current month', () => {
+    const today = new Date(2025, 5, 15); // June 15, 2025
+    const activities = [
+      makeActivity({ date: '2025-06-02', distance: 5000 }),
+      makeActivity({ date: '2025-06-10', distance: 3000 }),
+    ];
+    const data = buildMetricChartData(activities, 'distance', 'month', null, today, 'day');
+    // Should have 30 day buckets for June
+    expect(data.buckets).toHaveLength(30);
+    // Cumulative should only go up to day 15 (index 14)
+    expect(data.cumulative).toHaveLength(15);
+  });
+
   it('includes prorated goal when provided', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', distance: 5000 })];
-    const data = buildMetricChartData(activities, 'distance', 'month', 1000, today);
+    const data = buildMetricChartData(activities, 'distance', 'month', 1000, today, 'week');
     expect(data.proratedGoal).not.toBeNull();
     expect(data.proratedGoal!).toBeGreaterThan(0);
   });
@@ -284,7 +357,7 @@ describe('buildMetricChartData', () => {
       makeActivity({ date: '2025-01-15', distance: 5000 }),
       makeActivity({ date: '2025-06-18', distance: 10000 }),
     ];
-    const data = buildMetricChartData(activities, 'distance', '2025', 1200, today);
+    const data = buildMetricChartData(activities, 'distance', '2025', 1200, today, 'month');
     // Year range with 12 buckets, goal = 1200 miles
     expect(data.goalTrajectory).toHaveLength(12);
     expect(data.goalTrajectory[0]).toBeCloseTo(100, 1);   // 1200 * 1/12
@@ -295,14 +368,14 @@ describe('buildMetricChartData', () => {
   it('returns empty goalTrajectory when no goal is set', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', distance: 5000 })];
-    const data = buildMetricChartData(activities, 'distance', 'month', null, today);
+    const data = buildMetricChartData(activities, 'distance', 'month', null, today, 'week');
     expect(data.goalTrajectory).toEqual([]);
   });
 
   it('returns empty goalTrajectory for past year', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2024-06-16', distance: 5000 })];
-    const data = buildMetricChartData(activities, 'distance', '2024', 1000, today);
+    const data = buildMetricChartData(activities, 'distance', '2024', 1000, today, 'month');
     // prorateGoal returns null for past years
     expect(data.goalTrajectory).toEqual([]);
   });
@@ -310,7 +383,7 @@ describe('buildMetricChartData', () => {
   it('handles duration metric', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', duration: 7200 })]; // 2 hours
-    const data = buildMetricChartData(activities, 'duration', 'month', null, today);
+    const data = buildMetricChartData(activities, 'duration', 'month', null, today, 'week');
     // Find the bucket containing the activity
     const totalDuration = data.buckets.reduce((sum, b) => sum + b.value, 0);
     expect(totalDuration).toBeCloseTo(2.0, 1);
@@ -320,10 +393,25 @@ describe('buildMetricChartData', () => {
   it('handles elevationGain metric', () => {
     const today = new Date(2025, 5, 18);
     const activities = [makeActivity({ date: '2025-06-16', elevationGain: 500 })]; // 500m
-    const data = buildMetricChartData(activities, 'elevationGain', 'month', null, today);
+    const data = buildMetricChartData(activities, 'elevationGain', 'month', null, today, 'week');
     const totalElevation = data.buckets.reduce((sum, b) => sum + b.value, 0);
     expect(totalElevation).toBeCloseTo(toDisplayUnit('elevationGain', 500), 0);
     expect(data.unit).toBe('feet');
+  });
+
+  it('aggregates into daily buckets', () => {
+    const today = new Date(2025, 5, 18); // June 18
+    const activities = [
+      makeActivity({ date: '2025-06-02', distance: 5000 }),
+      makeActivity({ date: '2025-06-02', distance: 3000 }), // same day
+      makeActivity({ date: '2025-06-18', distance: 10000 }),
+    ];
+    const data = buildMetricChartData(activities, 'distance', 'month', null, today, 'day');
+    expect(data.buckets).toHaveLength(30); // June has 30 days
+    // Day 2 (index 1) should have combined distance
+    expect(data.buckets[1].value).toBeCloseTo(toDisplayUnit('distance', 8000), 1);
+    // Day 18 (index 17) should have its distance
+    expect(data.buckets[17].value).toBeCloseTo(toDisplayUnit('distance', 10000), 1);
   });
 });
 

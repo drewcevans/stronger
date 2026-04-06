@@ -4,6 +4,7 @@ import type {
   GarminGoal,
   GarminMetric,
   GarminTimeRange,
+  GarminAggregation,
   MetricChartData,
 } from '../model/garmin.js';
 import {
@@ -40,12 +41,19 @@ const STRENGTH_METRICS: GarminMetric[] = ['duration'];
 const CHART_HEIGHT = 220;
 const CHART_PADDING = { top: 16, right: 56, bottom: 32, left: 52 };
 
+const AGGREGATION_OPTIONS: { value: GarminAggregation; label: string }[] = [
+  { value: 'day', label: 'Day' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+];
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
 export function GarminView({ activities, goals, onGoalChange }: Props) {
   const [range, setRange] = useState<GarminTimeRange>('month');
+  const [aggregation, setAggregation] = useState<GarminAggregation>('week');
   const [filterOpen, setFilterOpen] = useState(false);
 
   // Split into cardio (everything except strength) and strength training
@@ -103,17 +111,17 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
   const cardioCharts = useMemo(
     () =>
       METRICS.map((metric) =>
-        buildMetricChartData(filteredCardio, metric, range, goalMap.get(metric) ?? null, today),
+        buildMetricChartData(filteredCardio, metric, range, goalMap.get(metric) ?? null, today, aggregation),
       ).filter((d) => d.buckets.length > 0),
-    [filteredCardio, range, goalMap, today],
+    [filteredCardio, range, goalMap, today, aggregation],
   );
 
   const strengthCharts = useMemo(
     () =>
       STRENGTH_METRICS.map((metric) =>
-        buildMetricChartData(filteredStrength, metric, range, null, today),
+        buildMetricChartData(filteredStrength, metric, range, null, today, aggregation),
       ).filter((d) => d.buckets.length > 0),
-    [filteredStrength, range, today],
+    [filteredStrength, range, today, aggregation],
   );
 
   const toggleType = useCallback((type: string) => {
@@ -159,6 +167,19 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
             onClick={() => setRange(r.value)}
           >
             {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Aggregation selector */}
+      <div className="garmin-agg-group">
+        {AGGREGATION_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            className={`garmin-agg-btn${aggregation === opt.value ? ' active' : ''}`}
+            onClick={() => setAggregation(opt.value)}
+          >
+            {opt.label}
           </button>
         ))}
       </div>
