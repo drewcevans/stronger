@@ -4,7 +4,7 @@ Operational reminders for AI agents working on this project. Read this before st
 
 ## Project overview
 
-Stronger is a barbell training tracker built as a single-page React app. It uses Google Sheets as its database — there is no backend. The app authenticates via Google OAuth, reads/writes lift configs, workout definitions, log entries, and schedule data directly to named tabs in the user's spreadsheet. It is deployed to GitHub Pages.
+Stronger is a barbell training tracker built as a single-page React app. It uses Google Sheets as its database — there is no backend. The app authenticates via Google OAuth, reads/writes lift configs, workout definitions, log entries, schedule data, and cardio activities directly to named tabs in the user's spreadsheet. A separate GitHub Actions workflow syncs Garmin/Strava activity data into another sheet tab. The app is deployed to GitHub Pages.
 
 ## Tech stack
 
@@ -26,30 +26,36 @@ Stronger is a barbell training tracker built as a single-page React app. It uses
 
 ### Data model (`src/model/types.ts`)
 
-Seven-layer model, each building on the previous:
+Core types, each building on the previous:
 
-1. **LiftConfig** — per-lift settings (weights, increments, gear, category). 10 fields. Stored in the "Exercises" sheet tab.
+1. **LiftConfig** — per-lift settings (weights, increments, gear). 9 fields. Stored in the "Exercises" sheet tab.
 2. **SetTemplate / ExerciseTemplate** — the structure of a workout (set types, percentages, rep ranges, roles). Stored in the "Workouts" sheet tab.
 3. **ComputedSet / ComputedExercise** — concrete workout instances with calculated weights. Computed at runtime, never stored.
-4. **Workout** — a named collection of computed exercises with `category` (`'strength' | 'cardio'`) and `favorite` flag.
-5. **SetResult** — execution-time tracking of what the user actually did. Logged to the "Log" sheet tab.
-6. **ScheduleEntry** — date→workoutId mapping. Stored in the "Schedule" sheet tab.
-7. **ProgressionProposal** — post-workout weight-change suggestions. Ephemeral, never stored.
+4. **Workout** — a named collection of computed exercises with a `favorite` flag.
+5. **PreviousSetData** — previous-session weight/reps for comparison. Ephemeral.
+6. **SetResult** — execution-time tracking of what the user actually did. Logged to the "Log" sheet tab.
+7. **DayFlags** — boolean flags for calendar days (`home`, `elsewhere`, `travel`, `visitors`, `blocked`).
+8. **ScheduleEntry** — date→workoutId mapping with optional `flags`. Stored in the "Schedule" sheet tab.
+9. **CardioActivity** — simple `{id, name}` for cardio activities. Stored in the "Cardio" sheet tab.
+10. **GarminActivity** — synced Strava activity data (date, type, duration, distance, elevation, HR, etc.). Stored in the "Garmin" sheet tab.
+11. **ProgressionProposal** — post-workout weight-change suggestions. Ephemeral, never stored.
 
 ### Google Sheets tabs and ranges (`src/google/sheets.ts`, `src/google/config.ts`)
 
-The app uses four tabs in the user's spreadsheet. Each tab has a header constant, a range constant, and serialization/deserialization functions.
+The app uses six tabs in the user's spreadsheet. Each tab has a header constant, a range constant, and serialization/deserialization functions.
 
-| Tab name                | Range constant        | Header columns | Column span |
+| Tab name                | Range constant(s)     | Header columns | Column span |
 |-------------------------|-----------------------|----------------|-------------|
-| `Stronger - Exercises`  | `CONFIG_RANGE = A:J`  | 10 (`id` → `category`) | A–J |
-| `Stronger - Workouts`   | `WORKOUT_DEFS_RANGE = A:N` | 14 (`workoutId` → `favorite`) | A–N |
-| `Stronger - Log`        | `LOG_READ_RANGE = A2:R`, `LOG_HEADER_RANGE = A1:R1`, `LOG_APPEND_RANGE = A2:R2` | 18 (`date` → `cardioWeight`) | A–R |
-| `Stronger - Schedule`   | `SCHEDULE_READ_RANGE = A2:B10000`, `SCHEDULE_FULL_RANGE = A1:B10000` | 2 (`date`, `workoutId`) | A–B |
+| `Stronger - Exercises`  | `CONFIG_RANGE = A:I`  | 9 (`id` → `gear`) | A–I |
+| `Stronger - Workouts`   | `WORKOUT_DEFS_RANGE = A:M` | 13 (`workoutId` → `favorite`) | A–M |
+| `Stronger - Log`        | `LOG_READ_RANGE = A2:M`, `LOG_HEADER_RANGE = A1:M1`, `LOG_APPEND_RANGE = A2:M2` | 13 (`date` → `completed`) | A–M |
+| `Stronger - Schedule`   | `SCHEDULE_READ_RANGE = A2:G10000`, `SCHEDULE_FULL_RANGE = A1:G10000` | 7 (`date`, `workoutId`, `home`, `elsewhere`, `travel`, `visitors`, `blocked`) | A–G |
+| `Stronger - Cardio`     | `CARDIO_RANGE = A:B`  | 2 (`id`, `name`) | A–B |
+| `Stronger - Garmin`     | `GARMIN_SYNC_RANGE = A:J`, `GARMIN_HEADER_RANGE = A1:J1`, `GARMIN_READ_RANGE = A2:J` | 10 (`date` → `maxHR`) | A–J |
 
 ### Critical rule: keep ranges in sync with the data model
 
-**When you add or remove a column from any header constant, you must update the corresponding range constants to match.** The letter in the range (e.g., `R` in `A2:R`) must cover all columns in the header array. If the header has 18 entries, the range must end at column R (the 18th column). If you add a 19th column, update every range for that tab to end at S.
+**When you add or remove a column from any header constant, you must update the corresponding range constants to match.** The letter in the range (e.g., `M` in `A2:M`) must cover all columns in the header array. If the header has 13 entries, the range must end at column M (the 13th column). If you add a 14th column, update every range for that tab to end at N.
 
 The header arrays also serve as the human-readable column names in the actual spreadsheet. Use clear, descriptive field names — these are visible to the user when they open the sheet.
 
@@ -59,28 +65,28 @@ Use the formula: column letter = `String.fromCharCode(64 + columnCount)` (A=1, B
 
 Hash-based SPA router. Routes:
 - `#/` — workout list (home)
-- `#/workout/<id>` — strength workout execution
-- `#/cardio/<id>` — cardio workout logging
+- `#/workout/<id>` — workout execution
 - `#/calendar` — calendar view
 - `#/edit/<id>` or `#/edit/new` — workout editor
 - `#/exercises` — exercise library
 - `#/exercise/<id>` or `#/exercise/new` — exercise editor
 - `#/progress` — progress charts
+- `#/settings` — settings (Hevy import, disconnect)
 
 When adding a new view, add its route type to the `Route` union, update `parseHash`, and update `routeToHash`.
 
 ### Component structure (`src/components/`)
 
 - `WorkoutSelect` — home screen, workout list with favorites
-- `WorkoutView` — strength workout execution (sets, reps, checkboxes)
-- `CardioView` — cardio logging (duration, distance, elevation, weight)
+- `WorkoutView` — workout execution (sets, reps, checkboxes)
 - `WorkoutEditor` — create/edit workout definitions
-- `CalendarView` — schedule workouts to dates, history mode
-- `CalendarPush` — push scheduled workouts to Google Calendar
+- `CalendarView` — schedule workouts to dates, history mode, day flags
+- `CalendarPush` — weekly planner + push scheduled workouts to Google Calendar
 - `ProgressView` — SVG line charts for progress metrics (volume, heaviest, e1RM)
 - `ProgressionReview` — post-workout weight increase proposals
 - `ExerciseLibrary` — browse and manage exercises
 - `ExerciseEditor` — create/edit individual exercise configs
+- `SettingsView` — Hevy CSV import, disconnect sheet
 - `GoogleAuth` — OAuth sign-in, sheet connection, nav bar
 - `SetupPage` — first-time setup wizard
 - `MotivationalQuote` — random quotes display
@@ -88,7 +94,7 @@ When adding a new view, add its route type to the `Route` union, update `parseHa
 
 ### App orchestration (`src/App.tsx`)
 
-`App.tsx` is the top-level component. It owns all state (workouts, configs, definitions, schedule, active workout) and passes callbacks down. Logging helpers (`logWorkoutResults`, `logCardioResult`) live at the bottom of this file as standalone async functions.
+`App.tsx` is the top-level component. It owns all state (workouts, configs, definitions, schedule, active workout) and passes callbacks down.
 
 ### Styling (`src/App.css`)
 
@@ -99,13 +105,29 @@ Neon design language using CSS custom properties:
 - `--color-surface: #0a0a0a` (card backgrounds)
 - Role-based set colors: `--color-warmup`, `--color-work`, `--color-backoff`, `--color-joker`
 
-### Workout data (`src/data/sample-workouts.ts`, `lib/`)
+### Seed data (`lib/`)
 
-Default lift configs and workout definitions are loaded from JSON files in `lib/` and used as seed data when a user connects a fresh spreadsheet. After first connect, the sheet is the source of truth.
+Default data loaded from JSON files in `lib/` and used as seed data when a user connects a fresh spreadsheet. After first connect, the sheet is the source of truth.
+
+- `lib/exercises.json` — default lift configurations
+- `lib/workouts.json` — default workout definitions
+- `lib/cardio.json` — cardio activity definitions
+- `lib/quotes.json` — motivational quotes
+
+### Garmin sync (`scripts/garmin-sync.mjs`)
+
+A Node.js script run by the `garmin-sync.yml` GitHub Actions workflow on a daily cron. It fetches recent activities from the Strava API (which receives data from Garmin Connect auto-sync), then appends new rows to the "Stronger - Garmin" sheet tab via a Google service account. See [GARMIN_SYNC_SETUP.md](GARMIN_SYNC_SETUP.md) for configuration.
+
+### GitHub Actions (`.github/workflows/`)
+
+- `deploy.yml` — builds and deploys to GitHub Pages on push to main
+- `garmin-sync.yml` — daily Strava → Google Sheets sync
+- `auto-spec-issues.yml` — creates GitHub issues from new spec files
+- `auto-archive-specs.yml` — moves spec files to `.archive/specs/` when their issue is closed
 
 ## Common pitfalls
 
 - **Sheet API 400 errors** usually mean a range doesn't cover enough columns for the data being written. Check that the range letter matches the header length.
 - **Open-ended ranges** (e.g., `A:I`) are preferred for reading — they don't silently truncate if more rows exist than expected. The schedule tab is an exception and uses a row limit.
-- **Cardio vs. strength** — these share the same log tab but have different columns populated. The `category` column distinguishes them. Cardio rows have zeros in the strength-specific columns and values in the cardio-specific ones.
-- **Old log rows** — rows written before the cardio extension have no `category` column. `parseLogRow` defaults missing category to `'strength'`.
+- **Old log rows** — rows written before schema changes may have fewer columns. Parse functions should handle missing columns gracefully with defaults.
+- **Garmin sync 404** — usually means the `SPREADSHEET_ID` repo secret is missing or wrong. The service account also needs Editor access to the spreadsheet.
