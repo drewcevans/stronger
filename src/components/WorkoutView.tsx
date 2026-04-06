@@ -3,6 +3,7 @@ import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { saveDraft } from '../hooks/useWorkoutDraft.js';
+import { useRestTimer, resolveTimerExercise, formatElapsed } from '../hooks/useRestTimer.js';
 
 interface WorkoutViewProps {
 	workout: Workout;
@@ -87,6 +88,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 		return workout.exercises.map(() => []);
 	});
 	const [finished, setFinished] = useState(false);
+	const restTimer = useRestTimer();
 
 	// Persist results to localStorage on every change so a refresh doesn't lose progress.
 	const isFirstRender = useRef(true);
@@ -113,6 +115,13 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 						),
 			),
 		);
+
+		// Start rest timer when a set is checked as complete
+		if (patch.completed === true) {
+			const totalSetsPerExercise = results.map((ex) => ex.length);
+			const targetExercise = resolveTimerExercise(exerciseIdx, setIdx, totalSetsPerExercise);
+			restTimer.start(targetExercise);
+		}
 	}
 
 	const addSet = useCallback(
@@ -152,6 +161,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 	const completedSets = results.flat().filter((s) => s.completed).length;
 
 	function handleFinish() {
+		restTimer.stop();
 		setFinished(true);
 		onFinish(workout, results);
 	}
@@ -196,6 +206,9 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, on
 				<section key={exerciseIdx} className="exercise-card">
 					<h2 className="exercise-name">
 						{exercise.name}
+						{restTimer.exerciseIdx === exerciseIdx && (
+							<span className="rest-timer">{formatElapsed(restTimer.elapsed)}</span>
+						)}
 						<span className={`role-tag role-${exercise.role}`}>{exercise.role}</span>
 					</h2>
 					<div className="sets-list">
