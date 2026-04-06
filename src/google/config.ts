@@ -43,3 +43,6 @@ export const CARDIO_TAB_NAME = 'Stronger - Cardio'
 
 /** Name of the tab that holds Garmin/Strava synced activity data. */
 export const GARMIN_TAB_NAME = 'Stronger - Garmin'
+
+/** Name of the tab that holds annual goals for activity metrics. */
+export const GOALS_TAB_NAME = 'Stronger - Goals'

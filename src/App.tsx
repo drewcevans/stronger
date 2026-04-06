@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifyGoalsTab, createGoalsTab, readGoals, writeGoals } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions, defaultCardioActivities } from './data/sample-workouts.js';
@@ -245,6 +245,16 @@ function App() {
     } catch {
       // Silently ignore — Garmin data is optional
     }
+    try {
+      const goalsTabExists = await verifyGoalsTab(sheetId);
+      if (!goalsTabExists) {
+        await createGoalsTab(sheetId);
+      }
+      const goals = await readGoals(sheetId);
+      setGarminGoals(goals);
+    } catch {
+      // Silently ignore — goals data is optional
+    }
   }, []);
 
   const handleScheduleAssign = useCallback(
@@ -420,9 +430,12 @@ function App() {
       if (value !== null) {
         filtered.push({ metric, value });
       }
+      if (spreadsheetId) {
+        void writeGoals(spreadsheetId, filtered);
+      }
       return filtered;
     });
-  }, []);
+  }, [spreadsheetId]);
 
   const handleImportComplete = useCallback(() => {
     // Refresh log data so progress charts and calendar history reflect the import
