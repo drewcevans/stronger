@@ -10,6 +10,8 @@ import {
 	signOut,
 	hasToken,
 	restoreToken,
+	clearAuth,
+	isAuthError,
 	extractSheetId,
 	saveSheetId,
 	loadSheetId,
@@ -111,9 +113,11 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 	/* ---------------------------------------------------------------- */
 
 	const tryConnect = useCallback(async (spreadsheetId: string) => {
-		try {
-			setPhase('connecting')
-			setError(null)
+		/**
+		 * Inner function that performs the actual connection + data load.
+		 * Extracted so we can retry once after re-authenticating.
+		 */
+		const attemptConnect = async () => {
 			await connectToSheet(spreadsheetId)
 			saveSheetId(spreadsheetId)
 
@@ -179,7 +183,37 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 			const workouts = buildWorkoutsFromConfigs(configs, defs)
 			setPhase('connected')
 			onConnected(workouts, configs, spreadsheetId, defs, cardio)
+		}
+
+		try {
+			setPhase('connecting')
+			setError(null)
+			await attemptConnect()
 		} catch (err) {
+			// If the token expired / was revoked, try to re-authenticate
+			// via Google sign-in and retry the connection once.
+			if (isAuthError(err)) {
+				clearAuth()
+				try {
+					await signIn()
+					try {
+						await attemptConnect()
+						return
+					} catch (retryErr) {
+						setError(
+							retryErr instanceof Error
+								? retryErr.message
+								: 'Unable to access the sheet after re-authenticating. Please check your permissions.',
+						)
+						setPhase('error')
+						return
+					}
+				} catch {
+					// Re-authentication failed — show sign-in button
+					setPhase('sign-in')
+					return
+				}
+			}
 			setError(
 				err instanceof Error ? err.message : 'Unable to access the sheet.',
 			)
@@ -241,6 +275,15 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 		[sheetName, tryConnect],
 	)
 
+	const handleRetry = useCallback(async () => {
+		const storedId = loadSheetId()
+		if (storedId) {
+			await tryConnect(storedId)
+		} else {
+			setPhase('sheet-input')
+		}
+	}, [tryConnect])
+
 	const handleSignOut = useCallback(async () => {
 		await signOut()
 		setSheetUrl('')
@@ -261,7 +304,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 		)
 	}
 
-	if (phase === 'sign-in' || (phase === 'error' && !hasToken())) {
+	if (phase === 'sign-in') {
 		return (
 			<div className="auth-screen">
 				<h1 className="app-title">Stronger</h1>
@@ -274,7 +317,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 		)
 	}
 
-	if (phase === 'sheet-input' || (phase === 'error' && !loadSheetId())) {
+	if (phase === 'sheet-input') {
 		return (
 			<div className="auth-screen">
 				<h1 className="app-title">Stronger</h1>
@@ -328,6 +371,21 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 		return (
 			<div className="auth-screen">
 				<p className="auth-status">Connecting to sheet…</p>
+			</div>
+		)
+	}
+
+	if (phase === 'error') {
+		return (
+			<div className="auth-screen">
+				<h1 className="app-title">Stronger</h1>
+				{error && <p className="auth-error">{error}</p>}
+				<button className="btn-primary" onClick={handleRetry}>
+					Retry
+				</button>
+				<button className="btn-link" onClick={handleSignOut}>
+					Sign out
+				</button>
 			</div>
 		)
 	}

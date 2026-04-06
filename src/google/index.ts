@@ -8,6 +8,8 @@ export {
 	signOut,
 	hasToken,
 	restoreToken,
+	clearAuth,
+	isAuthError,
 } from './auth.ts'
 export {
 	verifySheetAccess,
