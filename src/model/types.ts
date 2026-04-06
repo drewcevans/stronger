@@ -215,6 +215,34 @@ export interface CardioActivity {
 }
 
 // ---------------------------------------------------------------------------
+// Garmin / Strava activity (synced externally via GitHub Actions)
+// ---------------------------------------------------------------------------
+
+/** A single activity synced from Garmin via the Strava API. */
+export interface GarminActivity {
+	/** Activity date in YYYY-MM-DD format. */
+	date: string;
+	/** Strava activity ID (used for deduplication). */
+	stravaId: string;
+	/** Strava activity type (e.g. "Run", "Ride", "WeightTraining"). */
+	activityType: string;
+	/** Activity name as set in Strava/Garmin. */
+	name: string;
+	/** Duration in seconds. */
+	duration: number;
+	/** Distance in meters (0 for stationary activities). */
+	distance: number;
+	/** Total elevation gain in meters. */
+	elevationGain: number;
+	/** Calories burned. */
+	calories: number;
+	/** Average heart rate in bpm (0 if not recorded). */
+	avgHR: number;
+	/** Max heart rate in bpm (0 if not recorded). */
+	maxHR: number;
+}
+
+// ---------------------------------------------------------------------------
 // Layer 7 – Progression (post-workout weight update proposals)
 // ---------------------------------------------------------------------------
 
