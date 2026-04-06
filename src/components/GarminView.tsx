@@ -1,0 +1,486 @@
+import { useState, useMemo, useCallback } from 'react';
+import type {
+  GarminActivity,
+  GarminGoal,
+  GarminMetric,
+  GarminTimeRange,
+  MetricChartData,
+} from '../model/garmin.js';
+import {
+  getActivityTypes,
+  filterActivities,
+  buildMetricChartData,
+  formatMetricValue,
+  METRIC_LABELS,
+  METRIC_UNITS,
+  splitActivities,
+} from '../model/garmin.js';
+import { Target, ChevronDown, ChevronUp } from 'lucide-react';
+
+/* ------------------------------------------------------------------ */
+/*  Props                                                              */
+/* ------------------------------------------------------------------ */
+
+interface Props {
+  activities: GarminActivity[];
+  goals: GarminGoal[];
+  onGoalChange?: (metric: GarminMetric, value: number | null) => void;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+
+const TIME_RANGES: { value: GarminTimeRange; label: string }[] = [
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+  { value: 'quarter', label: 'Quarter' },
+  { value: 'year', label: 'Year' },
+  { value: 'all', label: 'All' },
+];
+
+const METRICS: GarminMetric[] = ['distance', 'elevationGain', 'duration'];
+
+/** Cardio charts show all three metrics; strength only shows duration. */
+const STRENGTH_METRICS: GarminMetric[] = ['duration'];
+
+const CHART_HEIGHT = 220;
+const CHART_PADDING = { top: 16, right: 56, bottom: 32, left: 52 };
+
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
+
+export function GarminView({ activities, goals, onGoalChange }: Props) {
+  const [range, setRange] = useState<GarminTimeRange>('month');
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // Split into cardio (everything except strength) and strength training
+  const { cardio: cardioActivities, strength: strengthActivities } = useMemo(
+    () => splitActivities(activities),
+    [activities],
+  );
+
+  // Activity type filter applies to cardio only (strength is shown separately)
+  const allTypes = useMemo(
+    () => getActivityTypes(cardioActivities),
+    [cardioActivities],
+  );
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(() => new Set(allTypes));
+
+  // Keep filter in sync when new types appear
+  useMemo(() => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      for (const t of allTypes) {
+        if (!next.has(t)) {
+          next.add(t);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [allTypes]);
+
+  const today = useMemo(() => new Date(), []);
+
+  // Cardio: filtered by type + range
+  const filteredCardio = useMemo(
+    () => filterActivities(cardioActivities, range, selectedTypes, today),
+    [cardioActivities, range, selectedTypes, today],
+  );
+
+  // Strength: filtered by range only (all strength activities included)
+  const filteredStrength = useMemo(
+    () => {
+      const allStrength = new Set(getActivityTypes(strengthActivities));
+      return filterActivities(strengthActivities, range, allStrength, today);
+    },
+    [strengthActivities, range, today],
+  );
+
+  const goalMap = useMemo(() => {
+    const m = new Map<GarminMetric, number>();
+    for (const g of goals) m.set(g.metric, g.value);
+    return m;
+  }, [goals]);
+
+  const cardioCharts = useMemo(
+    () =>
+      METRICS.map((metric) =>
+        buildMetricChartData(filteredCardio, metric, range, goalMap.get(metric) ?? null, today),
+      ).filter((d) => d.buckets.length > 0),
+    [filteredCardio, range, goalMap, today],
+  );
+
+  const strengthCharts = useMemo(
+    () =>
+      STRENGTH_METRICS.map((metric) =>
+        buildMetricChartData(filteredStrength, metric, range, null, today),
+      ).filter((d) => d.buckets.length > 0),
+    [filteredStrength, range, today],
+  );
+
+  const toggleType = useCallback((type: string) => {
+    setSelectedTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    setSelectedTypes((prev) => {
+      if (prev.size === allTypes.length) return new Set();
+      return new Set(allTypes);
+    });
+  }, [allTypes]);
+
+  if (activities.length === 0) {
+    return (
+      <div className="garmin-view">
+        <h2 className="garmin-title">Activities</h2>
+        <p className="garmin-empty">
+          No Garmin data yet. Set up sync to see activity charts.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="garmin-view">
+      <h2 className="garmin-title">Activities</h2>
+
+      {/* Time range selector */}
+      <div className="garmin-range-group">
+        {TIME_RANGES.map((r) => (
+          <button
+            key={r.value}
+            className={`garmin-range-btn${range === r.value ? ' active' : ''}`}
+            onClick={() => setRange(r.value)}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Activity type filter (cardio only) */}
+      {allTypes.length > 1 && (
+        <div className="garmin-filter">
+          <button
+            className="garmin-filter-toggle"
+            onClick={() => setFilterOpen(!filterOpen)}
+          >
+            Filter: {selectedTypes.size === allTypes.length ? 'All' : `${selectedTypes.size}/${allTypes.length}`}
+            {filterOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          {filterOpen && (
+            <div className="garmin-filter-options">
+              <button
+                className={`garmin-filter-chip${selectedTypes.size === allTypes.length ? ' active' : ''}`}
+                onClick={toggleAll}
+              >
+                All
+              </button>
+              {allTypes.map((type) => (
+                <button
+                  key={type}
+                  className={`garmin-filter-chip${selectedTypes.has(type) ? ' active' : ''}`}
+                  onClick={() => toggleType(type)}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cardio charts */}
+      {cardioCharts.length > 0 && (
+        <>
+          <h3 className="garmin-section-title">Cardio</h3>
+          {cardioCharts.map((data) => (
+            <MetricChart
+              key={data.metric}
+              data={data}
+              goal={goalMap.get(data.metric) ?? null}
+              onGoalChange={onGoalChange}
+            />
+          ))}
+        </>
+      )}
+
+      {/* Strength training chart */}
+      {strengthCharts.length > 0 && (
+        <>
+          <h3 className="garmin-section-title">Strength Training</h3>
+          {strengthCharts.map((data) => (
+            <MetricChart
+              key={`strength-${data.metric}`}
+              data={data}
+              goal={null}
+              onGoalChange={undefined}
+            />
+          ))}
+        </>
+      )}
+
+      {cardioCharts.length === 0 && strengthCharts.length === 0 && (
+        <p className="garmin-empty">No data for the selected filters and time range.</p>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  MetricChart — dual-axis SVG chart                                  */
+/* ------------------------------------------------------------------ */
+
+function MetricChart({
+  data,
+  goal,
+  onGoalChange,
+}: {
+  data: MetricChartData;
+  goal: number | null;
+  onGoalChange?: (metric: GarminMetric, value: number | null) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [goalInput, setGoalInput] = useState(goal !== null ? String(goal) : '');
+
+  const handleGoalSubmit = () => {
+    const val = parseFloat(goalInput);
+    if (onGoalChange) {
+      onGoalChange(data.metric, isNaN(val) || val <= 0 ? null : val);
+    }
+    setEditing(false);
+  };
+
+  const viewBoxWidth = 400;
+  const plotW = viewBoxWidth - CHART_PADDING.left - CHART_PADDING.right;
+  const plotH = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
+
+  const { buckets, cumulative, proratedGoal } = data;
+  const n = buckets.length;
+  if (n === 0) return null;
+
+  // Left axis: bar values
+  const maxBar = Math.max(...buckets.map((b) => b.value), 0.001);
+
+  // Right axis: cumulative values (and goal if present)
+  const maxCum = Math.max(
+    ...cumulative,
+    proratedGoal ?? 0,
+    0.001,
+  );
+
+  // Scales
+  const barWidth = plotW / n;
+  const barGap = Math.max(1, barWidth * 0.15);
+  const barInner = barWidth - barGap * 2;
+
+  const xCenter = (i: number) => CHART_PADDING.left + barWidth * i + barWidth / 2;
+  const yBar = (v: number) => CHART_PADDING.top + plotH - (v / maxBar) * plotH;
+  const yCum = (v: number) => CHART_PADDING.top + plotH - (v / maxCum) * plotH;
+
+  // Y-axis ticks
+  const leftTicks = niceTicksFor(0, maxBar, 4);
+  const rightTicks = niceTicksFor(0, maxCum, 4);
+
+  // X-axis labels — show a subset to avoid crowding
+  const maxLabels = Math.min(n, 8);
+  const xLabelIndices: number[] = [];
+  if (n <= maxLabels) {
+    for (let i = 0; i < n; i++) xLabelIndices.push(i);
+  } else {
+    for (let i = 0; i < maxLabels; i++) {
+      xLabelIndices.push(Math.round((i / (maxLabels - 1)) * (n - 1)));
+    }
+  }
+
+  // Cumulative polyline
+  const cumPoints = cumulative
+    .map((v, i) => `${xCenter(i)},${yCum(v)}`)
+    .join(' ');
+
+  // Goal line points (linear from 0 to prorated goal)
+  const goalPoints =
+    proratedGoal !== null
+      ? `${CHART_PADDING.left},${yCum(0)} ${CHART_PADDING.left + plotW},${yCum(proratedGoal)}`
+      : null;
+
+  return (
+    <div className="garmin-chart-card">
+      <div className="garmin-chart-header">
+        <h3 className="garmin-chart-label">
+          {METRIC_LABELS[data.metric]}
+          <span className="garmin-chart-total">
+            {formatMetricValue(data.total, data.metric)} {METRIC_UNITS[data.metric]}
+          </span>
+        </h3>
+        {onGoalChange && (
+          <button
+            className="garmin-goal-btn"
+            onClick={() => {
+              setGoalInput(goal !== null ? String(goal) : '');
+              setEditing(!editing);
+            }}
+            title="Set annual goal"
+          >
+            <Target size={16} />
+          </button>
+        )}
+      </div>
+
+      {editing && (
+        <div className="garmin-goal-input-row">
+          <input
+            className="garmin-goal-input"
+            type="number"
+            placeholder={`Annual goal (${METRIC_UNITS[data.metric]})`}
+            value={goalInput}
+            onChange={(e) => setGoalInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleGoalSubmit()}
+            autoFocus
+          />
+          <button className="garmin-goal-save" onClick={handleGoalSubmit}>
+            Set
+          </button>
+        </div>
+      )}
+
+      <div className="garmin-chart-container">
+        <svg
+          className="garmin-chart-svg"
+          viewBox={`0 0 ${viewBoxWidth} ${CHART_HEIGHT}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {/* Grid lines (left axis) */}
+          {leftTicks.map((tick) => (
+            <line
+              key={`grid-${tick}`}
+              x1={CHART_PADDING.left}
+              y1={yBar(tick)}
+              x2={viewBoxWidth - CHART_PADDING.right}
+              y2={yBar(tick)}
+              className="garmin-grid-line"
+            />
+          ))}
+
+          {/* Left axis labels (bar values) */}
+          {leftTicks.map((tick) => (
+            <text
+              key={`lbl-l-${tick}`}
+              x={CHART_PADDING.left - 4}
+              y={yBar(tick)}
+              className="garmin-axis-label"
+              textAnchor="end"
+              dominantBaseline="middle"
+            >
+              {formatMetricValue(tick, data.metric)}
+            </text>
+          ))}
+
+          {/* Right axis labels (cumulative values) */}
+          {rightTicks.map((tick) => (
+            <text
+              key={`lbl-r-${tick}`}
+              x={viewBoxWidth - CHART_PADDING.right + 4}
+              y={yCum(tick)}
+              className="garmin-axis-label garmin-axis-right"
+              textAnchor="start"
+              dominantBaseline="middle"
+            >
+              {formatMetricValue(tick, data.metric)}
+            </text>
+          ))}
+
+          {/* X-axis labels */}
+          {xLabelIndices.map((i) => (
+            <text
+              key={`xlbl-${i}`}
+              x={xCenter(i)}
+              y={CHART_HEIGHT - 4}
+              className="garmin-axis-label"
+              textAnchor="middle"
+            >
+              {buckets[i].label}
+            </text>
+          ))}
+
+          {/* Bars */}
+          {buckets.map((b, i) => (
+            <rect
+              key={`bar-${i}`}
+              x={CHART_PADDING.left + barWidth * i + barGap}
+              y={yBar(b.value)}
+              width={Math.max(barInner, 1)}
+              height={Math.max(plotH - (plotH - (b.value / maxBar) * plotH), 0)}
+              className="garmin-bar"
+              rx={2}
+            />
+          ))}
+
+          {/* Goal line */}
+          {goalPoints && (
+            <polyline
+              points={goalPoints}
+              className="garmin-goal-line"
+            />
+          )}
+
+          {/* Cumulative line */}
+          <polyline
+            points={cumPoints}
+            className="garmin-cumulative-line"
+          />
+
+          {/* Cumulative dots */}
+          {cumulative.map((v, i) => (
+            <circle
+              key={`dot-${i}`}
+              cx={xCenter(i)}
+              cy={yCum(v)}
+              r={n > 20 ? 1.5 : 2.5}
+              className="garmin-cumulative-dot"
+            />
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function niceTicksFor(min: number, max: number, count: number): number[] {
+  const range = max - min;
+  if (range === 0) return [min];
+
+  const rawStep = range / (count - 1);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+
+  let niceStep: number;
+  if (residual <= 1.5) niceStep = magnitude;
+  else if (residual <= 3.5) niceStep = 2.5 * magnitude;
+  else if (residual <= 7.5) niceStep = 5 * magnitude;
+  else niceStep = 10 * magnitude;
+
+  const niceMin = Math.floor(min / niceStep) * niceStep;
+  const niceMax = Math.ceil(max / niceStep) * niceStep;
+
+  const ticks: number[] = [];
+  for (let v = niceMin; v <= niceMax + niceStep * 0.01; v += niceStep) {
+    ticks.push(Math.round(v * 1e6) / 1e6);
+  }
+  return ticks;
+}

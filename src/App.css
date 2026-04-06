@@ -2963,3 +2963,229 @@ body {
 	background: var(--color-accent);
 	color: #000;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Garmin Activity Charts                                             */
+/* ------------------------------------------------------------------ */
+
+.garmin-view {
+	padding: 16px;
+}
+
+.garmin-title {
+	color: var(--color-primary);
+	font-size: 1.5rem;
+	margin: 0 0 16px;
+}
+
+.garmin-empty {
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.9rem;
+	text-align: center;
+	padding: 40px 16px;
+}
+
+/* Time range selector */
+.garmin-range-group {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+.garmin-range-btn {
+	flex: 1;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: rgba(255, 255, 255, 0.6);
+	padding: 6px 4px;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.garmin-range-btn.active {
+	background: var(--color-primary);
+	color: #000;
+	border-color: var(--color-primary);
+	font-weight: 600;
+}
+
+/* Activity type filter */
+.garmin-filter {
+	margin-bottom: 12px;
+}
+
+.garmin-filter-toggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	background: none;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	color: rgba(255, 255, 255, 0.7);
+	padding: 6px 12px;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+
+.garmin-filter-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.garmin-filter-chip {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	color: rgba(255, 255, 255, 0.5);
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.garmin-filter-chip.active {
+	background: rgba(0, 229, 255, 0.15);
+	border-color: var(--color-primary);
+	color: var(--color-primary);
+}
+
+/* Section titles (Cardio / Strength Training) */
+.garmin-section-title {
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin: 16px 0 8px;
+}
+
+/* Chart card */
+.garmin-chart-card {
+	background: var(--color-surface);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: var(--radius);
+	padding: 12px;
+	margin-bottom: 16px;
+}
+
+.garmin-chart-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.garmin-chart-label {
+	color: #fff;
+	font-size: 0.95rem;
+	margin: 0;
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.garmin-chart-total {
+	color: var(--color-primary);
+	font-size: 0.8rem;
+	font-weight: 400;
+}
+
+.garmin-goal-btn {
+	background: none;
+	border: none;
+	color: rgba(255, 255, 255, 0.4);
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	transition: color 0.15s;
+}
+
+.garmin-goal-btn:hover {
+	color: var(--color-primary);
+}
+
+.garmin-goal-input-row {
+	display: flex;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.garmin-goal-input {
+	flex: 1;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	color: #fff;
+	padding: 6px 10px;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	outline: none;
+}
+
+.garmin-goal-input:focus {
+	border-color: var(--color-primary);
+}
+
+.garmin-goal-save {
+	background: var(--color-primary);
+	color: #000;
+	border: none;
+	padding: 6px 14px;
+	border-radius: 6px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+/* SVG chart */
+.garmin-chart-container {
+	width: 100%;
+	overflow: hidden;
+}
+
+.garmin-chart-svg {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+.garmin-grid-line {
+	stroke: rgba(255, 255, 255, 0.06);
+	stroke-width: 0.5;
+}
+
+.garmin-axis-label {
+	fill: rgba(255, 255, 255, 0.4);
+	font-size: 8px;
+	font-family: inherit;
+}
+
+.garmin-axis-right {
+	fill: rgba(255, 45, 123, 0.6);
+}
+
+.garmin-bar {
+	fill: var(--color-primary);
+	opacity: 0.8;
+}
+
+.garmin-cumulative-line {
+	fill: none;
+	stroke: var(--color-accent);
+	stroke-width: 2;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.garmin-cumulative-dot {
+	fill: var(--color-accent);
+}
+
+.garmin-goal-line {
+	fill: none;
+	stroke: rgba(255, 255, 255, 0.25);
+	stroke-width: 1.5;
+	stroke-dasharray: 6 4;
+}

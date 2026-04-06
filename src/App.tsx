@@ -14,10 +14,13 @@ import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView, SessionDetail } from './components/CalendarView.js';
 import type { LogSession } from './components/CalendarView.js';
 import { ProgressView } from './components/ProgressView.js';
+import { GarminView } from './components/GarminView.js';
 import { SettingsView } from './components/SettingsView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
+import { generateMockGarminActivities, mockGarminGoals } from './data/mock-garmin.js';
+import type { GarminActivity, GarminGoal, GarminMetric } from './model/garmin.js';
 import './App.css';
 
 function App() {
@@ -36,6 +39,8 @@ function App() {
   const [needsSetup, setNeedsSetup] = useState(false);
   const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
+  const [garminActivities] = useState<GarminActivity[]>(() => generateMockGarminActivities());
+  const [garminGoals, setGarminGoals] = useState<GarminGoal[]>(() => [...mockGarminGoals]);
 
   const handleConnected = useCallback(
     (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[], cardio: CardioActivity[]) => {
@@ -390,6 +395,20 @@ function App() {
     navigateTo({ view: 'settings' });
   }, [navigateTo]);
 
+  const handleOpenGarmin = useCallback(() => {
+    navigateTo({ view: 'garmin' });
+  }, [navigateTo]);
+
+  const handleGarminGoalChange = useCallback((metric: GarminMetric, value: number | null) => {
+    setGarminGoals((prev) => {
+      const filtered = prev.filter((g) => g.metric !== metric);
+      if (value !== null) {
+        filtered.push({ metric, value });
+      }
+      return filtered;
+    });
+  }, []);
+
   const handleImportComplete = useCallback(() => {
     // Refresh log data so progress charts and calendar history reflect the import
     if (spreadsheetId) {
@@ -588,6 +607,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <ExerciseEditor
@@ -610,6 +630,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <ExerciseLibrary
@@ -634,6 +655,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <WorkoutEditor
@@ -658,6 +680,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <CalendarView
@@ -687,9 +710,32 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <ProgressView logRows={logRows} />
+      </>
+    );
+  }
+
+  if (route.view === 'garmin') {
+    return (
+      <>
+        <GoogleAuth
+          onConnected={handleConnected}
+          onDisconnected={handleDisconnected}
+          onGoToList={handleGoToList}
+          onOpenCalendar={handleOpenCalendar}
+          onOpenExercises={handleOpenExercises}
+          onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
+          onOpenSettings={handleOpenSettings}
+        />
+        <GarminView
+          activities={garminActivities}
+          goals={garminGoals}
+          onGoalChange={handleGarminGoalChange}
+        />
       </>
     );
   }
@@ -704,6 +750,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <SettingsView
@@ -735,6 +782,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
+          onOpenGarmin={handleOpenGarmin}
           onOpenSettings={handleOpenSettings}
         />
         <SessionDetail
@@ -756,6 +804,7 @@ function App() {
         onOpenCalendar={handleOpenCalendar}
         onOpenExercises={handleOpenExercises}
         onOpenProgress={handleOpenProgress}
+        onOpenGarmin={handleOpenGarmin}
         onOpenSettings={handleOpenSettings}
       />
       <WorkoutSelect
