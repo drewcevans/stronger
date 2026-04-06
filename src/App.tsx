@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity } from './model/index.js';
 import { computeProgression } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
 import { buildWorkoutsFromConfigs, workoutDefinitions, defaultCardioActivities } from './data/sample-workouts.js';
@@ -19,7 +19,6 @@ import { SettingsView } from './components/SettingsView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
-import { generateMockGarminActivities, mockGarminGoals } from './data/mock-garmin.js';
 import type { GarminActivity, GarminGoal, GarminMetric } from './model/garmin.js';
 import './App.css';
 
@@ -39,8 +38,8 @@ function App() {
   const [needsSetup, setNeedsSetup] = useState(false);
   const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
-  const [garminActivities] = useState<GarminActivity[]>(() => generateMockGarminActivities());
-  const [garminGoals, setGarminGoals] = useState<GarminGoal[]>(() => [...mockGarminGoals]);
+  const [garminActivities, setGarminActivities] = useState<GarminActivity[]>([]);
+  const [garminGoals, setGarminGoals] = useState<GarminGoal[]>([]);
 
   const handleConnected = useCallback(
     (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[], cardio: CardioActivity[]) => {
@@ -54,6 +53,7 @@ function App() {
       // Fire-and-forget: load schedule and log data
       void loadScheduleData(sheetId);
       void loadLogData(sheetId);
+      void loadGarminData(sheetId);
     },
     [],
   );
@@ -97,6 +97,7 @@ function App() {
       // Fire-and-forget: load schedule and log data
       void loadScheduleData(spreadsheetId);
       void loadLogData(spreadsheetId);
+      void loadGarminData(spreadsheetId);
     },
     [spreadsheetId],
   );
@@ -115,6 +116,7 @@ function App() {
     setLogRows([]);
     setNeedsSetup(false);
     setCardioActivities([]);
+    setGarminActivities([]);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
@@ -229,6 +231,19 @@ function App() {
       setLogRows(rows);
     } catch {
       // Silently ignore — log data is optional for calendar history
+    }
+  }, []);
+
+  const loadGarminData = useCallback(async (sheetId: string) => {
+    try {
+      const tabExists = await verifyGarminTab(sheetId);
+      if (!tabExists) {
+        await createGarminTab(sheetId);
+      }
+      const activities = await readGarminActivities(sheetId);
+      setGarminActivities(activities);
+    } catch {
+      // Silently ignore — Garmin data is optional
     }
   }, []);
 
