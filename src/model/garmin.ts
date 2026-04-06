@@ -243,18 +243,9 @@ function getISOWeek(d: Date): number {
  * - month: month index "0"-"11"
  */
 function getBucketKey(dateStr: string, aggregation: GarminAggregation): string {
-  switch (aggregation) {
-    case 'day':
-      return dateStr;
-    case 'week': {
-      const d = new Date(dateStr + 'T00:00:00');
-      return `W${getISOWeek(d)}`;
-    }
-    case 'month': {
-      const d = new Date(dateStr + 'T00:00:00');
-      return String(d.getMonth());
-    }
-  }
+  if (aggregation === 'day') return dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  return aggregation === 'week' ? `W${getISOWeek(d)}` : String(d.getMonth());
 }
 
 /** Generate all expected bucket keys and labels for a time range and aggregation. */
