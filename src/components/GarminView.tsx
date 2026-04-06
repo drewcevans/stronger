@@ -11,6 +11,7 @@ import {
   filterActivities,
   buildMetricChartData,
   formatMetricValue,
+  getTimeRangeOptions,
   METRIC_LABELS,
   METRIC_UNITS,
   splitActivities,
@@ -30,14 +31,6 @@ interface Props {
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
-
-const TIME_RANGES: { value: GarminTimeRange; label: string }[] = [
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: 'quarter', label: 'Quarter' },
-  { value: 'year', label: 'Year' },
-  { value: 'all', label: 'All' },
-];
 
 const METRICS: GarminMetric[] = ['distance', 'elevationGain', 'duration'];
 
@@ -84,6 +77,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
   }, [allTypes]);
 
   const today = useMemo(() => new Date(), []);
+  const timeRanges = useMemo(() => getTimeRangeOptions(today), [today]);
 
   // Cardio: filtered by type + range
   const filteredCardio = useMemo(
@@ -158,7 +152,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
 
       {/* Time range selector */}
       <div className="garmin-range-group">
-        {TIME_RANGES.map((r) => (
+        {timeRanges.map((r) => (
           <button
             key={r.value}
             className={`garmin-range-btn${range === r.value ? ' active' : ''}`}
