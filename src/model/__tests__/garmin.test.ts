@@ -307,7 +307,7 @@ describe('getTimeRangeOptions', () => {
     const today = new Date(2025, 5, 15);
     const options = getTimeRangeOptions(today);
     expect(options).toHaveLength(7);
-    expect(options[0]).toEqual({ value: 'month', label: 'This Month' });
+    expect(options[0]).toEqual({ value: 'month', label: 'Month' });
     expect(options[1]).toEqual({ value: '2025', label: '2025' });
     expect(options[6]).toEqual({ value: '2020', label: '2020' });
   });

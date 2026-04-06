@@ -205,11 +205,11 @@ function toISODate(d: Date): string {
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** Build the list of time range options: This Month, then the current year and 5 prior years. */
+/** Build the list of time range options: Month, then the current year and 5 prior years. */
 export function getTimeRangeOptions(today: Date = new Date()): { value: GarminTimeRange; label: string }[] {
   const currentYear = today.getFullYear();
   return [
-    { value: 'month', label: 'This Month' },
+    { value: 'month', label: 'Month' },
     ...Array.from({ length: 6 }, (_, i) => ({
       value: String(currentYear - i),
       label: String(currentYear - i),
