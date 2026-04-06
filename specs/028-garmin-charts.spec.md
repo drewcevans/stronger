@@ -121,3 +121,12 @@ Conversions are display-only — storage remains in metric (matching Strava API 
 - **Goal editing UX**: Keep it minimal. Tapping a small "Set goal" or pencil icon near the chart shows an inline number input. Pressing enter saves. No modal, no separate settings page.
 - **Route**: `#/garmin` added to the hash router. Navigation icon: `Activity` or `Mountain` from lucide-react (or similar — whatever fits the neon aesthetic).
 - **Depends on**: Spec 027 (Garmin data sync). The view is useless without data in the Garmin tab, but the component can render an empty state ("No Garmin data yet. Set up sync to see activity charts.").
+
+## Implementation notes (added during development)
+
+- **Mock data first**: Initial implementation uses `src/data/mock-garmin.ts` which generates ~6 months of synthetic activities (Run, Ride, Hike, Trail Run) using a deterministic PRNG. Goals also use mock defaults (1500 mi, 200k ft, 500 hrs). Will switch to real Garmin sheet data once spec 027 is fully implemented.
+- **Nav icon**: Uses `Activity` from lucide-react. Title shows "Activities" since the view shows all synced activities, not just Garmin-branded ones.
+- **Goal storage**: Currently in-memory only (state resets on reload). Sheet-backed goal persistence (via "Stronger - Goals" tab) deferred until real data integration.
+- **Model/view split**: Chart logic is in `src/model/garmin.ts` (pure functions, 31 unit tests). Component is in `src/components/GarminView.tsx`. This mirrors the existing `progress.ts` / `ProgressView.tsx` pattern.
+- **SVG approach**: Hand-rolled SVG with viewBox for responsiveness, matching the existing progress charts style. niceTicksFor helper is duplicated (same algorithm as ProgressView) — could be extracted later.
+- **Filter UX**: Collapsible chip-based filter for activity types. "All" toggle for convenience. Filter only appears when more than one activity type exists.

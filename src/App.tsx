@@ -804,7 +804,7 @@ function App() {
         onOpenCalendar={handleOpenCalendar}
         onOpenExercises={handleOpenExercises}
         onOpenProgress={handleOpenProgress}
-          onOpenGarmin={handleOpenGarmin}
+        onOpenGarmin={handleOpenGarmin}
         onOpenSettings={handleOpenSettings}
       />
       <WorkoutSelect
