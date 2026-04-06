@@ -21,6 +21,7 @@ import { SettingsView } from './components/SettingsView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
+import { loadDraft, saveDraft, clearDraft } from './hooks/useWorkoutDraft.js';
 import type { GarminActivity, GarminGoal, GarminMetric } from './model/garmin.js';
 import './App.css';
 
@@ -42,6 +43,7 @@ function App() {
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
   const [garminActivities, setGarminActivities] = useState<GarminActivity[]>([]);
   const [garminGoals, setGarminGoals] = useState<GarminGoal[]>([]);
+  const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
   const settingsRef = useRef(new Map<string, string>());
 
   const handleConnected = useCallback(
@@ -137,9 +139,13 @@ function App() {
   );
 
   const handleSelectWorkout = useCallback((workout: Workout) => {
-    setStartTime(new Date().toISOString());
+    const now = new Date().toISOString();
+    setStartTime(now);
     setActiveWorkout(workout);
     setPreviousSets(null);
+    setDraftResults(null);
+    // Persist the draft so a refresh can restore the active workout
+    saveDraft({ workoutId: workout.id, startTime: now, results: [] });
     navigateTo({ view: 'workout', workoutId: workout.id });
     // Fire-and-forget: load previous workout data for context
     if (spreadsheetId) {
@@ -150,6 +156,8 @@ function App() {
   const handleFinish = useCallback(
     (workout: Workout, results: SetResult[][]) => {
       const endTime = new Date().toISOString();
+      // Clear the in-progress draft now that the workout is complete
+      clearDraft();
       if (spreadsheetId && startTime) {
         // Fire-and-forget: log results to the sheet, then reload log data
         void logWorkoutResults(
@@ -208,9 +216,11 @@ function App() {
   }, []);
 
   const handleBack = useCallback(() => {
+    clearDraft();
     setActiveWorkout(null);
     setStartTime(null);
     setPreviousSets(null);
+    setDraftResults(null);
     navigateTo({ view: 'list' });
   }, [navigateTo]);
 
@@ -580,9 +590,8 @@ function App() {
 
   // Deep-link resolution: when auth completes and workouts are loaded,
   // check if the URL contains a workout ID and auto-select it.
-  // Sets state directly instead of calling handleSelectWorkout to avoid
-  // a redundant navigateTo → hashchange → setRoute cycle that causes
-  // extra renders and can make the app appear hung.
+  // If a draft exists in localStorage for this workout, restore startTime
+  // and set results so the user doesn't lose progress after a refresh.
   useEffect(() => {
     if (!sheetConnected || workouts.length === 0) return;
     if (route.view !== 'workout') return;
@@ -591,7 +600,15 @@ function App() {
 
     const match = workouts.find((w) => w.id === route.workoutId);
     if (match) {
-      setStartTime(new Date().toISOString());
+      // Check for a saved draft from a previous session (page refresh)
+      const draft = loadDraft();
+      if (draft && draft.workoutId === match.id) {
+        setStartTime(draft.startTime);
+        setDraftResults(draft.results.length > 0 ? draft.results : null);
+      } else {
+        setStartTime(new Date().toISOString());
+        setDraftResults(null);
+      }
       setActiveWorkout(match);
       setPreviousSets(null);
       if (spreadsheetId) {
@@ -607,9 +624,11 @@ function App() {
   // if the URL changed to list while a workout is active, clear it.
   useEffect(() => {
     if (route.view === 'list' && activeWorkout && !progressionProposals) {
+      clearDraft();
       setActiveWorkout(null);
       setStartTime(null);
       setPreviousSets(null);
+      setDraftResults(null);
     }
   }, [route, activeWorkout, progressionProposals]);
 
@@ -651,6 +670,8 @@ function App() {
       <WorkoutView
         workout={activeWorkout}
         previousSets={previousSets}
+        startTime={startTime ?? new Date().toISOString()}
+        draftResults={draftResults}
         onBack={handleBack}
         onFinish={handleFinish}
       />

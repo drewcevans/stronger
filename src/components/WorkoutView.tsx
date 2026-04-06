@@ -1,10 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout } from '../model/index.js';
+import { saveDraft } from '../hooks/useWorkoutDraft.js';
 
 interface WorkoutViewProps {
 	workout: Workout;
 	previousSets?: PreviousSetData[][] | null;
+	startTime: string;
+	/** Pre-filled results restored from a draft (e.g. after page refresh). */
+	draftResults?: SetResult[][] | null;
 	onBack: () => void;
 	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
@@ -56,14 +60,41 @@ function initResults(workout: Workout): SetResult[][] {
 	);
 }
 
-export function WorkoutView({ workout, previousSets, onBack, onFinish }: WorkoutViewProps) {
-	const [results, setResults] = useState<SetResult[][]>(() =>
-		initResults(workout),
-	);
-	const [addedSets, setAddedSets] = useState<ComputedSet[][]>(() =>
-		workout.exercises.map(() => []),
-	);
+export function WorkoutView({ workout, previousSets, startTime, draftResults, onBack, onFinish }: WorkoutViewProps) {
+	const [results, setResults] = useState<SetResult[][]>(() => {
+		// Restore from draft if shapes match; otherwise start fresh.
+		if (draftResults && draftResults.length === workout.exercises.length) {
+			const shapesMatch = workout.exercises.every(
+				(ex, i) => draftResults[i].length >= ex.sets.length,
+			);
+			if (shapesMatch) return draftResults;
+		}
+		return initResults(workout);
+	});
+	const [addedSets, setAddedSets] = useState<ComputedSet[][]>(() => {
+		// If the draft had extra sets beyond the planned ones, reconstruct addedSets.
+		if (draftResults && draftResults.length === workout.exercises.length) {
+			return workout.exercises.map((ex, i) => {
+				const extra = draftResults[i].length - ex.sets.length;
+				if (extra <= 0) return [];
+				const lastPlanned = ex.sets[ex.sets.length - 1];
+				return Array.from({ length: extra }, () => ({ ...lastPlanned }));
+			});
+		}
+		return workout.exercises.map(() => []);
+	});
 	const [finished, setFinished] = useState(false);
+
+	// Persist results to localStorage on every change so a refresh doesn't lose progress.
+	const isFirstRender = useRef(true);
+	useEffect(() => {
+		// Skip the very first render when restoring a draft (no new info to save).
+		if (isFirstRender.current) {
+			isFirstRender.current = false;
+			return;
+		}
+		saveDraft({ workoutId: workout.id, startTime, results });
+	}, [results, workout.id, startTime]);
 
 	function updateSet(
 		exerciseIdx: number,
