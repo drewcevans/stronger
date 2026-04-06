@@ -29,7 +29,7 @@ import {
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
 import { defaultCardioActivities } from '../data/sample-workouts.ts'
-import { Dumbbell, Calendar, LogOut, Library, TrendingUp, Settings } from 'lucide-react'
+import { Dumbbell, Calendar, LogOut, Library, TrendingUp, Settings, Activity } from 'lucide-react'
 
 type Phase =
 	| 'loading' // loading Google scripts
@@ -46,11 +46,12 @@ interface Props {
 	onOpenCalendar?: () => void
 	onOpenExercises?: () => void
 	onOpenProgress?: () => void
+	onOpenGarmin?: () => void
 	onOpenSettings?: () => void
 	onGoToList?: () => void
 }
 
-export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onOpenExercises, onOpenProgress, onOpenSettings, onGoToList }: Props) {
+export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onOpenExercises, onOpenProgress, onOpenGarmin, onOpenSettings, onGoToList }: Props) {
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
@@ -353,6 +354,11 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 				{onOpenProgress && (
 					<button className="btn-toolbar" onClick={onOpenProgress} title="Progress">
 						<TrendingUp size={20} />
+					</button>
+				)}
+				{onOpenGarmin && (
+					<button className="btn-toolbar" onClick={onOpenGarmin} title="Activities">
+						<Activity size={20} />
 					</button>
 				)}
 				{onOpenSettings && (
