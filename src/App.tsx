@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
-import { computeProgression } from './model/index.js';
+import { computeProgression, FLAG_SENTINEL } from './model/index.js';
 import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
-import { syncScheduleWithCalendar } from './google/index.js';
+import { syncScheduleWithCalendar, generateStrongerId } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
@@ -275,7 +275,7 @@ function App() {
 
   const handleScheduleAssign = useCallback(
     (date: string, workoutId: string) => {
-      const updated = [...schedule, { date, workoutId }];
+      const updated = [...schedule, { date, workoutId, strongerId: generateStrongerId() }];
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);
@@ -293,21 +293,22 @@ function App() {
       const toAdd = entries.filter((e) => e.workoutId !== '__rest__');
 
       // For rest dates: blank out workoutIds instead of deleting rows
-      // (preserves flags and calendarEventIds)
+      // (preserves calendarEventIds and strongerIds for sync cleanup)
+      // Skip flag sentinel rows — those are independent of workout scheduling.
       let updated = schedule.map((e) => {
-        if (datesToRest.has(e.date) && e.workoutId) {
+        if (datesToRest.has(e.date) && e.workoutId && e.workoutId !== FLAG_SENTINEL) {
           return { ...e, workoutId: '' };
         }
         return e;
       });
 
-      // Add new entries, deduplicating (skip if same date+workoutId already exists)
+      // Add new entries with strongerIds, deduplicating (skip if same date+workoutId already exists)
       for (const entry of toAdd) {
         const exists = updated.some(
           (e) => e.date === entry.date && e.workoutId === entry.workoutId,
         );
         if (!exists) {
-          updated.push(entry);
+          updated.push({ ...entry, strongerId: entry.strongerId ?? generateStrongerId() });
         }
       }
 
@@ -322,10 +323,11 @@ function App() {
   const handleScheduleRemove = useCallback(
     (date: string, workoutId: string) => {
       // Blank out the workoutId instead of deleting the row.
-      // This preserves flags and calendarEventId for calendar sync.
+      // This preserves calendarEventId and strongerId for calendar sync cleanup.
+      // Never touch flag sentinel rows.
       let blanked = false;
       const updated = schedule.map((e) => {
-        if (!blanked && e.date === date && e.workoutId === workoutId) {
+        if (!blanked && e.date === date && e.workoutId === workoutId && e.workoutId !== FLAG_SENTINEL) {
           blanked = true;
           return { ...e, workoutId: '' };
         }
@@ -342,22 +344,26 @@ function App() {
   const handleUpdateFlags = useCallback(
     (date: string, flags: DayFlags) => {
       const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
-      // Find the first entry for this date to apply flags to
-      const firstIdx = schedule.findIndex((e) => e.date === date);
+      // Flags always live in their own dedicated row with FLAG_SENTINEL.
+      // Find the existing flag row for this date.
+      const flagIdx = schedule.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
       let updated: ScheduleEntry[];
-      if (firstIdx >= 0) {
-        // Update flags on the first entry for this date
-        updated = schedule.map((e, i) =>
-          i === firstIdx ? { ...e, flags: hasFlags ? flags : undefined } : e,
-        );
+      if (flagIdx >= 0) {
+        if (hasFlags) {
+          // Update existing flag row
+          updated = schedule.map((e, i) =>
+            i === flagIdx ? { ...e, flags } : e,
+          );
+        } else {
+          // Remove the flag row entirely (no flags left)
+          updated = schedule.filter((_, i) => i !== flagIdx);
+        }
       } else if (hasFlags) {
-        // No existing entry — add a flag-only row
-        updated = [...schedule, { date, workoutId: '', flags }];
+        // No existing flag row — add a new one
+        updated = [...schedule, { date, workoutId: FLAG_SENTINEL, flags }];
       } else {
-        return; // No flags and no existing entry — nothing to do
+        return; // No flags and no existing flag row — nothing to do
       }
-      // Remove flag-only rows that no longer have flags (but preserve rows with calendarEventId)
-      updated = updated.filter((e) => e.workoutId || e.calendarEventId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors || e.flags.blocked)));
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);
@@ -388,10 +394,21 @@ function App() {
         return w?.name ?? null;
       };
 
+      const resolveWorkoutId = (name: string): string | null => {
+        // Try strength workouts first
+        const w = workouts.find((wk) => wk.name === name);
+        if (w) return w.id;
+        // Try cardio activities
+        const c = cardioActivities.find((a) => a.name === name);
+        if (c) return `cardio:${c.id}`;
+        return null;
+      };
+
       const { updatedSchedule, result } = await syncScheduleWithCalendar(
         calendarId,
         schedule,
         resolveWorkoutName,
+        resolveWorkoutId,
       );
 
       setSchedule(updatedSchedule);

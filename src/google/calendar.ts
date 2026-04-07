@@ -8,6 +8,50 @@
 
 import type { CalendarListEntry, CalendarEventResource, CalendarEventItem } from './types.ts'
 import type { ScheduleEntry } from '../model/types.ts'
+import { FLAG_SENTINEL } from '../model/types.ts'
+
+/* ------------------------------------------------------------------ */
+/*  Stronger ID generation                                             */
+/* ------------------------------------------------------------------ */
+
+/** Prefix used to identify Stronger IDs embedded in calendar event descriptions. */
+export const STRONGER_ID_PREFIX = '[stronger:'
+
+/** Suffix for the Stronger ID tag in event descriptions. */
+export const STRONGER_ID_SUFFIX = ']'
+
+/**
+ * Generate a unique Stronger ID for a schedule row.
+ * Format: `s-{timestamp}-{random}` — short, URL-safe, unique enough.
+ */
+export function generateStrongerId(): string {
+	const ts = Date.now().toString(36)
+	const rand = Math.random().toString(36).slice(2, 8)
+	return `s-${ts}-${rand}`
+}
+
+/**
+ * Embed a Stronger ID into an event description string.
+ * Appends `\n[stronger:<id>]` to the description.
+ */
+export function embedStrongerId(description: string, strongerId: string): string {
+	return `${description}\n${STRONGER_ID_PREFIX}${strongerId}${STRONGER_ID_SUFFIX}`
+}
+
+/**
+ * Extract a Stronger ID from a calendar event description, if present.
+ * Returns `undefined` if no ID is found.
+ */
+export function extractStrongerId(description: string | undefined): string | undefined {
+	if (!description) return undefined
+	const start = description.indexOf(STRONGER_ID_PREFIX)
+	if (start === -1) return undefined
+	const idStart = start + STRONGER_ID_PREFIX.length
+	const end = description.indexOf(STRONGER_ID_SUFFIX, idStart)
+	if (end === -1) return undefined
+	const id = description.slice(idStart, end).trim()
+	return id || undefined
+}
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -127,6 +171,17 @@ export function buildDeepLink(
 ): string {
 	const base = baseUrl ?? window.location.href.split('#')[0]
 	return `${base}#/workout/${encodeURIComponent(workoutId)}`
+}
+
+/**
+ * Build an event description that includes the deep link (for strength
+ * workouts) and the Stronger ID tag for two-way sync tracking.
+ */
+function buildEventDescription(workoutId: string, workoutName: string, strongerId: string): string {
+	const isCardio = workoutId.startsWith('cardio:')
+	const deepLink = isCardio ? null : buildDeepLink(workoutId)
+	const base = deepLink ? `Open workout: ${deepLink}` : workoutName
+	return embedStrongerId(base, strongerId)
 }
 
 /**
@@ -308,6 +363,8 @@ export interface CalendarSyncResult {
 	updated: number
 	/** Events deleted from Google Calendar (removed from sheet). */
 	deleted: number
+	/** Schedule entries created from calendar events (pulled from Google). */
+	pulledCreations: number
 	/** Schedule entries updated from calendar changes (date moved in calendar). */
 	pulledDateChanges: number
 	/** Schedule entries removed because their calendar event was deleted. */
@@ -319,6 +376,9 @@ export interface CalendarSyncResult {
 /** Resolves a workoutId to a human-readable name. Returns null for unknown IDs. */
 export type WorkoutNameResolver = (workoutId: string) => string | null
 
+/** Resolves a workout name back to a workoutId. Returns null for unknown names. */
+export type WorkoutIdResolver = (name: string) => string | null
+
 /**
  * Build a Map from calendar event ID → CalendarEventItem for fast lookup.
  */
@@ -326,6 +386,18 @@ function buildEventMap(events: CalendarEventItem[]): Map<string, CalendarEventIt
 	const map = new Map<string, CalendarEventItem>()
 	for (const e of events) {
 		if (e.id) map.set(e.id, e)
+	}
+	return map
+}
+
+/**
+ * Build a Map from strongerId → CalendarEventItem for events that have one.
+ */
+function buildStrongerIdToEventMap(events: CalendarEventItem[]): Map<string, CalendarEventItem> {
+	const map = new Map<string, CalendarEventItem>()
+	for (const e of events) {
+		const sid = extractStrongerId(e.description)
+		if (sid) map.set(sid, e)
 	}
 	return map
 }
@@ -340,19 +412,24 @@ export function getEventDate(event: CalendarEventItem): string | undefined {
 /**
  * Perform a two-way sync between the schedule (sheet) and Google Calendar.
  *
- * 1. Push new schedule entries (no calendarEventId) to Google Calendar.
- * 2. For entries with a calendarEventId, check if the event still exists
- *    and whether its date changed in Google Calendar → update the sheet.
- * 3. If a calendar event was deleted, remove the entry from the sheet.
- * 4. Delete calendar events whose corresponding schedule entry was removed.
+ * Uses the Stronger ID (`strongerId`) as the primary matching key between
+ * sheet rows and calendar events. The stronger ID is embedded in the
+ * event description as `[stronger:<id>]`.
  *
- * Returns the updated schedule entries (to be written to the sheet) and
- * a summary of what changed.
+ * Sync rules:
+ * - Flag rows (workoutId === FLAG_SENTINEL) are never synced.
+ * - Sheet rows with strongerId but no calendarEventId → push to calendar.
+ * - Sheet rows with both strongerId and calendarEventId → reconcile
+ *   (detect date moves, deletions in either direction).
+ * - Calendar events with no strongerId → created in Google, pull to sheet.
+ * - Blanked rows (calendarEventId but no workoutId) → delete from calendar.
+ * - After sync, deduplicate by strongerId (one row per strongerId).
  */
 export async function syncScheduleWithCalendar(
 	calendarId: string,
 	schedule: ScheduleEntry[],
 	resolveWorkoutName: WorkoutNameResolver,
+	resolveWorkoutId?: WorkoutIdResolver,
 ): Promise<{ updatedSchedule: ScheduleEntry[]; result: CalendarSyncResult }> {
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
@@ -361,23 +438,41 @@ export async function syncScheduleWithCalendar(
 		created: 0,
 		updated: 0,
 		deleted: 0,
+		pulledCreations: 0,
 		pulledDateChanges: 0,
 		pulledDeletions: 0,
 		errors: [],
 	}
 
-	// Separate entries into syncable (has workoutId) and blanked (calendarEventId but no workoutId)
-	const syncable = schedule.filter((e) => e.workoutId)
-	const blanked = schedule.filter((e) => !e.workoutId && e.calendarEventId)
-	const inactive = schedule.filter((e) => !e.workoutId && !e.calendarEventId)
+	// --- Classify schedule entries ---
+	// Flag rows are never synced with Google Calendar
+	const flagRows = schedule.filter((e) => e.workoutId === FLAG_SENTINEL)
 
-	// Compute the date range for the calendar query
-	const allDates = [...syncable, ...blanked].map((e) => e.date).sort()
+	// Syncable: has a real workoutId (not sentinel, not blank)
+	const syncable = schedule.filter((e) => e.workoutId && e.workoutId !== FLAG_SENTINEL)
+	// Blanked: had a calendar event but workout was removed
+	const blanked = schedule.filter((e) => !e.workoutId && e.calendarEventId)
+	// Inactive: no workoutId, no calendarEventId (orphan/empty rows)
+	const inactive = schedule.filter(
+		(e) => !e.workoutId && !e.calendarEventId,
+	)
+
+	// Assign strongerIds to any syncable entries that don't have one yet
+	const syncableWithIds = syncable.map((e) =>
+		e.strongerId ? e : { ...e, strongerId: generateStrongerId() },
+	)
+
+	// Compute date range for the calendar query
+	const allDates = [...syncableWithIds, ...blanked].map((e) => e.date).sort()
+	if (allDates.length === 0 && flagRows.length === schedule.length) {
+		// Only flag rows, nothing to sync
+		return { updatedSchedule: schedule, result }
+	}
 	if (allDates.length === 0) {
 		return { updatedSchedule: schedule, result }
 	}
 
-	// Extend range to ±30 days around the schedule to catch moved events
+	// Extend range to ±30 days to catch moved events
 	const firstDate = allDates[0]
 	const lastDate = allDates[allDates.length - 1]
 	const [fy, fm, fd] = firstDate.split('-').map(Number)
@@ -397,17 +492,21 @@ export async function syncScheduleWithCalendar(
 		return { updatedSchedule: schedule, result }
 	}
 
+	// Filter out cancelled events
+	calendarEvents = calendarEvents.filter((e) => e.status !== 'cancelled')
+
 	const eventMap = buildEventMap(calendarEvents)
+	const strongerIdToEvent = buildStrongerIdToEventMap(calendarEvents)
 
-	// Build a set of "date|summary" keys from existing calendar events for dedup
-	const existingEventKeys = buildExistingEventKeys(calendarEvents)
+	// Track which calendar event IDs we've accounted for (to detect orphans)
+	const accountedEventIds = new Set<string>()
 
-	// Delete calendar events for blanked-out entries (workout was removed)
+	// --- Phase 1: Delete calendar events for blanked entries ---
 	const updatedBlanked: ScheduleEntry[] = []
 	for (const entry of blanked) {
 		if (entry.calendarEventId) {
 			const calEvent = eventMap.get(entry.calendarEventId)
-			if (calEvent && calEvent.status !== 'cancelled') {
+			if (calEvent) {
 				try {
 					await gapi.client.calendar.events.delete({
 						calendarId,
@@ -419,40 +518,54 @@ export async function syncScheduleWithCalendar(
 					result.errors.push(`Delete event ${entry.calendarEventId}: ${msg}`)
 				}
 			}
-			// Clear the calendarEventId since the event is gone
-			updatedBlanked.push({ ...entry, calendarEventId: undefined })
+			if (entry.calendarEventId) accountedEventIds.add(entry.calendarEventId)
+			// Clear calendar linkage since the event is gone
+			updatedBlanked.push({ ...entry, calendarEventId: undefined, strongerId: undefined })
 		} else {
 			updatedBlanked.push(entry)
 		}
 	}
 
-	// Collect IDs of events that are tracked in the schedule
-	const trackedEventIds = new Set<string>()
+	// --- Phase 2: Reconcile syncable entries ---
 	const updatedSyncable: ScheduleEntry[] = []
 
-	for (const entry of syncable) {
-		if (entry.calendarEventId) {
-			trackedEventIds.add(entry.calendarEventId)
-			const calEvent = eventMap.get(entry.calendarEventId)
+	for (const entry of syncableWithIds) {
+		const sid = entry.strongerId!
 
-			if (!calEvent || calEvent.status === 'cancelled') {
-				// Event was deleted from Google Calendar → remove from schedule
-				result.pulledDeletions++
-				continue
-			}
+		// Try to find the matching calendar event by strongerId first, then calendarEventId
+		let calEvent: CalendarEventItem | undefined
+		calEvent = strongerIdToEvent.get(sid)
+		if (!calEvent && entry.calendarEventId) {
+			calEvent = eventMap.get(entry.calendarEventId)
+		}
 
-			// Check if the date changed in Google Calendar
+		if (calEvent && calEvent.id) {
+			accountedEventIds.add(calEvent.id)
+
+			// Check if the date moved in Google Calendar
 			const calDate = getEventDate(calEvent)
 			if (calDate && calDate !== entry.date) {
 				// Date was moved in Google Calendar → update the sheet entry
-				updatedSyncable.push({ ...entry, date: calDate })
+				updatedSyncable.push({
+					...entry,
+					date: calDate,
+					calendarEventId: calEvent.id,
+				})
 				result.pulledDateChanges++
 			} else {
-				// No change, keep as-is
-				updatedSyncable.push(entry)
+				// Ensure calendarEventId is up to date
+				updatedSyncable.push({
+					...entry,
+					calendarEventId: calEvent.id,
+				})
 			}
+		} else if (entry.calendarEventId) {
+			// Had a calendarEventId but event no longer exists → deleted from Google
+			result.pulledDeletions++
+			// Remove the entry (don't add to updatedSyncable)
+			continue
 		} else {
-			// New entry (no calendarEventId) — push to Google Calendar
+			// New entry — push to Google Calendar
 			const name = resolveWorkoutName(entry.workoutId)
 			if (!name) {
 				// Unknown workout, keep the entry but skip pushing
@@ -460,17 +573,10 @@ export async function syncScheduleWithCalendar(
 				continue
 			}
 
-			// Skip if an event with the same name already exists on this date
-			if (existingEventKeys.has(`${entry.date}|${name}`)) {
-				updatedSyncable.push(entry)
-				continue
-			}
-
-			const isCardio = entry.workoutId.startsWith('cardio:')
-			const deepLink = isCardio ? null : buildDeepLink(entry.workoutId)
+			const description = buildEventDescription(entry.workoutId, name, sid)
 			const event: CalendarEventResource = {
 				summary: name,
-				description: deepLink ? `Open workout: ${deepLink}` : name,
+				description,
 				start: { date: entry.date },
 				end: { date: entry.date },
 			}
@@ -480,8 +586,11 @@ export async function syncScheduleWithCalendar(
 					calendarId,
 					resource: event,
 				})
-				updatedSyncable.push({ ...entry, calendarEventId: resp.result.id })
-				existingEventKeys.add(`${entry.date}|${name}`)
+				updatedSyncable.push({
+					...entry,
+					calendarEventId: resp.result.id,
+				})
+				accountedEventIds.add(resp.result.id)
 				result.created++
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err)
@@ -491,34 +600,85 @@ export async function syncScheduleWithCalendar(
 		}
 	}
 
-	// Delete calendar events that were previously tracked but whose
-	// schedule entry has been removed (the entry was in the old schedule
-	// but not in the new updatedSyncable).
-	const remainingEventIds = new Set(
-		updatedSyncable.map((e) => e.calendarEventId).filter(Boolean),
-	)
+	// --- Phase 3: Pull new events created in Google Calendar ---
+	// Events without a strongerId that we haven't accounted for
+	if (resolveWorkoutId) {
+		for (const calEvent of calendarEvents) {
+			if (!calEvent.id || accountedEventIds.has(calEvent.id)) continue
 
-	for (const calEvent of calendarEvents) {
-		if (!calEvent.id) continue
-		// Skip events still linked to a schedule entry
-		if (remainingEventIds.has(calEvent.id)) continue
-		// Only delete events that were tracked by us
-		if (trackedEventIds.has(calEvent.id)) {
+			const sid = extractStrongerId(calEvent.description)
+			if (sid) continue // Has a strongerId — already handled or belongs to another sheet
+
+			const calDate = getEventDate(calEvent)
+			const summary = calEvent.summary
+			if (!calDate || !summary) continue
+
+			// Try to resolve the event name to a workoutId
+			const workoutId = resolveWorkoutId(summary)
+			if (!workoutId) continue // Not a recognized workout name, skip
+
+			// Check if we already have this workout on this date (dedup)
+			const isDupe = updatedSyncable.some(
+				(e) => e.date === calDate && e.workoutId === workoutId,
+			)
+			if (isDupe) continue
+
+			// Create a new schedule entry and stamp the event with a strongerId
+			const newSid = generateStrongerId()
+			const newEntry: ScheduleEntry = {
+				date: calDate,
+				workoutId,
+				calendarEventId: calEvent.id,
+				strongerId: newSid,
+			}
+
+			// Update the Google Calendar event description to include the strongerId
 			try {
-				await gapi.client.calendar.events.delete({
+				const updatedDescription = embedStrongerId(
+					calEvent.description ?? summary,
+					newSid,
+				)
+				await gapi.client.calendar.events.update({
 					calendarId,
 					eventId: calEvent.id,
+					resource: {
+						summary,
+						description: updatedDescription,
+						start: { date: calDate },
+						end: { date: calDate },
+					},
 				})
-				result.deleted++
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err)
-				result.errors.push(`Delete event ${calEvent.id}: ${msg}`)
+				result.errors.push(`Update event ${calEvent.id} with strongerId: ${msg}`)
 			}
+
+			updatedSyncable.push(newEntry)
+			accountedEventIds.add(calEvent.id)
+			result.pulledCreations++
 		}
 	}
 
-	// Reassemble the full schedule: inactive rows + blanked rows + synced entries
-	const updatedSchedule = [...inactive, ...updatedBlanked, ...updatedSyncable]
+	// --- Phase 4: Dedup the syncable entries ---
+	// If the same strongerId appears multiple times, keep the first.
+	// Entries without a strongerId are only deduped by date+workoutId.
+	const seenStrongerIds = new Set<string>()
+	const seenDateWorkoutKeys = new Set<string>()
+	const dedupedSyncable: ScheduleEntry[] = []
+	for (const entry of updatedSyncable) {
+		if (entry.strongerId) {
+			if (seenStrongerIds.has(entry.strongerId)) continue
+			seenStrongerIds.add(entry.strongerId)
+		}
+		// Also dedup by date + workoutId (same workout on same date = keep first)
+		const dateWorkoutKey = `${entry.date}|${entry.workoutId}`
+		if (seenDateWorkoutKeys.has(dateWorkoutKey)) continue
+		seenDateWorkoutKeys.add(dateWorkoutKey)
+		dedupedSyncable.push(entry)
+	}
+
+	// Reassemble: flag rows + inactive + blanked + synced
+	const updatedSchedule = [...flagRows, ...inactive, ...updatedBlanked, ...dedupedSyncable]
 
 	return { updatedSchedule, result }
 }

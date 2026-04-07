@@ -82,6 +82,9 @@ export {
 	pushScheduleToCalendar,
 	getEventDate,
 	syncScheduleWithCalendar,
+	generateStrongerId,
+	extractStrongerId,
+	embedStrongerId,
 } from './calendar.ts'
 export type {
 	WeeklySlot,
@@ -91,4 +94,5 @@ export type {
 	SchedulePushRequest,
 	CalendarSyncResult,
 	WorkoutNameResolver,
+	WorkoutIdResolver,
 } from './calendar.ts'

@@ -192,16 +192,32 @@ export interface DayFlags {
 	blocked: boolean;
 }
 
+/**
+ * Sentinel value used as workoutId for flag-only rows.
+ * Flag rows always get their own dedicated row so they never interfere
+ * with workout scheduling or calendar sync.
+ */
+export const FLAG_SENTINEL = '__flags__';
+
 /** A single schedule entry mapping a date to a workout. */
 export interface ScheduleEntry {
 	/** Date in YYYY-MM-DD format. */
 	date: string;
-	/** References a Workout.id (e.g. "A", "B"). Empty string for flag-only rows. */
+	/**
+	 * References a Workout.id (e.g. "A", "B"), or {@link FLAG_SENTINEL}
+	 * for flag-only rows. Empty string for blanked-out entries.
+	 */
 	workoutId: string;
-	/** Optional day-level flags (only meaningful on the first row for a given date). */
+	/** Day-level flags. Only present on rows where workoutId === FLAG_SENTINEL. */
 	flags?: DayFlags;
 	/** Google Calendar event ID linking this entry to a calendar event. */
 	calendarEventId?: string;
+	/**
+	 * Unique Stronger-generated ID for two-way calendar sync.
+	 * Written to the Google Calendar event's description/notes so we can
+	 * match sheet rows ↔ calendar events regardless of direction.
+	 */
+	strongerId?: string;
 }
 
 // ---------------------------------------------------------------------------

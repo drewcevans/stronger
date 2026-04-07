@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateEventDates, buildDeepLink, getEventDate } from '../calendar.ts'
+import { generateEventDates, buildDeepLink, getEventDate, generateStrongerId, embedStrongerId, extractStrongerId, STRONGER_ID_PREFIX, STRONGER_ID_SUFFIX } from '../calendar.ts'
 
 describe('generateEventDates', () => {
 	it('generates one date per week for Monday (dayIndex 0)', () => {
@@ -71,5 +71,59 @@ describe('getEventDate', () => {
 
 	it('returns undefined when start has no date fields', () => {
 		expect(getEventDate({ start: {} })).toBeUndefined()
+	})
+})
+
+describe('generateStrongerId', () => {
+	it('returns a string starting with s-', () => {
+		const id = generateStrongerId()
+		expect(id).toMatch(/^s-[a-z0-9]+-[a-z0-9]+$/)
+	})
+
+	it('generates unique IDs on successive calls', () => {
+		const ids = new Set(Array.from({ length: 100 }, () => generateStrongerId()))
+		expect(ids.size).toBe(100)
+	})
+})
+
+describe('embedStrongerId', () => {
+	it('appends the stronger ID tag to a description', () => {
+		const result = embedStrongerId('Open workout: https://example.com', 's-abc-123')
+		expect(result).toBe(`Open workout: https://example.com\n${STRONGER_ID_PREFIX}s-abc-123${STRONGER_ID_SUFFIX}`)
+	})
+
+	it('works with empty descriptions', () => {
+		const result = embedStrongerId('', 's-xyz')
+		expect(result).toBe(`\n${STRONGER_ID_PREFIX}s-xyz${STRONGER_ID_SUFFIX}`)
+	})
+})
+
+describe('extractStrongerId', () => {
+	it('extracts the stronger ID from a description', () => {
+		const desc = `Open workout: https://example.com\n${STRONGER_ID_PREFIX}s-abc-123${STRONGER_ID_SUFFIX}`
+		expect(extractStrongerId(desc)).toBe('s-abc-123')
+	})
+
+	it('returns undefined for descriptions without a stronger ID', () => {
+		expect(extractStrongerId('Just a normal description')).toBeUndefined()
+	})
+
+	it('returns undefined for undefined input', () => {
+		expect(extractStrongerId(undefined)).toBeUndefined()
+	})
+
+	it('returns undefined for empty string', () => {
+		expect(extractStrongerId('')).toBeUndefined()
+	})
+
+	it('round-trips with embedStrongerId', () => {
+		const original = 's-test-id-42'
+		const desc = embedStrongerId('My workout', original)
+		expect(extractStrongerId(desc)).toBe(original)
+	})
+
+	it('handles descriptions with multiple lines before the tag', () => {
+		const desc = `Line 1\nLine 2\n${STRONGER_ID_PREFIX}s-multi${STRONGER_ID_SUFFIX}`
+		expect(extractStrongerId(desc)).toBe('s-multi')
 	})
 })
