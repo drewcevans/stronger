@@ -305,10 +305,15 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 	}
 
 	if (phase === 'sign-in') {
+		const isReturning = !!loadSheetId()
 		return (
 			<div className="auth-screen">
 				<h1 className="app-title">Stronger</h1>
-				<p className="subtitle">Sign in to connect your Google Sheet</p>
+				<p className="subtitle">
+					{isReturning
+						? 'Your session has expired. Sign in to continue.'
+						: 'Sign in to connect your Google Sheet'}
+				</p>
 				{error && <p className="auth-error">{error}</p>}
 				<button className="btn-google" onClick={handleSignIn}>
 					Sign in with Google

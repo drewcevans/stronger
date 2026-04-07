@@ -72,6 +72,7 @@ describe('token storage (cookie)', () => {
 		cookieJar = ''
 		setCalls = []
 		vi.stubGlobal('document', createCookieDoc())
+		vi.stubGlobal('localStorage', mockLocalStorage())
 	})
 
 	it('returns null when no token cookie exists', () => {
@@ -89,18 +90,32 @@ describe('token storage (cookie)', () => {
 		expect(loadToken()).toBeNull()
 	})
 
-	it('sets a 7-day max-age with security flags', () => {
+	it('sets max-age based on actual token expiry with security flags', () => {
 		saveToken('tok_buf', 3600)
 		const raw = setCalls[setCalls.length - 1]
-		// 7 days = 604800 seconds
-		expect(raw).toContain('max-age=604800')
+		// 3600 - 300 (buffer) = 3300 seconds
+		expect(raw).toContain('max-age=3300')
 		expect(raw).toContain('SameSite=Strict')
 		expect(raw).toContain('Secure')
 	})
 
-	it('uses the same 7-day max-age regardless of expiresIn', () => {
+	it('uses default 1-hour lifetime when expiresIn is omitted', () => {
 		saveToken('tok_no_exp')
 		const raw = setCalls[setCalls.length - 1]
-		expect(raw).toContain('max-age=604800')
+		// Default 3600 - 300 (buffer) = 3300 seconds
+		expect(raw).toContain('max-age=3300')
+	})
+
+	it('returns null when localStorage expiry indicates token has expired', () => {
+		saveToken('tok_expired', 3600)
+		// Simulate the token having expired by backdating the localStorage entry
+		localStorage.setItem('stronger_token_expires_at', String(Date.now() - 1000))
+		expect(loadToken()).toBeNull()
+	})
+
+	it('clearToken also removes localStorage expiry', () => {
+		saveToken('tok_clear', 3600)
+		clearToken()
+		expect(localStorage.getItem('stronger_token_expires_at')).toBeNull()
 	})
 })

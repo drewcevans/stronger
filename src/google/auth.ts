@@ -14,20 +14,43 @@ import type { TokenClient, TokenResponse } from './types.ts'
 /*  Script-loading helpers                                             */
 /* ------------------------------------------------------------------ */
 
+/** Cache of in-flight or completed script-loading promises. */
+const scriptPromises = new Map<string, Promise<void>>()
+
 function loadScript(src: string): Promise<void> {
-	return new Promise((resolve, reject) => {
-		if (document.querySelector(`script[src="${src}"]`)) {
-			resolve()
+	const cached = scriptPromises.get(src)
+	if (cached) return cached
+
+	const promise = new Promise<void>((resolve, reject) => {
+		const existing = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`)
+		if (existing) {
+			// Script tag already in the DOM (e.g. StrictMode double-mount).
+			// If it has finished loading, resolve immediately; otherwise wait.
+			if (existing.dataset.loaded === 'true') {
+				resolve()
+				return
+			}
+			existing.addEventListener('load', () => resolve(), { once: true })
+			existing.addEventListener('error', () => reject(new Error(`Failed to load script: ${src}`)), { once: true })
 			return
 		}
 		const el = document.createElement('script')
 		el.src = src
 		el.async = true
 		el.defer = true
-		el.onload = () => resolve()
-		el.onerror = () => reject(new Error(`Failed to load script: ${src}`))
+		el.onload = () => {
+			el.dataset.loaded = 'true'
+			resolve()
+		}
+		el.onerror = () => {
+			scriptPromises.delete(src)
+			reject(new Error(`Failed to load script: ${src}`))
+		}
 		document.head.appendChild(el)
 	})
+
+	scriptPromises.set(src, promise)
+	return promise
 }
 
 /** Load Google Identity Services library. */
