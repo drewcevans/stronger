@@ -1136,15 +1136,15 @@ export async function readLogZone(
 /* ------------------------------------------------------------------ */
 
 /** A1 range for the schedule header (row 1). */
-const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:H1`
+const SCHEDULE_HEADER_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:I1`
 
 /** A1 range for reading all schedule data (row 2 onward, generous upper bound). */
-const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:H10000`
+const SCHEDULE_READ_RANGE = `'${SCHEDULE_TAB_NAME}'!A2:I10000`
 
 /** A1 range covering the full schedule tab for clearing. */
-const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:H10000`
+const SCHEDULE_FULL_RANGE = `'${SCHEDULE_TAB_NAME}'!A1:I10000`
 
-const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'travel', 'visitors', 'blocked', 'calendarEventId']
+const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'travel', 'visitors', 'blocked', 'calendarEventId', 'strongerId']
 
 /* ------------------------------------------------------------------ */
 /*  Schedule tab – serialization                                       */
@@ -1153,7 +1153,7 @@ const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'tr
 /**
  * Parse a single raw schedule row (string array) into a {@link ScheduleEntry}.
  * Returns `null` for incomplete or invalid rows.
- * A row with flags but no workoutId is valid (flag-only row).
+ * A row with the FLAG_SENTINEL workoutId is a dedicated flag row.
  */
 export function parseScheduleRow(row: string[]): ScheduleEntry | null {
 	if (!row || row.length < 1) return null
@@ -1177,11 +1177,18 @@ export function parseScheduleRow(row: string[]): ScheduleEntry | null {
 	const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked
 
 	const calendarEventId = (row[7] ?? '').trim() || undefined
+	const strongerId = (row[8] ?? '').trim() || undefined
 
-	// Must have either a workoutId, at least one flag, or a calendarEventId
-	if (!workoutId && !hasFlags && !calendarEventId) return null
+	// Must have either a workoutId, at least one flag, a calendarEventId, or a strongerId
+	if (!workoutId && !hasFlags && !calendarEventId && !strongerId) return null
 
-	return { date, workoutId, ...(hasFlags ? { flags } : {}), ...(calendarEventId ? { calendarEventId } : {}) }
+	return {
+		date,
+		workoutId,
+		...(hasFlags ? { flags } : {}),
+		...(calendarEventId ? { calendarEventId } : {}),
+		...(strongerId ? { strongerId } : {}),
+	}
 }
 
 /** Convert a {@link ScheduleEntry} to a spreadsheet row. */
@@ -1196,6 +1203,7 @@ export function scheduleEntryToRow(entry: ScheduleEntry): string[] {
 		f?.visitors ? 'TRUE' : '',
 		f?.blocked ? 'TRUE' : '',
 		entry.calendarEventId ?? '',
+		entry.strongerId ?? '',
 	]
 }
 

@@ -61,6 +61,7 @@ export function CalendarSync({ onSync, onClose }: CalendarSyncProps) {
         created: 0,
         updated: 0,
         deleted: 0,
+        pulledCreations: 0,
         pulledDateChanges: 0,
         pulledDeletions: 0,
         errors: [err instanceof Error ? err.message : String(err)],
@@ -73,6 +74,7 @@ export function CalendarSync({ onSync, onClose }: CalendarSyncProps) {
   function buildSummary(r: CalendarSyncResult): string {
     const parts: string[] = [];
     if (r.created > 0) parts.push(`${r.created} pushed`);
+    if (r.pulledCreations > 0) parts.push(`${r.pulledCreations} pulled from calendar`);
     if (r.pulledDateChanges > 0) parts.push(`${r.pulledDateChanges} date${r.pulledDateChanges !== 1 ? 's' : ''} updated`);
     if (r.pulledDeletions > 0) parts.push(`${r.pulledDeletions} removed (deleted in calendar)`);
     if (r.deleted > 0) parts.push(`${r.deleted} calendar event${r.deleted !== 1 ? 's' : ''} cleaned up`);

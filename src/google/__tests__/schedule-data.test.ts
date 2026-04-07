@@ -97,6 +97,7 @@ describe('scheduleEntryToRow', () => {
 			'',
 			'',
 			'',
+			'',
 		])
 	})
 
@@ -107,7 +108,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: 'A',
 				flags: { home: true, elsewhere: false, travel: true, visitors: false, blocked: false },
 			}),
-		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', '', ''])
+		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', '', '', ''])
 	})
 
 	it('converts a flag-only row', () => {
@@ -117,7 +118,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: '',
 				flags: { home: false, elsewhere: true, travel: false, visitors: true, blocked: false },
 			}),
-		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE', '', ''])
+		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE', '', '', ''])
 	})
 
 	it('converts a blocked flag row', () => {
@@ -127,7 +128,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: '',
 				flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
 			}),
-		).toEqual(['2025-01-15', '', '', '', '', '', 'TRUE', ''])
+		).toEqual(['2025-01-15', '', '', '', '', '', 'TRUE', '', ''])
 	})
 
 	it('round-trips through parseScheduleRow', () => {
@@ -169,7 +170,7 @@ describe('scheduleEntryToRow', () => {
 				workoutId: 'A',
 				calendarEventId: 'abc123',
 			}),
-		).toEqual(['2025-01-15', 'A', '', '', '', '', '', 'abc123'])
+		).toEqual(['2025-01-15', 'A', '', '', '', '', '', 'abc123', ''])
 	})
 
 	it('round-trips entries with calendarEventId', () => {
@@ -177,6 +178,48 @@ describe('scheduleEntryToRow', () => {
 			date: '2025-01-15',
 			workoutId: 'A',
 			calendarEventId: 'event-xyz',
+		}
+		const row = scheduleEntryToRow(entry)
+		expect(parseScheduleRow(row)).toEqual(entry)
+	})
+
+	it('converts a schedule entry with strongerId', () => {
+		expect(
+			scheduleEntryToRow({
+				date: '2025-01-15',
+				workoutId: 'A',
+				strongerId: 's-abc-123',
+			}),
+		).toEqual(['2025-01-15', 'A', '', '', '', '', '', '', 's-abc-123'])
+	})
+
+	it('converts a schedule entry with calendarEventId and strongerId', () => {
+		expect(
+			scheduleEntryToRow({
+				date: '2025-01-15',
+				workoutId: 'A',
+				calendarEventId: 'evt-1',
+				strongerId: 's-abc-123',
+			}),
+		).toEqual(['2025-01-15', 'A', '', '', '', '', '', 'evt-1', 's-abc-123'])
+	})
+
+	it('round-trips entries with strongerId', () => {
+		const entry = {
+			date: '2025-01-15',
+			workoutId: 'A',
+			strongerId: 's-test-xyz',
+		}
+		const row = scheduleEntryToRow(entry)
+		expect(parseScheduleRow(row)).toEqual(entry)
+	})
+
+	it('round-trips entries with calendarEventId and strongerId', () => {
+		const entry = {
+			date: '2025-01-15',
+			workoutId: 'A',
+			calendarEventId: 'evt-1',
+			strongerId: 's-test-xyz',
 		}
 		const row = scheduleEntryToRow(entry)
 		expect(parseScheduleRow(row)).toEqual(entry)
@@ -224,6 +267,54 @@ describe('parseScheduleRow – calendarEventId', () => {
 			date: '2025-01-15',
 			workoutId: '',
 			calendarEventId: 'orphan-event',
+		})
+	})
+})
+
+/* ------------------------------------------------------------------ */
+/*  parseScheduleRow – strongerId                                       */
+/* ------------------------------------------------------------------ */
+
+describe('parseScheduleRow – strongerId', () => {
+	it('parses strongerId from column 8', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', '', '', '', '', '', '', 's-abc-123'])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+			strongerId: 's-abc-123',
+		})
+	})
+
+	it('omits strongerId when column 8 is empty', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', '', '', '', '', '', '', ''])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+		})
+	})
+
+	it('parses both calendarEventId and strongerId', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', '', '', '', '', '', 'evt-1', 's-xyz'])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+			calendarEventId: 'evt-1',
+			strongerId: 's-xyz',
+		})
+	})
+
+	it('keeps row with only strongerId (no workoutId, no flags, no calendarEventId)', () => {
+		expect(parseScheduleRow(['2025-01-15', '', '', '', '', '', '', '', 's-orphan'])).toEqual({
+			date: '2025-01-15',
+			workoutId: '',
+			strongerId: 's-orphan',
+		})
+	})
+
+	it('parses strongerId alongside flags and calendarEventId', () => {
+		expect(parseScheduleRow(['2025-01-15', 'A', 'TRUE', '', '', '', '', 'evt-1', 's-xyz'])).toEqual({
+			date: '2025-01-15',
+			workoutId: 'A',
+			flags: { home: true, elsewhere: false, travel: false, visitors: false, blocked: false },
+			calendarEventId: 'evt-1',
+			strongerId: 's-xyz',
 		})
 	})
 })

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType, CardioActivity, DayFlags } from '../model/index.js';
+import { FLAG_SENTINEL } from '../model/index.js';
 import type { ParsedLogRow, CalendarSyncResult } from '../google/index.js';
 import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users, Ban, RefreshCw, Loader, CheckCircle, AlertCircle } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
@@ -317,7 +318,7 @@ export function CalendarView({
 	const scheduleMap = useMemo(() => {
 		const map = new Map<string, string[]>();
 		for (const entry of schedule) {
-			if (!entry.workoutId) continue; // skip flag-only rows
+			if (!entry.workoutId || entry.workoutId === FLAG_SENTINEL) continue; // skip flag/sentinel rows
 			const existing = map.get(entry.date) ?? [];
 			existing.push(entry.workoutId);
 			map.set(entry.date, existing);

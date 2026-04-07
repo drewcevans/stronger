@@ -18,6 +18,8 @@ export type {
 	Workout,
 } from './types.js';
 
+export { FLAG_SENTINEL } from './types.js';
+
 export {
 	computeExercise,
 	computeSet,
