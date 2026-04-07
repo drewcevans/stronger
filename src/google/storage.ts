@@ -64,28 +64,79 @@ function deleteCookie(name: string): void {
 /*  Token persistence (cookie-based)                                   */
 /* ------------------------------------------------------------------ */
 
-/** Cookie lifetime: 7 days in seconds. */
-const TOKEN_MAX_AGE = 7 * 24 * 60 * 60
+/** Buffer (seconds) to subtract from expires_in so the cookie expires slightly before the token. */
+const TOKEN_EXPIRY_BUFFER = 300 // 5 minutes
+
+/** Safe fallback lifetime when expires_in is not provided (Google tokens typically last 1 hour). */
+const TOKEN_DEFAULT_LIFETIME = 3600
+
+/** localStorage key for the token expiry timestamp (belt-and-suspenders alongside cookie max-age). */
+const TOKEN_EXPIRY_KEY = 'stronger_token_expires_at'
 
 /**
  * Persist the OAuth access token as a Secure, SameSite=Strict cookie.
- * The cookie lives for 7 days so the user isn't prompted to sign in
- * on every visit. If the token expires at Google's end before then,
- * the next API call will fail and the sign-in flow will re-trigger.
+ * The cookie max-age matches the actual token lifetime (minus a small
+ * buffer) so the browser auto-deletes the cookie when the token expires.
+ * This avoids restoring stale tokens on page reload, which would cause
+ * a 401 round-trip and require a manual re-authentication click.
  */
-export function saveToken(accessToken: string, _expiresIn?: number): void {
-	setCookie(TOKEN_COOKIE, accessToken, TOKEN_MAX_AGE)
+export function saveToken(accessToken: string, expiresIn?: number): void {
+	const lifetime = expiresIn ?? TOKEN_DEFAULT_LIFETIME
+	const maxAge = Math.max(lifetime - TOKEN_EXPIRY_BUFFER, 60)
+	setCookie(TOKEN_COOKIE, accessToken, maxAge)
+
+	// Also save the expiry timestamp in localStorage as a secondary check
+	// (guards against browsers that don't enforce cookie max-age precisely).
+	try {
+		const expiresAt = Date.now() + lifetime * 1000
+		localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiresAt))
+	} catch {
+		// localStorage unavailable — cookie is the primary mechanism
+	}
 }
 
 /**
  * Load the saved access token from the cookie.
- * Returns `null` if no token cookie exists (browser auto-expires it).
+ * Returns `null` if no token cookie exists (browser auto-expires it)
+ * or if the localStorage expiry check indicates the token has expired.
  */
 export function loadToken(): string | null {
-	return getCookie(TOKEN_COOKIE)
+	const token = getCookie(TOKEN_COOKIE)
+	if (!token) return null
+
+	// Double-check against stored expiry timestamp
+	if (isTokenExpired()) {
+		// Cookie exists but token has expired — clean up
+		deleteCookie(TOKEN_COOKIE)
+		clearTokenExpiry()
+		return null
+	}
+
+	return token
 }
 
-/** Remove the stored access token cookie. */
+/** Remove the stored access token cookie and expiry timestamp. */
 export function clearToken(): void {
 	deleteCookie(TOKEN_COOKIE)
+	clearTokenExpiry()
+}
+
+/** Check whether the stored token has expired based on the localStorage timestamp. */
+function isTokenExpired(): boolean {
+	try {
+		const expiresAt = localStorage.getItem(TOKEN_EXPIRY_KEY)
+		if (!expiresAt) return false // No expiry recorded — trust the cookie
+		return Date.now() >= Number(expiresAt)
+	} catch {
+		return false // localStorage unavailable — trust the cookie
+	}
+}
+
+/** Remove the stored expiry timestamp. */
+function clearTokenExpiry(): void {
+	try {
+		localStorage.removeItem(TOKEN_EXPIRY_KEY)
+	} catch {
+		// Ignore
+	}
 }
