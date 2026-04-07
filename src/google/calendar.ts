@@ -366,12 +366,13 @@ export async function syncScheduleWithCalendar(
 		errors: [],
 	}
 
-	// Only sync entries with a workoutId (skip flag-only rows)
+	// Separate entries into syncable (has workoutId) and blanked (calendarEventId but no workoutId)
 	const syncable = schedule.filter((e) => e.workoutId)
-	const flagOnly = schedule.filter((e) => !e.workoutId)
+	const blanked = schedule.filter((e) => !e.workoutId && e.calendarEventId)
+	const inactive = schedule.filter((e) => !e.workoutId && !e.calendarEventId)
 
 	// Compute the date range for the calendar query
-	const allDates = syncable.map((e) => e.date).sort()
+	const allDates = [...syncable, ...blanked].map((e) => e.date).sort()
 	if (allDates.length === 0) {
 		return { updatedSchedule: schedule, result }
 	}
@@ -397,6 +398,33 @@ export async function syncScheduleWithCalendar(
 	}
 
 	const eventMap = buildEventMap(calendarEvents)
+
+	// Build a set of "date|summary" keys from existing calendar events for dedup
+	const existingEventKeys = buildExistingEventKeys(calendarEvents)
+
+	// Delete calendar events for blanked-out entries (workout was removed)
+	const updatedBlanked: ScheduleEntry[] = []
+	for (const entry of blanked) {
+		if (entry.calendarEventId) {
+			const calEvent = eventMap.get(entry.calendarEventId)
+			if (calEvent && calEvent.status !== 'cancelled') {
+				try {
+					await gapi.client.calendar.events.delete({
+						calendarId,
+						eventId: entry.calendarEventId,
+					})
+					result.deleted++
+				} catch (err) {
+					const msg = err instanceof Error ? err.message : String(err)
+					result.errors.push(`Delete event ${entry.calendarEventId}: ${msg}`)
+				}
+			}
+			// Clear the calendarEventId since the event is gone
+			updatedBlanked.push({ ...entry, calendarEventId: undefined })
+		} else {
+			updatedBlanked.push(entry)
+		}
+	}
 
 	// Collect IDs of events that are tracked in the schedule
 	const trackedEventIds = new Set<string>()
@@ -432,6 +460,12 @@ export async function syncScheduleWithCalendar(
 				continue
 			}
 
+			// Skip if an event with the same name already exists on this date
+			if (existingEventKeys.has(`${entry.date}|${name}`)) {
+				updatedSyncable.push(entry)
+				continue
+			}
+
 			const isCardio = entry.workoutId.startsWith('cardio:')
 			const deepLink = isCardio ? null : buildDeepLink(entry.workoutId)
 			const event: CalendarEventResource = {
@@ -447,6 +481,7 @@ export async function syncScheduleWithCalendar(
 					resource: event,
 				})
 				updatedSyncable.push({ ...entry, calendarEventId: resp.result.id })
+				existingEventKeys.add(`${entry.date}|${name}`)
 				result.created++
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err)
@@ -482,8 +517,8 @@ export async function syncScheduleWithCalendar(
 		}
 	}
 
-	// Reassemble the full schedule: flag-only rows + synced entries
-	const updatedSchedule = [...flagOnly, ...updatedSyncable]
+	// Reassemble the full schedule: inactive rows + blanked rows + synced entries
+	const updatedSchedule = [...inactive, ...updatedBlanked, ...updatedSyncable]
 
 	return { updatedSchedule, result }
 }

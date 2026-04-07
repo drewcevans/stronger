@@ -286,50 +286,20 @@ function App() {
 
   const handleBulkSchedule = useCallback(
     (entries: ScheduleEntry[]) => {
-      // Separate clear signals from actual additions
-      const datesToClear = new Set(
-        entries.filter((e) => e.workoutId === '__clear__').map((e) => e.date),
+      // Separate rest signals from actual additions
+      const datesToRest = new Set(
+        entries.filter((e) => e.workoutId === '__rest__').map((e) => e.date),
       );
-      const toAdd = entries.filter((e) => e.workoutId !== '__clear__');
+      const toAdd = entries.filter((e) => e.workoutId !== '__rest__');
 
-      // Collect flags from entries about to be cleared so we can preserve them
-      const flagsToPreserve = new Map<string, DayFlags>();
-      for (const e of schedule) {
-        if (datesToClear.has(e.date) && e.flags && !flagsToPreserve.has(e.date)) {
-          flagsToPreserve.set(e.date, e.flags);
+      // For rest dates: blank out workoutIds instead of deleting rows
+      // (preserves flags and calendarEventIds)
+      let updated = schedule.map((e) => {
+        if (datesToRest.has(e.date) && e.workoutId) {
+          return { ...e, workoutId: '' };
         }
-      }
-
-      // Remove workouts from cleared dates (preserve flag-only rows)
-      let updated = schedule.filter((e) => {
-        if (!datesToClear.has(e.date)) return true;
-        return e.workoutId === '';
+        return e;
       });
-
-      // Ensure flag-only rows exist for cleared dates that had flags
-      for (const [date, flags] of flagsToPreserve) {
-        const hasFlagRow = updated.some((e) => e.date === date);
-        if (!hasFlagRow) {
-          updated.push({ date, workoutId: '', flags });
-        } else {
-          // Merge preserved flags into the surviving flag-only row
-          let merged = false;
-          updated = updated.map((e) => {
-            if (!merged && e.date === date && e.workoutId === '') {
-              merged = true;
-              const mergedFlags: DayFlags = {
-                home: flags.home || !!e.flags?.home,
-                elsewhere: flags.elsewhere || !!e.flags?.elsewhere,
-                travel: flags.travel || !!e.flags?.travel,
-                visitors: flags.visitors || !!e.flags?.visitors,
-                blocked: flags.blocked || !!e.flags?.blocked,
-              };
-              return { ...e, flags: mergedFlags };
-            }
-            return e;
-          });
-        }
-      }
 
       // Add new entries, deduplicating (skip if same date+workoutId already exists)
       for (const entry of toAdd) {
@@ -351,43 +321,16 @@ function App() {
 
   const handleScheduleRemove = useCallback(
     (date: string, workoutId: string) => {
-      // Find the entry being removed (to check for flags)
-      const removedEntry = schedule.find(
-        (e) => e.date === date && e.workoutId === workoutId,
-      );
-
-      // Remove the first matching entry for this date+workoutId
-      let removed = false;
-      let updated = schedule.filter((e) => {
-        if (!removed && e.date === date && e.workoutId === workoutId) {
-          removed = true;
-          return false;
+      // Blank out the workoutId instead of deleting the row.
+      // This preserves flags and calendarEventId for calendar sync.
+      let blanked = false;
+      const updated = schedule.map((e) => {
+        if (!blanked && e.date === date && e.workoutId === workoutId) {
+          blanked = true;
+          return { ...e, workoutId: '' };
         }
-        return true;
+        return e;
       });
-
-      // If the removed entry carried flags, preserve them
-      if (removedEntry?.flags) {
-        const nextForDate = updated.findIndex((e) => e.date === date);
-        if (nextForDate >= 0) {
-          // Merge flags into another entry for the same date
-          const existing = updated[nextForDate].flags;
-          const mergedFlags: DayFlags = {
-            home: removedEntry.flags.home || !!existing?.home,
-            elsewhere: removedEntry.flags.elsewhere || !!existing?.elsewhere,
-            travel: removedEntry.flags.travel || !!existing?.travel,
-            visitors: removedEntry.flags.visitors || !!existing?.visitors,
-            blocked: removedEntry.flags.blocked || !!existing?.blocked,
-          };
-          updated = updated.map((e, i) =>
-            i === nextForDate ? { ...e, flags: mergedFlags } : e,
-          );
-        } else {
-          // No other entries — keep a flag-only row
-          updated.push({ date, workoutId: '', flags: removedEntry.flags });
-        }
-      }
-
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);
@@ -413,8 +356,8 @@ function App() {
       } else {
         return; // No flags and no existing entry — nothing to do
       }
-      // Remove flag-only rows that no longer have flags
-      updated = updated.filter((e) => e.workoutId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors || e.flags.blocked)));
+      // Remove flag-only rows that no longer have flags (but preserve rows with calendarEventId)
+      updated = updated.filter((e) => e.workoutId || e.calendarEventId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors || e.flags.blocked)));
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);

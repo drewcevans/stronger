@@ -218,4 +218,12 @@ describe('parseScheduleRow – calendarEventId', () => {
 			calendarEventId: 'cal-event',
 		})
 	})
+
+	it('keeps row with only calendarEventId (no workoutId, no flags)', () => {
+		expect(parseScheduleRow(['2025-01-15', '', '', '', '', '', '', 'orphan-event'])).toEqual({
+			date: '2025-01-15',
+			workoutId: '',
+			calendarEventId: 'orphan-event',
+		})
+	})
 })
