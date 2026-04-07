@@ -22,6 +22,7 @@ import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import { loadDraft, saveDraft, clearDraft } from './hooks/useWorkoutDraft.js';
+import { clearSentinel as clearTimerSentinel } from './hooks/useRestTimer.js';
 import type { GarminActivity, GarminGoal, GarminMetric } from './model/garmin.js';
 import './App.css';
 
@@ -157,8 +158,9 @@ function App() {
   const handleFinish = useCallback(
     (workout: Workout, results: SetResult[][]) => {
       const endTime = new Date().toISOString();
-      // Clear the in-progress draft now that the workout is complete
+      // Clear the in-progress draft and rest timer now that the workout is complete
       clearDraft();
+      clearTimerSentinel();
       if (spreadsheetId && startTime) {
         // Fire-and-forget: log results to the sheet, then reload log data
         void logWorkoutResults(
@@ -218,6 +220,7 @@ function App() {
 
   const handleBack = useCallback(() => {
     clearDraft();
+    clearTimerSentinel();
     setActiveWorkout(null);
     setStartTime(null);
     setPreviousSets(null);
@@ -677,6 +680,7 @@ function App() {
   useEffect(() => {
     if (route.view === 'list' && activeWorkout && !progressionProposals) {
       clearDraft();
+      clearTimerSentinel();
       setActiveWorkout(null);
       setStartTime(null);
       setPreviousSets(null);
