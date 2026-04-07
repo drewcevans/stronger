@@ -1,5 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import { formatElapsed, resolveTimerExercise } from '../useRestTimer.js';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { formatElapsed, resolveTimerExercise, loadSentinel, clearSentinel } from '../useRestTimer.js';
+
+const SENTINEL_KEY = 'stronger_rest_timer';
+
+// Provide a minimal localStorage for Node/jsdom test environments
+const store: Record<string, string> = {};
+beforeEach(() => {
+	// Reset our polyfill store
+	for (const key of Object.keys(store)) delete store[key];
+	if (typeof globalThis.localStorage === 'undefined') {
+		Object.defineProperty(globalThis, 'localStorage', {
+			value: {
+				getItem: (k: string) => store[k] ?? null,
+				setItem: (k: string, v: string) => { store[k] = v; },
+				removeItem: (k: string) => { delete store[k]; },
+			},
+			configurable: true,
+		});
+	} else {
+		// Remove just our key to avoid issues with minimal localStorage polyfills
+		try { localStorage.removeItem(SENTINEL_KEY); } catch { /* ignore */ }
+	}
+});
 
 describe('formatElapsed', () => {
 	it('formats zero seconds', () => {
@@ -54,5 +76,33 @@ describe('resolveTimerExercise', () => {
 		expect(resolveTimerExercise(0, 0, [1, 1, 1])).toBe(1);
 		expect(resolveTimerExercise(1, 0, [1, 1, 1])).toBe(2);
 		expect(resolveTimerExercise(2, 0, [1, 1, 1])).toBe(2); // last exercise
+	});
+});
+
+describe('timer sentinel persistence', () => {
+	it('loadSentinel returns null when no sentinel exists', () => {
+		expect(loadSentinel()).toBeNull();
+	});
+
+	it('loadSentinel returns null for invalid JSON', () => {
+		localStorage.setItem(SENTINEL_KEY, 'not-json');
+		expect(loadSentinel()).toBeNull();
+	});
+
+	it('loadSentinel returns null for malformed data', () => {
+		localStorage.setItem(SENTINEL_KEY, JSON.stringify({ exerciseIdx: 'bad' }));
+		expect(loadSentinel()).toBeNull();
+	});
+
+	it('loadSentinel returns valid sentinel', () => {
+		const sentinel = { exerciseIdx: 2, startedAt: 1700000000000 };
+		localStorage.setItem(SENTINEL_KEY, JSON.stringify(sentinel));
+		expect(loadSentinel()).toEqual(sentinel);
+	});
+
+	it('clearSentinel removes the sentinel', () => {
+		localStorage.setItem(SENTINEL_KEY, JSON.stringify({ exerciseIdx: 0, startedAt: Date.now() }));
+		clearSentinel();
+		expect(localStorage.getItem(SENTINEL_KEY)).toBeNull();
 	});
 });
