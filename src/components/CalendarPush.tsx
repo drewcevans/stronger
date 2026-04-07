@@ -11,15 +11,12 @@ interface CalendarPushProps {
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-/** Find the next Monday on or after today, returned as YYYY-MM-DD. */
-function nextMonday(): string {
+/** Return today's date as YYYY-MM-DD. */
+function today(): string {
   const now = new Date();
-  const day = now.getDay(); // 0=Sun, 1=Mon, ...
-  const diff = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
-  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
-  const yyyy = mon.getFullYear();
-  const mm = String(mon.getMonth() + 1).padStart(2, '0');
-  const dd = String(mon.getDate()).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
 
@@ -28,7 +25,7 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
   // '' = no action (skip), '__rest__' = clear workouts, otherwise = workout/cardio id
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
   const [weeks, setWeeks] = useState(4);
-  const [startDate, setStartDate] = useState(nextMonday);
+  const [startDate, setStartDate] = useState(today);
 
   const handleDayChange = useCallback((dayIndex: number, workoutId: string) => {
     setDaySlots((prev) => {
@@ -43,15 +40,20 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
   // Generate ScheduleEntry[] from the weekly planner.
   // Additive: only emits entries for days with a selection (skips empty/no-action days).
   // __rest__ signals clearing all workouts for that date.
+  // Aligns each day-of-week to its correct calendar date regardless of start date.
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
     const entries: ScheduleEntry[] = [];
     const [sy, sm, sd] = startDate.split('-').map(Number);
     const start = new Date(sy, sm - 1, sd);
+    const startDow = start.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
     for (let week = 0; week < weeks; week++) {
       for (let day = 0; day < 7; day++) {
         const wid = daySlots[day];
         if (!wid) continue; // No action — skip this day
-        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + week * 7 + day);
+        // day 0=Monday(JS 1), 1=Tuesday(JS 2), ..., 6=Sunday(JS 0)
+        const targetDow = (day + 1) % 7;
+        const offset = (targetDow - startDow + 7) % 7;
+        const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset + week * 7);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         entries.push({ date: dateStr, workoutId: wid });
       }
@@ -116,7 +118,7 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
       {/* Start date */}
       <div className="calendar-push-section">
         <label className="calendar-push-label" htmlFor="push-start-date">
-          Start date (Monday)
+          Start date
         </label>
         <input
           id="push-start-date"
