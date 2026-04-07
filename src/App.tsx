@@ -286,10 +286,28 @@ function App() {
 
   const handleBulkSchedule = useCallback(
     (entries: ScheduleEntry[]) => {
-      // Merge: remove existing entries for dates covered by the new plan, then add new ones
-      const newDates = new Set(entries.map((e) => e.date));
-      const kept = schedule.filter((e) => !newDates.has(e.date));
-      const updated = [...kept, ...entries];
+      // Separate clear signals from actual additions
+      const datesToClear = new Set(
+        entries.filter((e) => e.workoutId === '__clear__').map((e) => e.date),
+      );
+      const toAdd = entries.filter((e) => e.workoutId !== '__clear__');
+
+      // Remove workouts from cleared dates (preserve flag-only rows)
+      let updated = schedule.filter((e) => {
+        if (!datesToClear.has(e.date)) return true;
+        return e.workoutId === '';
+      });
+
+      // Add new entries, deduplicating (skip if same date+workoutId already exists)
+      for (const entry of toAdd) {
+        const exists = updated.some(
+          (e) => e.date === entry.date && e.workoutId === entry.workoutId,
+        );
+        if (!exists) {
+          updated.push(entry);
+        }
+      }
+
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);
