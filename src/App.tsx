@@ -286,16 +286,19 @@ function App() {
 
   const handleBulkSchedule = useCallback(
     (entries: ScheduleEntry[]) => {
-      // Separate clear signals from actual additions
-      const datesToClear = new Set(
-        entries.filter((e) => e.workoutId === '__clear__').map((e) => e.date),
+      // Separate rest signals from actual additions
+      const datesToRest = new Set(
+        entries.filter((e) => e.workoutId === '__rest__').map((e) => e.date),
       );
-      const toAdd = entries.filter((e) => e.workoutId !== '__clear__');
+      const toAdd = entries.filter((e) => e.workoutId !== '__rest__');
 
-      // Remove workouts from cleared dates (preserve flag-only rows)
-      let updated = schedule.filter((e) => {
-        if (!datesToClear.has(e.date)) return true;
-        return e.workoutId === '';
+      // For rest dates: blank out workoutIds instead of deleting rows
+      // (preserves flags and calendarEventIds)
+      let updated = schedule.map((e) => {
+        if (datesToRest.has(e.date) && e.workoutId) {
+          return { ...e, workoutId: '' };
+        }
+        return e;
       });
 
       // Add new entries, deduplicating (skip if same date+workoutId already exists)
@@ -318,14 +321,15 @@ function App() {
 
   const handleScheduleRemove = useCallback(
     (date: string, workoutId: string) => {
-      // Remove the first matching entry for this date+workoutId
-      let removed = false;
-      const updated = schedule.filter((e) => {
-        if (!removed && e.date === date && e.workoutId === workoutId) {
-          removed = true;
-          return false;
+      // Blank out the workoutId instead of deleting the row.
+      // This preserves flags and calendarEventId for calendar sync.
+      let blanked = false;
+      const updated = schedule.map((e) => {
+        if (!blanked && e.date === date && e.workoutId === workoutId) {
+          blanked = true;
+          return { ...e, workoutId: '' };
         }
-        return true;
+        return e;
       });
       setSchedule(updated);
       if (spreadsheetId) {
@@ -352,8 +356,8 @@ function App() {
       } else {
         return; // No flags and no existing entry — nothing to do
       }
-      // Remove flag-only rows that no longer have flags
-      updated = updated.filter((e) => e.workoutId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors || e.flags.blocked)));
+      // Remove flag-only rows that no longer have flags (but preserve rows with calendarEventId)
+      updated = updated.filter((e) => e.workoutId || e.calendarEventId || (e.flags && (e.flags.home || e.flags.elsewhere || e.flags.travel || e.flags.visitors || e.flags.blocked)));
       setSchedule(updated);
       if (spreadsheetId) {
         void writeSchedule(spreadsheetId, updated);

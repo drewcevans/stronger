@@ -24,7 +24,8 @@ function nextMonday(): string {
 }
 
 export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSchedule }: CalendarPushProps) {
-  // Weekly day → activity mapping (7 entries, empty string = rest day)
+  // Weekly day → activity mapping (7 entries)
+  // '' = no action (skip), '__rest__' = clear workouts, otherwise = workout/cardio id
   const [daySlots, setDaySlots] = useState<string[]>(Array(7).fill(''));
   const [weeks, setWeeks] = useState(4);
   const [startDate, setStartDate] = useState(nextMonday);
@@ -39,18 +40,20 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
 
   const hasSlots = daySlots.some((id) => id !== '');
 
-  // Generate ScheduleEntry[] from the weekly planner
+  // Generate ScheduleEntry[] from the weekly planner.
+  // Additive: only emits entries for days with a selection (skips empty/no-action days).
+  // __rest__ signals clearing all workouts for that date.
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
     const entries: ScheduleEntry[] = [];
     const [sy, sm, sd] = startDate.split('-').map(Number);
     const start = new Date(sy, sm - 1, sd);
     for (let week = 0; week < weeks; week++) {
       for (let day = 0; day < 7; day++) {
+        const wid = daySlots[day];
+        if (!wid) continue; // No action — skip this day
         const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + week * 7 + day);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        const wid = daySlots[day];
-        // Empty = rest (skip), __clear__ = clear all workouts, otherwise = add workout
-        if (wid) entries.push({ date: dateStr, workoutId: wid });
+        entries.push({ date: dateStr, workoutId: wid });
       }
     }
     return entries;
@@ -86,8 +89,8 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
                 value={daySlots[i]}
                 onChange={(e) => handleDayChange(i, e.target.value)}
               >
-                <option value="">— Rest —</option>
-                <option value="__clear__">— Clear —</option>
+                <option value="">—</option>
+                <option value="__rest__">— Rest —</option>
                 <optgroup label="Strength">
                   {workouts.map((w) => (
                     <option key={w.id} value={w.id}>

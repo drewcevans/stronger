@@ -1176,10 +1176,10 @@ export function parseScheduleRow(row: string[]): ScheduleEntry | null {
 
 	const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked
 
-	// Must have either a workoutId or at least one flag
-	if (!workoutId && !hasFlags) return null
-
 	const calendarEventId = (row[7] ?? '').trim() || undefined
+
+	// Must have either a workoutId, at least one flag, or a calendarEventId
+	if (!workoutId && !hasFlags && !calendarEventId) return null
 
 	return { date, workoutId, ...(hasFlags ? { flags } : {}), ...(calendarEventId ? { calendarEventId } : {}) }
 }
