@@ -452,9 +452,9 @@ export async function syncScheduleWithCalendar(
 	const syncable = schedule.filter((e) => e.workoutId && e.workoutId !== FLAG_SENTINEL)
 	// Blanked: had a calendar event but workout was removed
 	const blanked = schedule.filter((e) => !e.workoutId && e.calendarEventId)
-	// Inactive: no workoutId, no calendarEventId, no flags (orphan/empty rows)
+	// Inactive: no workoutId, no calendarEventId (orphan/empty rows)
 	const inactive = schedule.filter(
-		(e) => !e.workoutId && !e.calendarEventId && e.workoutId !== FLAG_SENTINEL,
+		(e) => !e.workoutId && !e.calendarEventId,
 	)
 
 	// Assign strongerIds to any syncable entries that don't have one yet
@@ -660,8 +660,10 @@ export async function syncScheduleWithCalendar(
 	}
 
 	// --- Phase 4: Dedup the syncable entries ---
-	// If the same strongerId appears multiple times, keep the first
+	// If the same strongerId appears multiple times, keep the first.
+	// Entries without a strongerId are only deduped by date+workoutId.
 	const seenStrongerIds = new Set<string>()
+	const seenDateWorkoutKeys = new Set<string>()
 	const dedupedSyncable: ScheduleEntry[] = []
 	for (const entry of updatedSyncable) {
 		if (entry.strongerId) {
@@ -670,7 +672,8 @@ export async function syncScheduleWithCalendar(
 		}
 		// Also dedup by date + workoutId (same workout on same date = keep first)
 		const dateWorkoutKey = `${entry.date}|${entry.workoutId}`
-		if (dedupedSyncable.some((e) => `${e.date}|${e.workoutId}` === dateWorkoutKey)) continue
+		if (seenDateWorkoutKeys.has(dateWorkoutKey)) continue
+		seenDateWorkoutKeys.add(dateWorkoutKey)
 		dedupedSyncable.push(entry)
 	}
 
