@@ -82,6 +82,7 @@ const TOKEN_EXPIRY_KEY = 'stronger_token_expires_at'
  */
 export function saveToken(accessToken: string, expiresIn?: number): void {
 	const lifetime = expiresIn ?? TOKEN_DEFAULT_LIFETIME
+	// Ensure at least 60s so the cookie isn't immediately expired (e.g. if expiresIn ≤ buffer)
 	const maxAge = Math.max(lifetime - TOKEN_EXPIRY_BUFFER, 60)
 	setCookie(TOKEN_COOKIE, accessToken, maxAge)
 
