@@ -39,7 +39,9 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
 
   const hasSlots = daySlots.some((id) => id !== '');
 
-  // Generate ScheduleEntry[] from the weekly planner
+  // Generate ScheduleEntry[] from the weekly planner.
+  // Every date in the range gets an entry: rest days produce __clear__ so existing
+  // entries are removed, making the planner declarative (replace, not add).
   const generateScheduleEntries = useCallback((): ScheduleEntry[] => {
     const entries: ScheduleEntry[] = [];
     const [sy, sm, sd] = startDate.split('-').map(Number);
@@ -49,8 +51,13 @@ export function CalendarPush({ workouts, cardioActivities, onClose, onUpdateSche
         const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + week * 7 + day);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         const wid = daySlots[day];
-        // Empty = rest (skip), __clear__ = clear all workouts, otherwise = add workout
-        if (wid) entries.push({ date: dateStr, workoutId: wid });
+        if (wid) {
+          // __clear__ or a workout/cardio id
+          entries.push({ date: dateStr, workoutId: wid });
+        } else {
+          // Rest day — clear any existing entries for this date
+          entries.push({ date: dateStr, workoutId: '__clear__' });
+        }
       }
     }
     return entries;
