@@ -350,11 +350,16 @@ function App() {
       // Flags always live in their own dedicated row with FLAG_SENTINEL.
       // First, clear any stale flags from non-FLAG_SENTINEL entries for this date
       // (legacy data may have flags stored directly on workout entries).
-      let updated = schedule.map((e) =>
-        e.date === date && e.workoutId !== FLAG_SENTINEL && e.flags
-          ? { ...e, flags: undefined }
-          : e,
+      const hasLegacyFlags = schedule.some(
+        (e) => e.date === date && e.workoutId !== FLAG_SENTINEL && e.flags,
       );
+      let updated = hasLegacyFlags
+        ? schedule.map((e) =>
+            e.date === date && e.workoutId !== FLAG_SENTINEL && e.flags
+              ? { ...e, flags: undefined }
+              : e,
+          )
+        : [...schedule];
       // Find the existing flag row for this date.
       const flagIdx = updated.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
       if (flagIdx >= 0) {
@@ -370,6 +375,8 @@ function App() {
       } else if (hasFlags) {
         // No existing flag row — add a new one
         updated = [...updated, { date, workoutId: FLAG_SENTINEL, flags }];
+      } else if (!hasLegacyFlags) {
+        return; // No flags, no existing flag row, no legacy flags to clear — nothing to do
       }
       setSchedule(updated);
       if (spreadsheetId) {
