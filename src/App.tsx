@@ -348,24 +348,28 @@ function App() {
     (date: string, flags: DayFlags) => {
       const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
       // Flags always live in their own dedicated row with FLAG_SENTINEL.
+      // First, clear any stale flags from non-FLAG_SENTINEL entries for this date
+      // (legacy data may have flags stored directly on workout entries).
+      let updated = schedule.map((e) =>
+        e.date === date && e.workoutId !== FLAG_SENTINEL && e.flags
+          ? { ...e, flags: undefined }
+          : e,
+      );
       // Find the existing flag row for this date.
-      const flagIdx = schedule.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
-      let updated: ScheduleEntry[];
+      const flagIdx = updated.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
       if (flagIdx >= 0) {
         if (hasFlags) {
           // Update existing flag row
-          updated = schedule.map((e, i) =>
+          updated = updated.map((e, i) =>
             i === flagIdx ? { ...e, flags } : e,
           );
         } else {
           // Remove the flag row entirely (no flags left)
-          updated = schedule.filter((_, i) => i !== flagIdx);
+          updated = updated.filter((_, i) => i !== flagIdx);
         }
       } else if (hasFlags) {
         // No existing flag row — add a new one
-        updated = [...schedule, { date, workoutId: FLAG_SENTINEL, flags }];
-      } else {
-        return; // No flags and no existing flag row — nothing to do
+        updated = [...updated, { date, workoutId: FLAG_SENTINEL, flags }];
       }
       setSchedule(updated);
       if (spreadsheetId) {

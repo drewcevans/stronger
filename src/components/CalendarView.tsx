@@ -326,11 +326,19 @@ export function CalendarView({
 		return map;
 	}, [schedule]);
 
-	// Build a map of date → DayFlags for fast lookup (flags come from the first entry for a date)
+	// Build a map of date → DayFlags for fast lookup.
+	// Prefer FLAG_SENTINEL entries (dedicated flag rows) over legacy flags on workout entries.
 	const flagsMap = useMemo(() => {
 		const map = new Map<string, DayFlags>();
+		// First pass: collect flags from any entry (legacy support)
 		for (const entry of schedule) {
 			if (entry.flags && !map.has(entry.date)) {
+				map.set(entry.date, entry.flags);
+			}
+		}
+		// Second pass: override with FLAG_SENTINEL entries (authoritative)
+		for (const entry of schedule) {
+			if (entry.workoutId === FLAG_SENTINEL && entry.flags) {
 				map.set(entry.date, entry.flags);
 			}
 		}
