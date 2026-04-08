@@ -347,13 +347,11 @@ function App() {
   const handleUpdateFlags = useCallback(
     (date: string, flags: DayFlags) => {
       const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
-      // Flags always live in their own dedicated row with FLAG_SENTINEL.
-      // Find the existing flag row for this date.
+      // Flags live in their own dedicated row with FLAG_SENTINEL.
       const flagIdx = schedule.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
       let updated: ScheduleEntry[];
       if (flagIdx >= 0) {
         if (hasFlags) {
-          // Update existing flag row
           updated = schedule.map((e, i) =>
             i === flagIdx ? { ...e, flags } : e,
           );
@@ -362,10 +360,9 @@ function App() {
           updated = schedule.filter((_, i) => i !== flagIdx);
         }
       } else if (hasFlags) {
-        // No existing flag row — add a new one
         updated = [...schedule, { date, workoutId: FLAG_SENTINEL, flags }];
       } else {
-        return; // No flags and no existing flag row — nothing to do
+        return; // Nothing to do
       }
       setSchedule(updated);
       if (spreadsheetId) {
