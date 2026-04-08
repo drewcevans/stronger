@@ -347,36 +347,22 @@ function App() {
   const handleUpdateFlags = useCallback(
     (date: string, flags: DayFlags) => {
       const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
-      // Flags always live in their own dedicated row with FLAG_SENTINEL.
-      // First, clear any stale flags from non-FLAG_SENTINEL entries for this date
-      // (legacy data may have flags stored directly on workout entries).
-      const hasLegacyFlags = schedule.some(
-        (e) => e.date === date && e.workoutId !== FLAG_SENTINEL && e.flags,
-      );
-      let updated = hasLegacyFlags
-        ? schedule.map((e) =>
-            e.date === date && e.workoutId !== FLAG_SENTINEL && e.flags
-              ? { ...e, flags: undefined }
-              : e,
-          )
-        : [...schedule];
-      // Find the existing flag row for this date.
-      const flagIdx = updated.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
+      // Flags live in their own dedicated row with FLAG_SENTINEL.
+      const flagIdx = schedule.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
+      let updated: ScheduleEntry[];
       if (flagIdx >= 0) {
         if (hasFlags) {
-          // Update existing flag row
-          updated = updated.map((e, i) =>
+          updated = schedule.map((e, i) =>
             i === flagIdx ? { ...e, flags } : e,
           );
         } else {
           // Remove the flag row entirely (no flags left)
-          updated = updated.filter((_, i) => i !== flagIdx);
+          updated = schedule.filter((_, i) => i !== flagIdx);
         }
       } else if (hasFlags) {
-        // No existing flag row — add a new one
-        updated = [...updated, { date, workoutId: FLAG_SENTINEL, flags }];
-      } else if (!hasLegacyFlags) {
-        return; // No flags, no existing flag row, no legacy flags to clear — nothing to do
+        updated = [...schedule, { date, workoutId: FLAG_SENTINEL, flags }];
+      } else {
+        return; // Nothing to do
       }
       setSchedule(updated);
       if (spreadsheetId) {
