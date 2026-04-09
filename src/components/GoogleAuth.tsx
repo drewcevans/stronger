@@ -91,7 +91,25 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 						setPhase('sheet-input')
 					}
 				} else {
-					setPhase('sign-in')
+					// No valid token — but if we recognise a returning user
+					// (stored sheet ID), try to auto-sign-in via GIS popup.
+					// If the user has an active Google session the popup
+					// resolves instantly with no manual interaction needed.
+					const storedId = loadSheetId()
+					if (storedId) {
+						try {
+							setPhase('connecting')
+							await signIn()
+							if (cancelled) return
+							await tryConnect(storedId)
+						} catch {
+							// Auto-sign-in failed (popup blocked, no Google
+							// session, user dismissed) — fall back to manual.
+							if (!cancelled) setPhase('sign-in')
+						}
+					} else {
+						setPhase('sign-in')
+					}
 				}
 			} catch (err) {
 				if (!cancelled) {

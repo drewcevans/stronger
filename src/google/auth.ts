@@ -240,3 +240,34 @@ export function isAuthError(err: unknown): boolean {
 	}
 	return false
 }
+
+/* ------------------------------------------------------------------ */
+/*  Auth-retry wrapper                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * In-flight re-authentication promise. Used to deduplicate concurrent
+ * retry attempts so only one sign-in popup is opened at a time.
+ */
+let reauthPromise: Promise<string> | null = null
+
+/**
+ * Execute an async operation, and if it fails with a 401 auth error,
+ * re-authenticate via `signIn()` and retry once.
+ *
+ * Concurrent callers share a single re-auth attempt to avoid opening
+ * multiple sign-in popups.
+ */
+export async function withAuthRetry<T>(fn: () => Promise<T>): Promise<T> {
+	try {
+		return await fn()
+	} catch (err) {
+		if (!isAuthError(err)) throw err
+		clearAuth()
+		if (!reauthPromise) {
+			reauthPromise = signIn().finally(() => { reauthPromise = null })
+		}
+		await reauthPromise
+		return await fn()
+	}
+}

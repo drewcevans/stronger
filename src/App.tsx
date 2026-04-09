@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
 import { computeProgression, FLAG_SENTINEL } from './model/index.js';
 import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
-import { syncScheduleWithCalendar, generateStrongerId } from './google/index.js';
+import { syncScheduleWithCalendar, generateStrongerId, withAuthRetry } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
@@ -130,9 +130,11 @@ function App() {
   const loadPreviousSets = useCallback(
     async (sheetId: string, workoutId: string) => {
       try {
-        const logRows = await readLogZone(sheetId);
-        const prev = findPreviousWorkoutSets(logRows, workoutId);
-        setPreviousSets(prev);
+        await withAuthRetry(async () => {
+          const logRows = await readLogZone(sheetId);
+          const prev = findPreviousWorkoutSets(logRows, workoutId);
+          setPreviousSets(prev);
+        });
       } catch {
         // Silently ignore — previous data is optional context
       }
@@ -203,7 +205,7 @@ function App() {
 
       // Write updated configs back to the sheet
       if (spreadsheetId) {
-        void writeConfigValues(spreadsheetId, updatedConfigs);
+        void withAuthRetry(() => writeConfigValues(spreadsheetId, updatedConfigs));
       }
 
       // Update local state so the next workout uses the new weights
@@ -231,12 +233,14 @@ function App() {
   // Schedule handlers
   const loadScheduleData = useCallback(async (sheetId: string) => {
     try {
-      const tabExists = await verifyScheduleTab(sheetId);
-      if (!tabExists) {
-        await createScheduleTab(sheetId);
-      }
-      const entries = await readSchedule(sheetId);
-      setSchedule(entries);
+      await withAuthRetry(async () => {
+        const tabExists = await verifyScheduleTab(sheetId);
+        if (!tabExists) {
+          await createScheduleTab(sheetId);
+        }
+        const entries = await readSchedule(sheetId);
+        setSchedule(entries);
+      });
     } catch {
       // Silently ignore — schedule data is optional
     }
@@ -244,8 +248,10 @@ function App() {
 
   const loadLogData = useCallback(async (sheetId: string) => {
     try {
-      const rows = await readLogZone(sheetId);
-      setLogRows(rows);
+      await withAuthRetry(async () => {
+        const rows = await readLogZone(sheetId);
+        setLogRows(rows);
+      });
     } catch {
       // Silently ignore — log data is optional for calendar history
     }
@@ -253,24 +259,28 @@ function App() {
 
   const loadGarminData = useCallback(async (sheetId: string) => {
     try {
-      const tabExists = await verifyGarminTab(sheetId);
-      if (!tabExists) {
-        await createGarminTab(sheetId);
-      }
-      const activities = await readGarminActivities(sheetId);
-      setGarminActivities(activities);
+      await withAuthRetry(async () => {
+        const tabExists = await verifyGarminTab(sheetId);
+        if (!tabExists) {
+          await createGarminTab(sheetId);
+        }
+        const activities = await readGarminActivities(sheetId);
+        setGarminActivities(activities);
+      });
     } catch {
       // Silently ignore — Garmin data is optional
     }
     try {
-      const settingsTabExists = await verifySettingsTab(sheetId);
-      if (!settingsTabExists) {
-        await createSettingsTab(sheetId);
-      }
-      const settings = await readSettings(sheetId);
-      settingsRef.current = settings;
-      setGarminGoals(goalsFromSettings(settings));
-      setAppSettings(appSettingsFromMap(settings));
+      await withAuthRetry(async () => {
+        const settingsTabExists = await verifySettingsTab(sheetId);
+        if (!settingsTabExists) {
+          await createSettingsTab(sheetId);
+        }
+        const settings = await readSettings(sheetId);
+        settingsRef.current = settings;
+        setGarminGoals(goalsFromSettings(settings));
+        setAppSettings(appSettingsFromMap(settings));
+      });
     } catch {
       // Silently ignore — settings data is optional
     }
@@ -281,7 +291,7 @@ function App() {
       const updated = [...schedule, { date, workoutId, strongerId: generateStrongerId() }];
       setSchedule(updated);
       if (spreadsheetId) {
-        void writeSchedule(spreadsheetId, updated);
+        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
       }
     },
     [schedule, spreadsheetId],
@@ -317,7 +327,7 @@ function App() {
 
       setSchedule(updated);
       if (spreadsheetId) {
-        void writeSchedule(spreadsheetId, updated);
+        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
       }
     },
     [schedule, spreadsheetId],
@@ -338,7 +348,7 @@ function App() {
       });
       setSchedule(updated);
       if (spreadsheetId) {
-        void writeSchedule(spreadsheetId, updated);
+        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
       }
     },
     [schedule, spreadsheetId],
@@ -366,7 +376,7 @@ function App() {
       }
       setSchedule(updated);
       if (spreadsheetId) {
-        void writeSchedule(spreadsheetId, updated);
+        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
       }
     },
     [schedule, spreadsheetId],
@@ -404,16 +414,16 @@ function App() {
         return null;
       };
 
-      const { updatedSchedule, result } = await syncScheduleWithCalendar(
+      const { updatedSchedule, result } = await withAuthRetry(() => syncScheduleWithCalendar(
         calendarId,
         schedule,
         resolveWorkoutName,
         resolveWorkoutId,
-      );
+      ));
 
       setSchedule(updatedSchedule);
       if (spreadsheetId) {
-        void writeSchedule(spreadsheetId, updatedSchedule);
+        void withAuthRetry(() => writeSchedule(spreadsheetId, updatedSchedule));
       }
       return result;
     },
@@ -442,7 +452,7 @@ function App() {
       });
       // Fire-and-forget: write to sheet
       if (spreadsheetId) {
-        void updateLogRows(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime, updatedRows);
+        void withAuthRetry(() => updateLogRows(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime, updatedRows));
       }
     },
     [spreadsheetId],
@@ -459,7 +469,7 @@ function App() {
       );
       // Fire-and-forget: delete from sheet
       if (spreadsheetId) {
-        void deleteLogSession(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime);
+        void withAuthRetry(() => deleteLogSession(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime));
       }
     },
     [spreadsheetId],
@@ -515,7 +525,7 @@ function App() {
       if (spreadsheetId) {
         // Merge goals into settings and write the full settings map
         goalsToSettings(updated, settingsRef.current);
-        void writeSettings(spreadsheetId, settingsRef.current).catch(() => {});
+        void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
       }
       return updated;
     });
@@ -526,7 +536,7 @@ function App() {
       const updated = { ...prev, [key]: value };
       if (spreadsheetId) {
         appSettingsToMap(updated, settingsRef.current);
-        void writeSettings(spreadsheetId, settingsRef.current).catch(() => {});
+        void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
       }
       return updated;
     });
@@ -556,7 +566,7 @@ function App() {
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
       if (spreadsheetId) {
-        void writeWorkoutDefs(spreadsheetId, updatedDefs);
+        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
       }
     },
     [definitions, configs, spreadsheetId],
@@ -566,7 +576,7 @@ function App() {
     (updated: CardioActivity[]) => {
       setCardioActivities(updated);
       if (spreadsheetId) {
-        void writeCardioActivities(spreadsheetId, updated);
+        void withAuthRetry(() => writeCardioActivities(spreadsheetId, updated));
       }
     },
     [spreadsheetId],
@@ -582,7 +592,7 @@ function App() {
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
       if (spreadsheetId) {
-        void writeWorkoutDefs(spreadsheetId, updatedDefs);
+        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
       }
       navigateTo({ view: 'list' });
     },
@@ -613,7 +623,7 @@ function App() {
       setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
 
       if (spreadsheetId) {
-        void writeConfigValues(spreadsheetId, updatedConfigs);
+        void withAuthRetry(() => writeConfigValues(spreadsheetId, updatedConfigs));
       }
 
       navigateTo({ view: 'exercises' });
@@ -632,7 +642,7 @@ function App() {
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
 
       if (spreadsheetId) {
-        void writeWorkoutDefs(spreadsheetId, updatedDefs);
+        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
       }
 
       navigateTo({ view: 'list' });
@@ -1010,6 +1020,6 @@ async function logWorkoutResults(
     }
   }
 
-  await appendLogRows(sheetId, rows);
+  await withAuthRetry(() => appendLogRows(sheetId, rows));
 }
 
