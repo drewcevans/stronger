@@ -10,6 +10,7 @@ export {
 	restoreToken,
 	clearAuth,
 	isAuthError,
+	withAuthRetry,
 } from './auth.ts'
 export {
 	verifySheetAccess,
