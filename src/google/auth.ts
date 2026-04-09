@@ -263,8 +263,8 @@ export async function withAuthRetry<T>(fn: () => Promise<T>): Promise<T> {
 		return await fn()
 	} catch (err) {
 		if (!isAuthError(err)) throw err
-		clearAuth()
 		if (!reauthPromise) {
+			clearAuth()
 			reauthPromise = signIn().finally(() => { reauthPromise = null })
 		}
 		await reauthPromise
