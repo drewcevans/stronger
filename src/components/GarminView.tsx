@@ -336,7 +336,10 @@ function MetricChart({
   // Tooltip support
   const xPositions = useMemo(
     () => Array.from({ length: n }, (_, i) => xCenter(i)),
-    [n, barWidth],
+    // xCenter depends on barWidth which depends on n and plotW (constant),
+    // so n is sufficient as a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [n, plotW],
   );
   const { activeIndex, svgRef, containerHandlers } = useChartTooltip(xPositions, viewBoxWidth);
 

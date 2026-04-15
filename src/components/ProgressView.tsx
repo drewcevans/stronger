@@ -277,6 +277,9 @@ function ProgressChart({
   // Tooltip support
   const xPositions = useMemo(
     () => data.map((_, i) => xScale(i)),
+    // xScale depends on data.length and plotW (which is constant), so
+    // data.length is sufficient as a dependency.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [data.length, plotW],
   );
   const { activeIndex, svgRef, containerHandlers } = useChartTooltip(xPositions, viewBoxWidth);
@@ -363,15 +366,15 @@ function ProgressChart({
       <div className="progress-unit">{yUnit} · max {formatValue(maxVal)}</div>
 
       {/* Tooltip label */}
-      {active !== null && activeIndex !== null && (
+      {activeIndex !== null && (
         <div
           className="chart-tooltip"
           style={{
             left: `${(xScale(activeIndex) / viewBoxWidth) * 100}%`,
           }}
         >
-          <span className="chart-tooltip-value">{formatValue(active.value)}</span>
-          <span className="chart-tooltip-date">{formatDate(active.date)}</span>
+          <span className="chart-tooltip-value">{formatValue(active!.value)}</span>
+          <span className="chart-tooltip-date">{formatDate(active!.date)}</span>
         </div>
       )}
     </div>
