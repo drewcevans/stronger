@@ -6,6 +6,7 @@ import {
   buildProgressData,
   filterDips,
 } from '../model/progress.js';
+import { useChartTooltip } from '../hooks/useChartTooltip.js';
 
 interface Props {
   logRows: ParsedLogRow[];
@@ -273,9 +274,18 @@ function ProgressChart({
 
   const yUnit = metric === 'volume' ? 'lbs·reps' : 'lbs';
 
+  // Tooltip support
+  const xPositions = useMemo(
+    () => data.map((_, i) => xScale(i)),
+    [data.length, plotW],
+  );
+  const { activeIndex, svgRef, containerHandlers } = useChartTooltip(xPositions, viewBoxWidth);
+  const active = activeIndex !== null ? data[activeIndex] : null;
+
   return (
-    <div className="progress-chart-container">
+    <div className="progress-chart-container" {...containerHandlers}>
       <svg
+        ref={svgRef}
         className="progress-chart"
         viewBox={`0 0 ${viewBoxWidth} ${CHART_HEIGHT}`}
         preserveAspectRatio="xMidYMid meet"
@@ -334,12 +344,36 @@ function ProgressChart({
             key={i}
             cx={xScale(i)}
             cy={yScale(d.value)}
-            r={data.length > 30 ? 2 : 3}
-            className="progress-dot"
+            r={i === activeIndex ? (data.length > 30 ? 3.5 : 5) : (data.length > 30 ? 2 : 3)}
+            className={`progress-dot${i === activeIndex ? ' active' : ''}`}
           />
         ))}
+
+        {/* Tooltip crosshair */}
+        {activeIndex !== null && (
+          <line
+            x1={xScale(activeIndex)}
+            y1={CHART_PADDING.top}
+            x2={xScale(activeIndex)}
+            y2={CHART_PADDING.top + plotH}
+            className="chart-crosshair"
+          />
+        )}
       </svg>
       <div className="progress-unit">{yUnit} · max {formatValue(maxVal)}</div>
+
+      {/* Tooltip label */}
+      {active !== null && activeIndex !== null && (
+        <div
+          className="chart-tooltip"
+          style={{
+            left: `${(xScale(activeIndex) / viewBoxWidth) * 100}%`,
+          }}
+        >
+          <span className="chart-tooltip-value">{formatValue(active.value)}</span>
+          <span className="chart-tooltip-date">{formatDate(active.date)}</span>
+        </div>
+      )}
     </div>
   );
 }

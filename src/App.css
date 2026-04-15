@@ -3233,9 +3233,77 @@ body {
 	fill: var(--color-accent);
 }
 
+.garmin-cumulative-dot.active {
+	fill: var(--color-accent);
+	filter: drop-shadow(0 0 4px var(--color-accent));
+}
+
 .garmin-goal-line {
 	fill: none;
 	stroke: rgba(255, 255, 255, 0.4);
 	stroke-width: 1.5;
 	stroke-dasharray: 6 4;
+}
+
+.garmin-bar.active {
+	opacity: 1;
+	filter: drop-shadow(0 0 3px var(--color-primary));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Shared chart tooltip & crosshair                                   */
+/* ------------------------------------------------------------------ */
+
+.chart-crosshair {
+	stroke: rgba(255, 255, 255, 0.3);
+	stroke-width: 0.75;
+	stroke-dasharray: 3 2;
+	pointer-events: none;
+}
+
+.progress-chart-container,
+.garmin-chart-container {
+	position: relative;
+	touch-action: pan-y;
+}
+
+.chart-tooltip {
+	position: absolute;
+	top: 0;
+	transform: translateX(-50%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: rgba(20, 20, 20, 0.92);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 6px;
+	padding: 4px 8px;
+	pointer-events: none;
+	white-space: nowrap;
+	z-index: 10;
+}
+
+.chart-tooltip-value {
+	color: var(--color-primary);
+	font-size: 0.8rem;
+	font-weight: 600;
+	line-height: 1.3;
+}
+
+.chart-tooltip-secondary {
+	color: var(--color-accent);
+	font-size: 0.7rem;
+	font-weight: 500;
+	line-height: 1.3;
+}
+
+.chart-tooltip-date {
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.65rem;
+	line-height: 1.3;
+}
+
+.progress-dot.active {
+	fill: #fff;
+	filter: drop-shadow(0 0 4px var(--color-primary));
 }

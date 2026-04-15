@@ -18,6 +18,7 @@ import {
   splitActivities,
 } from '../model/garmin.js';
 import { Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { useChartTooltip } from '../hooks/useChartTooltip.js';
 
 /* ------------------------------------------------------------------ */
 /*  Props                                                              */
@@ -332,6 +333,13 @@ function MetricChart({
           .join(' ')
       : null;
 
+  // Tooltip support
+  const xPositions = useMemo(
+    () => Array.from({ length: n }, (_, i) => xCenter(i)),
+    [n, barWidth],
+  );
+  const { activeIndex, svgRef, containerHandlers } = useChartTooltip(xPositions, viewBoxWidth);
+
   return (
     <div className="garmin-chart-card">
       <div className="garmin-chart-header">
@@ -372,8 +380,9 @@ function MetricChart({
         </div>
       )}
 
-      <div className="garmin-chart-container">
+      <div className="garmin-chart-container" {...containerHandlers}>
         <svg
+          ref={svgRef}
           className="garmin-chart-svg"
           viewBox={`0 0 ${viewBoxWidth} ${CHART_HEIGHT}`}
           preserveAspectRatio="xMidYMid meet"
@@ -439,7 +448,7 @@ function MetricChart({
               y={yBar(b.value)}
               width={Math.max(barInner, 1)}
               height={Math.max(plotH - (plotH - (b.value / maxBar) * plotH), 0)}
-              className="garmin-bar"
+              className={`garmin-bar${i === activeIndex ? ' active' : ''}`}
               rx={2}
             />
           ))}
@@ -464,11 +473,40 @@ function MetricChart({
               key={`dot-${i}`}
               cx={xCenter(i)}
               cy={yCum(v)}
-              r={n > 20 ? 1.5 : 2.5}
-              className="garmin-cumulative-dot"
+              r={i === activeIndex ? (n > 20 ? 3 : 4) : (n > 20 ? 1.5 : 2.5)}
+              className={`garmin-cumulative-dot${i === activeIndex ? ' active' : ''}`}
             />
           ))}
+
+          {/* Tooltip crosshair */}
+          {activeIndex !== null && (
+            <line
+              x1={xCenter(activeIndex)}
+              y1={CHART_PADDING.top}
+              x2={xCenter(activeIndex)}
+              y2={CHART_PADDING.top + plotH}
+              className="chart-crosshair"
+            />
+          )}
         </svg>
+
+        {/* Tooltip label */}
+        {activeIndex !== null && (
+          <div
+            className="chart-tooltip"
+            style={{
+              left: `${(xCenter(activeIndex) / viewBoxWidth) * 100}%`,
+            }}
+          >
+            <span className="chart-tooltip-value">
+              {formatMetricValue(buckets[activeIndex].value, data.metric)} {METRIC_UNITS[data.metric]}
+            </span>
+            <span className="chart-tooltip-secondary">
+              Σ {formatMetricValue(cumulative[activeIndex], data.metric)}
+            </span>
+            <span className="chart-tooltip-date">{buckets[activeIndex].label}</span>
+          </div>
+        )}
       </div>
     </div>
   );
