@@ -6,6 +6,7 @@ import {
   getLiftsWithData,
   buildProgressData,
   getCutoffDate,
+  filterDips,
 } from '../progress.js';
 import type { ParsedLogRow } from '../../google/sheets.js';
 
@@ -241,5 +242,90 @@ describe('buildProgressData', () => {
     const rows = [makeRow({ liftId: 'squat' })];
     const data = buildProgressData(rows, 'unknown', 'volume', 'all');
     expect(data).toHaveLength(0);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  filterDips                                                         */
+/* ------------------------------------------------------------------ */
+
+describe('filterDips', () => {
+  const pts = (values: number[]) =>
+    values.map((v, i) => ({ date: `2025-01-${String(i + 1).padStart(2, '0')}`, value: v }));
+
+  it('returns input unchanged when fewer than 3 points', () => {
+    const two = pts([100, 200]);
+    expect(filterDips(two)).toEqual(two);
+    expect(filterDips([])).toEqual([]);
+    expect(filterDips(pts([100]))).toEqual(pts([100]));
+  });
+
+  it('removes a single obvious dip (deload session)', () => {
+    // 200 → 100 → 200 : the 100 is a 50% drop, clearly a dip
+    const data = pts([200, 100, 200]);
+    const result = filterDips(data);
+    expect(result).toHaveLength(2);
+    expect(result[0].value).toBe(200);
+    expect(result[1].value).toBe(200);
+  });
+
+  it('removes consecutive deload sessions via iteration', () => {
+    // 200 → 120 → 120 → 200 : both 120s are deload dips
+    const data = pts([200, 120, 120, 200]);
+    const result = filterDips(data);
+    expect(result).toHaveLength(2);
+    expect(result.map((p) => p.value)).toEqual([200, 200]);
+  });
+
+  it('preserves steady decline (not a dip pattern)', () => {
+    const data = pts([200, 190, 180, 170, 160]);
+    const result = filterDips(data);
+    expect(result).toEqual(data);
+  });
+
+  it('preserves steady increase', () => {
+    const data = pts([100, 110, 120, 130, 140]);
+    const result = filterDips(data);
+    expect(result).toEqual(data);
+  });
+
+  it('keeps first and last points always', () => {
+    const data = pts([50, 200, 50]);
+    const result = filterDips(data);
+    // 50 is the first and last, 200 is not a dip (it's higher)
+    expect(result).toEqual(data);
+  });
+
+  it('does not remove small fluctuations below threshold', () => {
+    // 200 → 175 → 200 : 175/200 = 0.875, drop is 12.5%, below 15% threshold
+    const data = pts([200, 175, 200]);
+    const result = filterDips(data);
+    expect(result).toEqual(data);
+  });
+
+  it('removes points just beyond threshold', () => {
+    // 200 → 165 → 200 : 165/200 = 0.825, interpolated avg = 200,
+    // 200 * 0.85 = 170, 165 < 170 → dip
+    const data = pts([200, 165, 200]);
+    const result = filterDips(data);
+    expect(result).toHaveLength(2);
+  });
+
+  it('handles a V-shaped deload in the middle of progression', () => {
+    const data = pts([100, 110, 120, 70, 125, 130]);
+    const result = filterDips(data);
+    // The 70 is clearly a deload dip
+    expect(result.map((p) => p.value)).not.toContain(70);
+    // Everything else should stay
+    expect(result.map((p) => p.value)).toContain(120);
+    expect(result.map((p) => p.value)).toContain(125);
+  });
+
+  it('accepts custom threshold', () => {
+    // With default 0.15, 175 out of avg 200 (12.5% drop) is kept
+    const data = pts([200, 175, 200]);
+    expect(filterDips(data, 0.15)).toEqual(data);
+    // With stricter 0.05 threshold, 175 is removed (12.5% > 5%)
+    expect(filterDips(data, 0.05)).toHaveLength(2);
   });
 });
