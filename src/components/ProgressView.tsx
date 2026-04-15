@@ -28,13 +28,20 @@ const RANGE_LABELS: Record<TimeRange, string> = {
 /** The four main barbell lifts shown prominently at the top. */
 const BIG_FOUR = ['squat', 'bench-press', 'deadlift', 'overhead-press'] as const;
 
-/** Fixed y-axis minimums so charts don't jump when toggling filters. */
-const FIXED_Y_MIN: Record<string, number> = {
-  squat: 150,
-  deadlift: 150,
-  'bench-press': 100,
-  'overhead-press': 100,
-};
+/**
+ * Compute the minimum data-point value across *all* time for a given lift+metric.
+ * Used as a stable y-axis floor so charts don't jump when toggling filters,
+ * while adapting to the user's actual strength level.
+ */
+function allTimeMinForLift(
+  logRows: ParsedLogRow[],
+  liftId: string,
+  metric: ProgressMetric,
+): number | undefined {
+  const all = buildProgressData(logRows, liftId, metric, 'all');
+  if (all.length === 0) return undefined;
+  return Math.min(...all.map((p) => p.value));
+}
 
 const BIG_FOUR_LABELS: Record<string, string> = {
   squat: 'Squat',
@@ -187,13 +194,18 @@ function Big4Chart({
     return skipDips ? filterDips(raw) : raw;
   }, [logRows, liftId, metric, range, skipDips]);
 
+  const stableYMin = useMemo(
+    () => allTimeMinForLift(logRows, liftId, metric),
+    [logRows, liftId, metric],
+  );
+
   return (
     <div className="progress-big4-item">
       <h3 className="progress-big4-label">{label}</h3>
       {data.length === 0 ? (
         <p className="progress-empty">No data yet.</p>
       ) : (
-        <ProgressChart data={data} metric={metric} liftId={liftId} />
+        <ProgressChart data={data} metric={metric} stableYMin={stableYMin} />
       )}
     </div>
   );
@@ -222,10 +234,15 @@ function SelectedLiftChart({
     return skipDips ? filterDips(raw) : raw;
   }, [logRows, liftId, metric, range, skipDips]);
 
+  const stableYMin = useMemo(
+    () => liftId ? allTimeMinForLift(logRows, liftId, metric) : undefined,
+    [logRows, liftId, metric],
+  );
+
   if (data.length === 0) {
     return <p className="progress-empty">No data for this selection.</p>;
   }
-  return <ProgressChart data={data} metric={metric} liftId={liftId} />;
+  return <ProgressChart data={data} metric={metric} stableYMin={stableYMin} />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -235,11 +252,11 @@ function SelectedLiftChart({
 function ProgressChart({
   data,
   metric,
-  liftId,
+  stableYMin,
 }: {
   data: { date: string; value: number }[];
   metric: ProgressMetric;
-  liftId?: string;
+  stableYMin?: number;
 }) {
   // We use a viewBox so the chart is responsive
   const viewBoxWidth = 400;
@@ -249,10 +266,10 @@ function ProgressChart({
   const values = data.map((d) => d.value);
   const maxVal = Math.max(...values);
   const minVal = Math.min(...values);
-  // Use a fixed y-min for known lifts so the axis doesn't jump when toggling
-  // filters.  Fall back to the data minimum if it's lower than the fixed floor.
-  const fixedFloor = liftId ? FIXED_Y_MIN[liftId] : undefined;
-  const yMin = fixedFloor !== undefined ? Math.min(fixedFloor, minVal) : 0;
+  // Use the all-time minimum for this lift+metric as a stable floor so the
+  // y-axis doesn't jump when toggling time-range or skip-dips filters.
+  // Fall back to the visible data minimum if no stable floor is provided.
+  const yMin = stableYMin !== undefined ? Math.min(stableYMin, minVal) : minVal;
   const yMax = Math.ceil(maxVal / 10) * 10 || 10;
   const yRange = yMax - yMin || 1;
 
