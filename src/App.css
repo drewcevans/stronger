@@ -2624,6 +2624,13 @@ body {
 	background: rgba(0, 229, 255, 0.08);
 }
 
+.progress-toggle.progress-toggle-sm {
+	flex: 0 0 auto;
+	padding: 0.3rem 0.5rem;
+	font-size: 0.7rem;
+	margin-left: 0.25rem;
+}
+
 .progress-chart-container {
 	position: relative;
 	border: 1px solid var(--color-border);

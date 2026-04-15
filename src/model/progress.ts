@@ -135,14 +135,21 @@ export function buildProgressData(
 }
 
 /**
- * Remove data points that are obviously from deload / taper sessions.
+ * Remove data points that are obviously from deload / taper / illness sessions.
  *
- * A point is considered a "dip" when its value drops more than `threshold`
- * (default 10 %) below the linearly interpolated value of its immediate
- * neighbors.  The algorithm iterates until no more dips are found so that
- * consecutive deload sessions are handled correctly.
+ * Uses a bi-directional running-peak algorithm:
  *
- * First and last points are always kept.
+ * 1. **Forward pass** — walk left-to-right tracking the highest value seen so
+ *    far.  Any point more than `threshold` (default 10 %) below that peak is
+ *    marked as a dip.
+ * 2. **Backward pass** — walk right-to-left doing the same, which preserves
+ *    legitimate long-term declines (a gradual downtrend is reachable from both
+ *    ends).
+ * 3. A point is kept if **either** pass considers it valid.
+ *
+ * This handles multi-week dips (illness, travel, deload blocks) naturally
+ * because every low point is compared against the running peak, not just its
+ * immediate neighbors.
  */
 export function filterDips(
   points: ProgressDataPoint[],
@@ -150,29 +157,30 @@ export function filterDips(
 ): ProgressDataPoint[] {
   if (points.length < 3) return points;
 
-  let filtered = points;
-  let changed = true;
+  const n = points.length;
+  const kept = new Set<number>();
 
-  while (changed) {
-    changed = false;
-    const next: ProgressDataPoint[] = [filtered[0]];
-
-    for (let i = 1; i < filtered.length - 1; i++) {
-      const prev = filtered[i - 1].value;
-      const curr = filtered[i].value;
-      const succ = filtered[i + 1].value;
-      const interpolated = (prev + succ) / 2;
-
-      if (curr < interpolated * (1 - threshold)) {
-        changed = true; // skip this dip point
-      } else {
-        next.push(filtered[i]);
-      }
+  // Forward pass: keep points within threshold of the running peak
+  kept.add(0);
+  let peak = points[0].value;
+  for (let i = 1; i < n; i++) {
+    const v = points[i].value;
+    if (v >= peak * (1 - threshold)) {
+      kept.add(i);
+      if (v > peak) peak = v;
     }
-
-    next.push(filtered[filtered.length - 1]);
-    filtered = next;
   }
 
-  return filtered;
+  // Backward pass: same logic from the right
+  kept.add(n - 1);
+  peak = points[n - 1].value;
+  for (let i = n - 2; i >= 0; i--) {
+    const v = points[i].value;
+    if (v >= peak * (1 - threshold)) {
+      kept.add(i);
+      if (v > peak) peak = v;
+    }
+  }
+
+  return points.filter((_, i) => kept.has(i));
 }

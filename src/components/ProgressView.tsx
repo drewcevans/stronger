@@ -86,7 +86,7 @@ export function ProgressView({ logRows }: Props) {
             ))}
           </div>
 
-          {/* Time range toggle */}
+          {/* Time range + skip-dips toggle */}
           <div className="progress-toggle-group">
             {(Object.keys(RANGE_LABELS) as TimeRange[]).map((r) => (
               <button
@@ -97,12 +97,8 @@ export function ProgressView({ logRows }: Props) {
                 {RANGE_LABELS[r]}
               </button>
             ))}
-          </div>
-
-          {/* Skip dips toggle */}
-          <div className="progress-toggle-group">
             <button
-              className={`progress-toggle${skipDips ? ' active' : ''}`}
+              className={`progress-toggle progress-toggle-sm${skipDips ? ' active' : ''}`}
               onClick={() => setSkipDips((v) => !v)}
             >
               Skip Dips
