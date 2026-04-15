@@ -53,8 +53,8 @@ export function ProgressView({ logRows }: Props) {
   const otherLifts = lifts.filter((l) => !big4Set.has(l.liftId));
 
   const [selectedLift, setSelectedLift] = useState<string>(otherLifts[0]?.liftId ?? '');
-  const [metric, setMetric] = useState<ProgressMetric>('volume');
-  const [range, setRange] = useState<TimeRange>('3m');
+  const [metric, setMetric] = useState<ProgressMetric>('e1rm');
+  const [range, setRange] = useState<TimeRange>('12m');
 
   // Auto-select the first "other" lift if the current selection becomes invalid
   useEffect(() => {
