@@ -30,8 +30,8 @@ const BIG_FOUR = ['squat', 'bench-press', 'deadlift', 'overhead-press'] as const
 
 /** Fixed y-axis minimums so charts don't jump when toggling filters. */
 const FIXED_Y_MIN: Record<string, number> = {
-  squat: 159,
-  deadlift: 159,
+  squat: 150,
+  deadlift: 150,
   'bench-press': 100,
   'overhead-press': 100,
 };
