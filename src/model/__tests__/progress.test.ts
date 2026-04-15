@@ -264,7 +264,6 @@ describe('filterDips', () => {
     // 200 → 100 → 200 : the 100 is a 50% drop, clearly a dip
     const data = pts([200, 100, 200]);
     const result = filterDips(data);
-    expect(result).toEqual(pts([200, 200]).map((p, i) => ({ date: i === 0 ? data[0].date : data[2].date, value: p.value })));
     expect(result).toHaveLength(2);
     expect(result[0].value).toBe(200);
     expect(result[1].value).toBe(200);

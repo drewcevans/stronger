@@ -139,7 +139,7 @@ export function buildProgressData(
  *
  * A point is considered a "dip" when its value drops more than `threshold`
  * (default 15 %) below the linearly interpolated value of its immediate
- * neighbours.  The algorithm iterates until no more dips are found so that
+ * neighbors.  The algorithm iterates until no more dips are found so that
  * consecutive deload sessions are handled correctly.
  *
  * First and last points are always kept.
