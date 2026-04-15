@@ -297,16 +297,16 @@ describe('filterDips', () => {
   });
 
   it('does not remove small fluctuations below threshold', () => {
-    // 200 → 175 → 200 : 175/200 = 0.875, drop is 12.5%, below 15% threshold
-    const data = pts([200, 175, 200]);
+    // 200 → 185 → 200 : 185/200 = 0.925, drop is 7.5%, below 10% threshold
+    const data = pts([200, 185, 200]);
     const result = filterDips(data);
     expect(result).toEqual(data);
   });
 
   it('removes points just beyond threshold', () => {
-    // 200 → 165 → 200 : 165/200 = 0.825, interpolated avg = 200,
-    // 200 * 0.85 = 170, 165 < 170 → dip
-    const data = pts([200, 165, 200]);
+    // 200 → 175 → 200 : 175/200 = 0.875, interpolated avg = 200,
+    // 200 * 0.90 = 180, 175 < 180 → dip
+    const data = pts([200, 175, 200]);
     const result = filterDips(data);
     expect(result).toHaveLength(2);
   });
@@ -322,10 +322,12 @@ describe('filterDips', () => {
   });
 
   it('accepts custom threshold', () => {
-    // With default 0.15, 175 out of avg 200 (12.5% drop) is kept
+    // With lenient 0.15, 175 out of avg 200 (12.5% drop) is kept
     const data = pts([200, 175, 200]);
     expect(filterDips(data, 0.15)).toEqual(data);
-    // With stricter 0.05 threshold, 175 is removed (12.5% > 5%)
+    // With default 0.10, 175 is removed (12.5% > 10%)
+    expect(filterDips(data, 0.10)).toHaveLength(2);
+    // With stricter 0.05 threshold, 175 is also removed (12.5% > 5%)
     expect(filterDips(data, 0.05)).toHaveLength(2);
   });
 });

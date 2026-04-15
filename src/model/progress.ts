@@ -138,7 +138,7 @@ export function buildProgressData(
  * Remove data points that are obviously from deload / taper sessions.
  *
  * A point is considered a "dip" when its value drops more than `threshold`
- * (default 15 %) below the linearly interpolated value of its immediate
+ * (default 10 %) below the linearly interpolated value of its immediate
  * neighbors.  The algorithm iterates until no more dips are found so that
  * consecutive deload sessions are handled correctly.
  *
@@ -146,7 +146,7 @@ export function buildProgressData(
  */
 export function filterDips(
   points: ProgressDataPoint[],
-  threshold = 0.15,
+  threshold = 0.10,
 ): ProgressDataPoint[] {
   if (points.length < 3) return points;
 
