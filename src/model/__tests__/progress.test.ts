@@ -330,4 +330,27 @@ describe('filterDips', () => {
     // With stricter 0.05 threshold, 175 is also removed (12.5% > 5%)
     expect(filterDips(data, 0.05)).toHaveLength(2);
   });
+
+  it('removes gradual multi-week dips (illness / travel)', () => {
+    // A lifter progressing 200→210, then 3 weeks of reduced weight, then recovery
+    const data = pts([200, 210, 190, 170, 160, 180, 210]);
+    const result = filterDips(data);
+    // The dip points (170, 160, 180) should be removed — they are all >10% below peak of 210
+    expect(result.map((p) => p.value)).not.toContain(170);
+    expect(result.map((p) => p.value)).not.toContain(160);
+    // Endpoints and the peak should remain
+    expect(result.map((p) => p.value)).toContain(200);
+    expect(result.map((p) => p.value)).toContain(210);
+  });
+
+  it('removes a long deload block', () => {
+    // 4 consecutive deload sessions
+    const data = pts([200, 210, 150, 140, 130, 140, 205, 215]);
+    const result = filterDips(data);
+    expect(result.map((p) => p.value)).not.toContain(150);
+    expect(result.map((p) => p.value)).not.toContain(140);
+    expect(result.map((p) => p.value)).not.toContain(130);
+    expect(result.map((p) => p.value)).toContain(210);
+    expect(result.map((p) => p.value)).toContain(215);
+  });
 });
