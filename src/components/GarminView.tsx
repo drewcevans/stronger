@@ -52,7 +52,7 @@ const AGGREGATION_OPTIONS: { value: GarminAggregation; label: string }[] = [
 /* ------------------------------------------------------------------ */
 
 export function GarminView({ activities, goals, onGoalChange }: Props) {
-  const [range, setRange] = useState<GarminTimeRange>('month');
+  const [range, setRange] = useState<GarminTimeRange>(String(new Date().getFullYear()));
   const [aggregation, setAggregation] = useState<GarminAggregation>('week');
   const [filterOpen, setFilterOpen] = useState(false);
 
