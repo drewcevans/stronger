@@ -236,14 +236,11 @@ function ProgressChart({
   const plotH = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
 
   const values = data.map((d) => d.value);
-  const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
-  const valRange = maxVal - minVal || 1; // avoid division by zero
-
-  // Pad the y-axis by 5% on each side
-  const yMin = minVal - valRange * 0.05;
-  const yMax = maxVal + valRange * 0.05;
-  const yRange = yMax - yMin;
+  // Fix y-axis: 0 at bottom, nearest 10 above max at top
+  const yMin = 0;
+  const yMax = Math.ceil(maxVal / 10) * 10 || 10;
+  const yRange = yMax - yMin || 1;
 
   const xScale = (i: number) =>
     CHART_PADDING.left + (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
