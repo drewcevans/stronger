@@ -4,6 +4,7 @@ import type { ProgressMetric, TimeRange } from '../model/progress.js';
 import {
   getLiftsWithData,
   buildProgressData,
+  filterDips,
 } from '../model/progress.js';
 
 interface Props {
@@ -55,6 +56,7 @@ export function ProgressView({ logRows }: Props) {
   const [selectedLift, setSelectedLift] = useState<string>(otherLifts[0]?.liftId ?? '');
   const [metric, setMetric] = useState<ProgressMetric>('e1rm');
   const [range, setRange] = useState<TimeRange>('12m');
+  const [skipDips, setSkipDips] = useState(true);
 
   // Auto-select the first "other" lift if the current selection becomes invalid
   useEffect(() => {
@@ -97,6 +99,16 @@ export function ProgressView({ logRows }: Props) {
             ))}
           </div>
 
+          {/* Skip dips toggle */}
+          <div className="progress-toggle-group">
+            <button
+              className={`progress-toggle${skipDips ? ' active' : ''}`}
+              onClick={() => setSkipDips((v) => !v)}
+            >
+              Skip Dips
+            </button>
+          </div>
+
           {/* Big 4 charts */}
           {big4Lifts.length > 0 && (
             <div className="progress-big4">
@@ -108,6 +120,7 @@ export function ProgressView({ logRows }: Props) {
                   logRows={logRows}
                   metric={metric}
                   range={range}
+                  skipDips={skipDips}
                 />
               ))}
             </div>
@@ -135,6 +148,7 @@ export function ProgressView({ logRows }: Props) {
                 logRows={logRows}
                 metric={metric}
                 range={range}
+                skipDips={skipDips}
               />
             </>
           )}
@@ -154,17 +168,19 @@ function Big4Chart({
   logRows,
   metric,
   range,
+  skipDips,
 }: {
   liftId: string;
   label: string;
   logRows: ParsedLogRow[];
   metric: ProgressMetric;
   range: TimeRange;
+  skipDips: boolean;
 }) {
-  const data = useMemo(
-    () => buildProgressData(logRows, liftId, metric, range),
-    [logRows, liftId, metric, range],
-  );
+  const data = useMemo(() => {
+    const raw = buildProgressData(logRows, liftId, metric, range);
+    return skipDips ? filterDips(raw) : raw;
+  }, [logRows, liftId, metric, range, skipDips]);
 
   return (
     <div className="progress-big4-item">
@@ -187,16 +203,19 @@ function SelectedLiftChart({
   logRows,
   metric,
   range,
+  skipDips,
 }: {
   liftId: string;
   logRows: ParsedLogRow[];
   metric: ProgressMetric;
   range: TimeRange;
+  skipDips: boolean;
 }) {
-  const data = useMemo(
-    () => (liftId ? buildProgressData(logRows, liftId, metric, range) : []),
-    [logRows, liftId, metric, range],
-  );
+  const data = useMemo(() => {
+    if (!liftId) return [];
+    const raw = buildProgressData(logRows, liftId, metric, range);
+    return skipDips ? filterDips(raw) : raw;
+  }, [logRows, liftId, metric, range, skipDips]);
 
   if (data.length === 0) {
     return <p className="progress-empty">No data for this selection.</p>;

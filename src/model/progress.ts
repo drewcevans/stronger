@@ -133,3 +133,46 @@ export function buildProgressData(
   points.sort((a, b) => a.date.localeCompare(b.date));
   return points;
 }
+
+/**
+ * Remove data points that are obviously from deload / taper sessions.
+ *
+ * A point is considered a "dip" when its value drops more than `threshold`
+ * (default 15 %) below the linearly interpolated value of its immediate
+ * neighbours.  The algorithm iterates until no more dips are found so that
+ * consecutive deload sessions are handled correctly.
+ *
+ * First and last points are always kept.
+ */
+export function filterDips(
+  points: ProgressDataPoint[],
+  threshold = 0.15,
+): ProgressDataPoint[] {
+  if (points.length < 3) return points;
+
+  let filtered = points;
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    const next: ProgressDataPoint[] = [filtered[0]];
+
+    for (let i = 1; i < filtered.length - 1; i++) {
+      const prev = filtered[i - 1].value;
+      const curr = filtered[i].value;
+      const succ = filtered[i + 1].value;
+      const interpolated = (prev + succ) / 2;
+
+      if (curr < interpolated * (1 - threshold)) {
+        changed = true; // skip this dip point
+      } else {
+        next.push(filtered[i]);
+      }
+    }
+
+    next.push(filtered[filtered.length - 1]);
+    filtered = next;
+  }
+
+  return filtered;
+}
