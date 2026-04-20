@@ -65,7 +65,7 @@ function initResults(workout: Workout): SetResult[][] {
 }
 
 export function WorkoutView({ workout, previousSets, startTime, draftResults, appSettings, onBack, onFinish }: WorkoutViewProps) {
-	useWakeLock(appSettings.keepScreenOn);
+	useWakeLock();
 
 	const [results, setResults] = useState<SetResult[][]>(() => {
 		// Restore from draft if shapes match; otherwise start fresh.

@@ -112,19 +112,7 @@ export function SettingsView({ spreadsheetId, onImportComplete, appendLogRows, o
           <span className="settings-toggle-switch" />
         </label>
 
-        <label className="settings-toggle-row">
-          <span className="settings-toggle-label">
-            <span className="settings-toggle-name">Keep Screen On</span>
-            <span className="settings-toggle-description">Prevent phone from sleeping during workouts</span>
-          </span>
-          <input
-            type="checkbox"
-            className="settings-toggle-input"
-            checked={appSettings.keepScreenOn}
-            onChange={(e) => onAppSettingChange('keepScreenOn', e.target.checked)}
-          />
-          <span className="settings-toggle-switch" />
-        </label>
+
       </div>
 
       <div className="settings-section" style={{ marginTop: '1.5rem' }}>
