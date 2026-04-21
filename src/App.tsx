@@ -143,13 +143,22 @@ function App() {
   );
 
   const handleSelectWorkout = useCallback((workout: Workout) => {
-    const now = new Date().toISOString();
-    setStartTime(now);
+    // Check for an existing in-progress draft for this workout
+    const draft = loadDraft();
+    if (draft && draft.workoutId === workout.id) {
+      // Resume the previous session
+      setStartTime(draft.startTime);
+      setDraftResults(draft.results.length > 0 ? draft.results : null);
+    } else {
+      // Start a fresh session
+      const now = new Date().toISOString();
+      setStartTime(now);
+      setDraftResults(null);
+      // Persist the draft so a refresh can restore the active workout
+      saveDraft({ workoutId: workout.id, startTime: now, results: [] });
+    }
     setActiveWorkout(workout);
     setPreviousSets(null);
-    setDraftResults(null);
-    // Persist the draft so a refresh can restore the active workout
-    saveDraft({ workoutId: workout.id, startTime: now, results: [] });
     navigateTo({ view: 'workout', workoutId: workout.id });
     // Fire-and-forget: load previous workout data for context
     if (spreadsheetId) {
@@ -221,8 +230,8 @@ function App() {
   }, []);
 
   const handleBack = useCallback(() => {
-    clearDraft();
-    clearTimerSentinel();
+    // Don't clear the draft or timer sentinel — the user may return to this
+    // workout later and expects to resume where they left off.
     setActiveWorkout(null);
     setStartTime(null);
     setPreviousSets(null);
@@ -683,11 +692,10 @@ function App() {
   }, [sheetConnected, workouts, route, activeWorkout?.id, spreadsheetId, loadPreviousSets, replaceTo]);
 
   // Sync state when the user presses the browser back button:
-  // if the URL changed to list while a workout is active, clear it.
+  // if the URL changed to list while a workout is active, clear React state
+  // but preserve the localStorage draft/timer so the user can resume later.
   useEffect(() => {
     if (route.view === 'list' && activeWorkout && !progressionProposals) {
-      clearDraft();
-      clearTimerSentinel();
       setActiveWorkout(null);
       setStartTime(null);
       setPreviousSets(null);
