@@ -376,7 +376,7 @@ function ProgressChart({
         ))}
 
         {/* Tooltip crosshair */}
-        {activeIndex !== null && (
+        {active != null && activeIndex !== null && (
           <line
             x1={xScale(activeIndex)}
             y1={CHART_PADDING.top}
@@ -389,15 +389,15 @@ function ProgressChart({
       <div className="progress-unit">{yUnit} · max {formatValue(maxVal)}</div>
 
       {/* Tooltip label */}
-      {activeIndex !== null && (
+      {active != null && activeIndex !== null && (
         <div
           className="chart-tooltip"
           style={{
             left: `${(xScale(activeIndex) / viewBoxWidth) * 100}%`,
           }}
         >
-          <span className="chart-tooltip-value">{formatValue(active!.value)}</span>
-          <span className="chart-tooltip-date">{formatDate(active!.date)}</span>
+          <span className="chart-tooltip-value">{formatValue(active.value)}</span>
+          <span className="chart-tooltip-date">{formatDate(active.date)}</span>
         </div>
       )}
     </div>
