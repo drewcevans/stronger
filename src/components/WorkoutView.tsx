@@ -165,6 +165,13 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 	function handleFinish() {
 		restTimer.stop();
 		setFinished(true);
+	}
+
+	function handleGoBack() {
+		setFinished(false);
+	}
+
+	function handleComplete() {
 		onFinish(workout, results);
 	}
 
@@ -172,15 +179,18 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 		return (
 			<div className="workout-view">
 				<div className="finish-summary">
-					<h2>Workout Complete!</h2>
+					<h2>Finish Workout?</h2>
 					<p>
 						{completedSets} of {totalSets} sets completed.
 					</p>
 					<p className="finish-note">
-						Results have been saved to your Google Sheet.
+						Tap <strong>Complete</strong> to save results to your Google Sheet, or go back to continue your workout.
 					</p>
-					<button className="btn-primary" onClick={onBack}>
-						Back to Workouts
+					<button className="btn-primary" onClick={handleComplete}>
+						Complete Workout
+					</button>
+					<button className="btn-back finish-go-back" onClick={handleGoBack}>
+						<ArrowLeft size={20} /> Go Back
 					</button>
 				</div>
 			</div>

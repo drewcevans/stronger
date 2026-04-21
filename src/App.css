@@ -594,6 +594,16 @@ body {
 	font-style: italic;
 }
 
+.finish-go-back {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+	margin: 1rem auto 0;
+	font-size: 1rem;
+	color: var(--color-text-muted);
+}
+
 .btn-primary {
 	padding: 0.875rem 2rem;
 	font-size: 1rem;
