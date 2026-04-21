@@ -494,7 +494,7 @@ function MetricChart({
         </svg>
 
         {/* Tooltip label */}
-        {activeIndex !== null && (
+        {activeIndex !== null && activeIndex < buckets.length && (
           <div
             className="chart-tooltip"
             style={{
@@ -504,9 +504,11 @@ function MetricChart({
             <span className="chart-tooltip-value">
               {formatMetricValue(buckets[activeIndex].value, data.metric)} {METRIC_UNITS[data.metric]}
             </span>
-            <span className="chart-tooltip-secondary">
-              Σ {formatMetricValue(cumulative[activeIndex], data.metric)}
-            </span>
+            {activeIndex < cumulative.length && (
+              <span className="chart-tooltip-secondary">
+                Σ {formatMetricValue(cumulative[activeIndex], data.metric)}
+              </span>
+            )}
             <span className="chart-tooltip-date">{buckets[activeIndex].label}</span>
           </div>
         )}
