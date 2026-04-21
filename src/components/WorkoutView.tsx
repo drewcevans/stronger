@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { ArrowLeft, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, Sun, SunDim } from 'lucide-react';
 import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout, AppSettings } from '../model/index.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { saveDraft } from '../hooks/useWorkoutDraft.js';
@@ -65,7 +65,7 @@ function initResults(workout: Workout): SetResult[][] {
 }
 
 export function WorkoutView({ workout, previousSets, startTime, draftResults, appSettings, onBack, onFinish }: WorkoutViewProps) {
-	useWakeLock();
+	const { active: wakeLockActive, reacquire: reacquireWakeLock } = useWakeLock(appSettings.keepScreenOn);
 
 	const [results, setResults] = useState<SetResult[][]>(() => {
 		// Restore from draft if shapes match; otherwise start fresh.
@@ -197,6 +197,15 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 				<span className="progress-badge">
 					{completedSets}/{totalSets}
 				</span>
+				{appSettings.keepScreenOn && (
+					<button
+						className={`btn-wake-lock ${wakeLockActive ? 'active' : 'inactive'}`}
+						onClick={reacquireWakeLock}
+						title={wakeLockActive ? 'Screen staying on' : 'Tap to keep screen on'}
+					>
+						{wakeLockActive ? <Sun size={16} /> : <SunDim size={16} />}
+					</button>
+				)}
 				<button className="btn-finish" onClick={handleFinish}>
 					Finish
 				</button>
