@@ -225,10 +225,6 @@ function App() {
     [spreadsheetId, configs, definitions],
   );
 
-  const handleProgressionSkip = useCallback(() => {
-    setProgressionProposals(null);
-  }, []);
-
   const handleBack = useCallback(() => {
     // Don't clear the draft or timer sentinel — the user may return to this
     // workout later and expects to resume where they left off.
@@ -731,7 +727,6 @@ function App() {
       <ProgressionReview
         proposals={progressionProposals}
         onConfirm={handleProgressionConfirm}
-        onSkip={handleProgressionSkip}
       />
     );
   }
