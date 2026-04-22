@@ -9,13 +9,11 @@ interface ProgressionReviewProps {
 	onConfirm: (
 		updates: Map<string, { topSetWeight: number; backoffWeight: number }>,
 	) => void;
-	onSkip: () => void;
 }
 
 export function ProgressionReview({
 	proposals,
 	onConfirm,
-	onSkip,
 }: ProgressionReviewProps) {
 	const [edits, setEdits] = useState<
 		Map<string, { topSetWeight: number; backoffWeight: number }>
@@ -219,9 +217,6 @@ export function ProgressionReview({
 					onClick={() => onConfirm(edits)}
 				>
 					Confirm
-				</button>
-				<button className="btn-link" onClick={onSkip}>
-					Skip
 				</button>
 			</div>
 		</div>
