@@ -1,12 +1,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import type {
-  GarminActivity,
-  GarminGoal,
-  GarminMetric,
-  GarminTimeRange,
-  GarminAggregation,
+  StravaActivity,
+  StravaGoal,
+  StravaMetric,
+  StravaTimeRange,
+  StravaAggregation,
   MetricChartData,
-} from '../model/garmin.js';
+} from '../model/strava.js';
 import {
   getActivityTypes,
   filterActivities,
@@ -16,7 +16,7 @@ import {
   METRIC_LABELS,
   METRIC_UNITS,
   splitActivities,
-} from '../model/garmin.js';
+} from '../model/strava.js';
 import { Target, ChevronDown, ChevronUp } from 'lucide-react';
 import { useChartTooltip } from '../hooks/useChartTooltip.js';
 
@@ -25,24 +25,24 @@ import { useChartTooltip } from '../hooks/useChartTooltip.js';
 /* ------------------------------------------------------------------ */
 
 interface Props {
-  activities: GarminActivity[];
-  goals: GarminGoal[];
-  onGoalChange?: (metric: GarminMetric, value: number | null) => void;
+  activities: StravaActivity[];
+  goals: StravaGoal[];
+  onGoalChange?: (metric: StravaMetric, value: number | null) => void;
 }
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
 
-const METRICS: GarminMetric[] = ['distance', 'elevationGain', 'duration'];
+const METRICS: StravaMetric[] = ['distance', 'elevationGain', 'duration'];
 
 /** Cardio charts show all three metrics; strength only shows duration. */
-const STRENGTH_METRICS: GarminMetric[] = ['duration'];
+const STRENGTH_METRICS: StravaMetric[] = ['duration'];
 
 const CHART_HEIGHT = 220;
 const CHART_PADDING = { top: 16, right: 56, bottom: 32, left: 52 };
 
-const AGGREGATION_OPTIONS: { value: GarminAggregation; label: string }[] = [
+const AGGREGATION_OPTIONS: { value: StravaAggregation; label: string }[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
@@ -52,9 +52,9 @@ const AGGREGATION_OPTIONS: { value: GarminAggregation; label: string }[] = [
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function GarminView({ activities, goals, onGoalChange }: Props) {
-  const [range, setRange] = useState<GarminTimeRange>(String(new Date().getFullYear()));
-  const [aggregation, setAggregation] = useState<GarminAggregation>('week');
+export function StravaView({ activities, goals, onGoalChange }: Props) {
+  const [range, setRange] = useState<StravaTimeRange>(String(new Date().getFullYear()));
+  const [aggregation, setAggregation] = useState<StravaAggregation>('week');
   const [filterOpen, setFilterOpen] = useState(false);
 
   // Split into cardio (everything except strength) and strength training
@@ -104,7 +104,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
   );
 
   const goalMap = useMemo(() => {
-    const m = new Map<GarminMetric, number>();
+    const m = new Map<StravaMetric, number>();
     for (const g of goals) m.set(g.metric, g.value);
     return m;
   }, [goals]);
@@ -146,25 +146,25 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
 
   if (activities.length === 0) {
     return (
-      <div className="garmin-view">
-        <h2 className="garmin-title">Activities</h2>
-        <p className="garmin-empty">
-          No Garmin data yet. Set up sync to see activity charts.
+      <div className="strava-view">
+        <h2 className="strava-title">Activities</h2>
+        <p className="strava-empty">
+          No Strava data yet. Set up sync to see activity charts.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="garmin-view">
-      <h2 className="garmin-title">Activities</h2>
+    <div className="strava-view">
+      <h2 className="strava-title">Activities</h2>
 
       {/* Time range selector */}
-      <div className="garmin-range-group">
+      <div className="strava-range-group">
         {timeRanges.map((r) => (
           <button
             key={r.value}
-            className={`garmin-range-btn${range === r.value ? ' active' : ''}`}
+            className={`strava-range-btn${range === r.value ? ' active' : ''}`}
             onClick={() => setRange(r.value)}
           >
             {r.label}
@@ -173,11 +173,11 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
       </div>
 
       {/* Aggregation selector */}
-      <div className="garmin-agg-group">
+      <div className="strava-agg-group">
         {AGGREGATION_OPTIONS.map((opt) => (
           <button
             key={opt.value}
-            className={`garmin-agg-btn${aggregation === opt.value ? ' active' : ''}`}
+            className={`strava-agg-btn${aggregation === opt.value ? ' active' : ''}`}
             onClick={() => setAggregation(opt.value)}
           >
             {opt.label}
@@ -187,18 +187,18 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
 
       {/* Activity type filter (cardio only) */}
       {allTypes.length > 1 && (
-        <div className="garmin-filter">
+        <div className="strava-filter">
           <button
-            className="garmin-filter-toggle"
+            className="strava-filter-toggle"
             onClick={() => setFilterOpen(!filterOpen)}
           >
             Filter: {selectedTypes.size === allTypes.length ? 'All' : `${selectedTypes.size}/${allTypes.length}`}
             {filterOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </button>
           {filterOpen && (
-            <div className="garmin-filter-options">
+            <div className="strava-filter-options">
               <button
-                className={`garmin-filter-chip${selectedTypes.size === allTypes.length ? ' active' : ''}`}
+                className={`strava-filter-chip${selectedTypes.size === allTypes.length ? ' active' : ''}`}
                 onClick={toggleAll}
               >
                 All
@@ -206,7 +206,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
               {allTypes.map((type) => (
                 <button
                   key={type}
-                  className={`garmin-filter-chip${selectedTypes.has(type) ? ' active' : ''}`}
+                  className={`strava-filter-chip${selectedTypes.has(type) ? ' active' : ''}`}
                   onClick={() => toggleType(type)}
                 >
                   {type}
@@ -220,7 +220,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
       {/* Cardio charts */}
       {cardioCharts.length > 0 && (
         <>
-          <h3 className="garmin-section-title">Cardio</h3>
+          <h3 className="strava-section-title">Cardio</h3>
           {cardioCharts.map((data) => (
             <MetricChart
               key={data.metric}
@@ -235,7 +235,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
       {/* Strength training chart */}
       {strengthCharts.length > 0 && (
         <>
-          <h3 className="garmin-section-title">Strength Training</h3>
+          <h3 className="strava-section-title">Strength Training</h3>
           {strengthCharts.map((data) => (
             <MetricChart
               key={`strength-${data.metric}`}
@@ -248,7 +248,7 @@ export function GarminView({ activities, goals, onGoalChange }: Props) {
       )}
 
       {cardioCharts.length === 0 && strengthCharts.length === 0 && (
-        <p className="garmin-empty">No data for the selected filters and time range.</p>
+        <p className="strava-empty">No data for the selected filters and time range.</p>
       )}
     </div>
   );
@@ -265,7 +265,7 @@ function MetricChart({
 }: {
   data: MetricChartData;
   goal: number | null;
-  onGoalChange?: (metric: GarminMetric, value: number | null) => void;
+  onGoalChange?: (metric: StravaMetric, value: number | null) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [goalInput, setGoalInput] = useState(goal !== null ? String(goal) : '');
@@ -344,17 +344,17 @@ function MetricChart({
   const { activeIndex, svgRef, containerHandlers } = useChartTooltip(xPositions, viewBoxWidth);
 
   return (
-    <div className="garmin-chart-card">
-      <div className="garmin-chart-header">
-        <h3 className="garmin-chart-label">
+    <div className="strava-chart-card">
+      <div className="strava-chart-header">
+        <h3 className="strava-chart-label">
           {METRIC_LABELS[data.metric]}
-          <span className="garmin-chart-total">
+          <span className="strava-chart-total">
             {formatMetricValue(data.total, data.metric)} {METRIC_UNITS[data.metric]}
           </span>
         </h3>
         {onGoalChange && (
           <button
-            className="garmin-goal-btn"
+            className="strava-goal-btn"
             onClick={() => {
               setGoalInput(goal !== null ? String(goal) : '');
               setEditing(!editing);
@@ -367,9 +367,9 @@ function MetricChart({
       </div>
 
       {editing && (
-        <div className="garmin-goal-input-row">
+        <div className="strava-goal-input-row">
           <input
-            className="garmin-goal-input"
+            className="strava-goal-input"
             type="number"
             placeholder={`Annual goal (${METRIC_UNITS[data.metric]})`}
             value={goalInput}
@@ -377,16 +377,16 @@ function MetricChart({
             onKeyDown={(e) => e.key === 'Enter' && handleGoalSubmit()}
             autoFocus
           />
-          <button className="garmin-goal-save" onClick={handleGoalSubmit}>
+          <button className="strava-goal-save" onClick={handleGoalSubmit}>
             Set
           </button>
         </div>
       )}
 
-      <div className="garmin-chart-container" {...containerHandlers}>
+      <div className="strava-chart-container" {...containerHandlers}>
         <svg
           ref={svgRef}
-          className="garmin-chart-svg"
+          className="strava-chart-svg"
           viewBox={`0 0 ${viewBoxWidth} ${CHART_HEIGHT}`}
           preserveAspectRatio="xMidYMid meet"
         >
@@ -398,7 +398,7 @@ function MetricChart({
               y1={yBar(tick)}
               x2={viewBoxWidth - CHART_PADDING.right}
               y2={yBar(tick)}
-              className="garmin-grid-line"
+              className="strava-grid-line"
             />
           ))}
 
@@ -408,7 +408,7 @@ function MetricChart({
               key={`lbl-l-${tick}`}
               x={CHART_PADDING.left - 4}
               y={yBar(tick)}
-              className="garmin-axis-label"
+              className="strava-axis-label"
               textAnchor="end"
               dominantBaseline="middle"
             >
@@ -422,7 +422,7 @@ function MetricChart({
               key={`lbl-r-${tick}`}
               x={viewBoxWidth - CHART_PADDING.right + 4}
               y={yCum(tick)}
-              className="garmin-axis-label garmin-axis-right"
+              className="strava-axis-label strava-axis-right"
               textAnchor="start"
               dominantBaseline="middle"
             >
@@ -436,7 +436,7 @@ function MetricChart({
               key={`xlbl-${i}`}
               x={xCenter(i)}
               y={CHART_HEIGHT - 4}
-              className="garmin-axis-label"
+              className="strava-axis-label"
               textAnchor="middle"
             >
               {buckets[i].label}
@@ -451,7 +451,7 @@ function MetricChart({
               y={yBar(b.value)}
               width={Math.max(barInner, 1)}
               height={Math.max(plotH - (plotH - (b.value / maxBar) * plotH), 0)}
-              className={`garmin-bar${i === activeIndex ? ' active' : ''}`}
+              className={`strava-bar${i === activeIndex ? ' active' : ''}`}
               rx={2}
             />
           ))}
@@ -460,14 +460,14 @@ function MetricChart({
           {goalTrajectoryPoints && (
             <polyline
               points={goalTrajectoryPoints}
-              className="garmin-goal-line"
+              className="strava-goal-line"
             />
           )}
 
           {/* Cumulative line */}
           <polyline
             points={cumPoints}
-            className="garmin-cumulative-line"
+            className="strava-cumulative-line"
           />
 
           {/* Cumulative dots */}
@@ -477,7 +477,7 @@ function MetricChart({
               cx={xCenter(i)}
               cy={yCum(v)}
               r={i === activeIndex ? (n > 20 ? 3 : 4) : (n > 20 ? 1.5 : 2.5)}
-              className={`garmin-cumulative-dot${i === activeIndex ? ' active' : ''}`}
+              className={`strava-cumulative-dot${i === activeIndex ? ' active' : ''}`}
             />
           ))}
 

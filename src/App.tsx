@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
 import { computeProgression, FLAG_SENTINEL } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readGarminActivities, verifyGarminTab, createGarminTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readStravaActivities, verifyStravaTab, createStravaTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
 import { syncScheduleWithCalendar, generateStrongerId, withAuthRetry } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
@@ -16,14 +16,14 @@ import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView, SessionDetail } from './components/CalendarView.js';
 import type { LogSession } from './components/CalendarView.js';
 import { ProgressView } from './components/ProgressView.js';
-import { GarminView } from './components/GarminView.js';
+import { StravaView } from './components/StravaView.js';
 import { SettingsView } from './components/SettingsView.js';
 import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import { loadDraft, saveDraft, clearDraft } from './hooks/useWorkoutDraft.js';
 import { clearSentinel as clearTimerSentinel } from './hooks/useRestTimer.js';
-import type { GarminActivity, GarminGoal, GarminMetric } from './model/garmin.js';
+import type { StravaActivity, StravaGoal, StravaMetric } from './model/strava.js';
 import './App.css';
 
 function App() {
@@ -42,8 +42,8 @@ function App() {
   const [needsSetup, setNeedsSetup] = useState(false);
   const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
-  const [garminActivities, setGarminActivities] = useState<GarminActivity[]>([]);
-  const [garminGoals, setGarminGoals] = useState<GarminGoal[]>([]);
+  const [stravaActivities, setStravaActivities] = useState<StravaActivity[]>([]);
+  const [stravaGoals, setStravaGoals] = useState<StravaGoal[]>([]);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
   const [pendingFinish, setPendingFinish] = useState<{
     workout: Workout;
@@ -65,7 +65,7 @@ function App() {
       // Fire-and-forget: load schedule and log data
       void loadScheduleData(sheetId);
       void loadLogData(sheetId);
-      void loadGarminData(sheetId);
+      void loadStravaData(sheetId);
     },
     [],
   );
@@ -109,7 +109,7 @@ function App() {
       // Fire-and-forget: load schedule and log data
       void loadScheduleData(spreadsheetId);
       void loadLogData(spreadsheetId);
-      void loadGarminData(spreadsheetId);
+      void loadStravaData(spreadsheetId);
     },
     [spreadsheetId],
   );
@@ -128,7 +128,7 @@ function App() {
     setLogRows([]);
     setNeedsSetup(false);
     setCardioActivities([]);
-    setGarminActivities([]);
+    setStravaActivities([]);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
@@ -282,18 +282,18 @@ function App() {
     }
   }, []);
 
-  const loadGarminData = useCallback(async (sheetId: string) => {
+  const loadStravaData = useCallback(async (sheetId: string) => {
     try {
       await withAuthRetry(async () => {
-        const tabExists = await verifyGarminTab(sheetId);
+        const tabExists = await verifyStravaTab(sheetId);
         if (!tabExists) {
-          await createGarminTab(sheetId);
+          await createStravaTab(sheetId);
         }
-        const activities = await readGarminActivities(sheetId);
-        setGarminActivities(activities);
+        const activities = await readStravaActivities(sheetId);
+        setStravaActivities(activities);
       });
     } catch {
-      // Silently ignore — Garmin data is optional
+      // Silently ignore — Strava data is optional
     }
     try {
       await withAuthRetry(async () => {
@@ -303,7 +303,7 @@ function App() {
         }
         const settings = await readSettings(sheetId);
         settingsRef.current = settings;
-        setGarminGoals(goalsFromSettings(settings));
+        setStravaGoals(goalsFromSettings(settings));
         setAppSettings(appSettingsFromMap(settings));
       });
     } catch {
@@ -537,12 +537,12 @@ function App() {
     navigateTo({ view: 'settings' });
   }, [navigateTo]);
 
-  const handleOpenGarmin = useCallback(() => {
-    navigateTo({ view: 'garmin' });
+  const handleOpenStrava = useCallback(() => {
+    navigateTo({ view: 'strava' });
   }, [navigateTo]);
 
-  const handleGarminGoalChange = useCallback((metric: GarminMetric, value: number | null) => {
-    setGarminGoals((prev) => {
+  const handleStravaGoalChange = useCallback((metric: StravaMetric, value: number | null) => {
+    setStravaGoals((prev) => {
       const updated = prev.filter((g) => g.metric !== metric);
       if (value !== null) {
         updated.push({ metric, value });
@@ -739,7 +739,7 @@ function App() {
     );
   }
 
-  const onOpenGarmin = garminActivities.length > 0 ? handleOpenGarmin : undefined;
+  const onOpenStrava = stravaActivities.length > 0 ? handleOpenStrava : undefined;
 
   // Show progression review / confirm page after clicking Finish
   if (progressionProposals && pendingFinish) {
@@ -783,7 +783,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <ExerciseEditor
@@ -806,7 +806,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <ExerciseLibrary
@@ -831,7 +831,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <WorkoutEditor
@@ -856,7 +856,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <CalendarView
@@ -887,7 +887,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <ProgressView logRows={logRows} />
@@ -895,7 +895,7 @@ function App() {
     );
   }
 
-  if (route.view === 'garmin') {
+  if (route.view === 'strava') {
     return (
       <>
         <GoogleAuth
@@ -905,13 +905,13 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
-        <GarminView
-          activities={garminActivities}
-          goals={garminGoals}
-          onGoalChange={handleGarminGoalChange}
+        <StravaView
+          activities={stravaActivities}
+          goals={stravaGoals}
+          onGoalChange={handleStravaGoalChange}
         />
       </>
     );
@@ -927,7 +927,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <SettingsView
@@ -961,7 +961,7 @@ function App() {
           onOpenCalendar={handleOpenCalendar}
           onOpenExercises={handleOpenExercises}
           onOpenProgress={handleOpenProgress}
-          onOpenGarmin={onOpenGarmin}
+          onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
         <SessionDetail
@@ -983,7 +983,7 @@ function App() {
         onOpenCalendar={handleOpenCalendar}
         onOpenExercises={handleOpenExercises}
         onOpenProgress={handleOpenProgress}
-        onOpenGarmin={onOpenGarmin}
+        onOpenStrava={onOpenStrava}
         onOpenSettings={handleOpenSettings}
       />
       <WorkoutSelect

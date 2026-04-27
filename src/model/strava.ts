@@ -1,7 +1,7 @@
 /**
- * Garmin activity chart data model and aggregation logic.
+ * Strava activity chart data model and aggregation logic.
  *
- * Consumes activity data from the "Stronger - Garmin" sheet tab and
+ * Consumes activity data from the "Stronger - Strava" sheet tab and
  * produces chart-ready data: bucketed bars, cumulative totals, and
  * prorated goal lines.
  */
@@ -10,8 +10,8 @@
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-/** A single Garmin activity row (subset consumed by charts). */
-export interface GarminActivity {
+/** A single Strava activity row (subset consumed by charts). */
+export interface StravaActivity {
   /** ISO date string YYYY-MM-DD */
   date: string;
   /** Activity type (e.g. "Run", "Ride", "Hike") */
@@ -25,24 +25,24 @@ export interface GarminActivity {
 }
 
 /** An annual goal for a single metric. */
-export interface GarminGoal {
+export interface StravaGoal {
   /** 'duration' | 'distance' | 'elevationGain' */
-  metric: GarminMetric;
+  metric: StravaMetric;
   /** Target value in display units (hours, miles, feet) */
   value: number;
 }
 
-export type GarminMetric = 'distance' | 'elevationGain' | 'duration';
+export type StravaMetric = 'distance' | 'elevationGain' | 'duration';
 
 /**
  * Time range selector for activity charts.
  * - 'month': the current calendar month
  * - A 4-digit year string (e.g. '2026'): that full calendar year
  */
-export type GarminTimeRange = string;
+export type StravaTimeRange = string;
 
 /** Bucket aggregation granularity for charts. */
-export type GarminAggregation = 'day' | 'week' | 'month';
+export type StravaAggregation = 'day' | 'week' | 'month';
 
 /** A single bar in the chart (one time bucket). */
 export interface ChartBucket {
@@ -54,7 +54,7 @@ export interface ChartBucket {
 
 /** Complete chart data for a single metric. */
 export interface MetricChartData {
-  metric: GarminMetric;
+  metric: StravaMetric;
   buckets: ChartBucket[];
   /** Cumulative values at each bucket boundary (same length as buckets) */
   cumulative: number[];
@@ -81,7 +81,7 @@ const METERS_TO_FEET = 3.28084;
 const SECONDS_TO_HOURS = 1 / 3600;
 
 /** Convert a raw metric value from storage units to display units. */
-export function toDisplayUnit(metric: GarminMetric, value: number): number {
+export function toDisplayUnit(metric: StravaMetric, value: number): number {
   switch (metric) {
     case 'distance':
       return value * METERS_TO_MILES;
@@ -92,13 +92,13 @@ export function toDisplayUnit(metric: GarminMetric, value: number): number {
   }
 }
 
-export const METRIC_UNITS: Record<GarminMetric, string> = {
+export const METRIC_UNITS: Record<StravaMetric, string> = {
   distance: 'miles',
   elevationGain: 'feet',
   duration: 'hours',
 };
 
-export const METRIC_LABELS: Record<GarminMetric, string> = {
+export const METRIC_LABELS: Record<StravaMetric, string> = {
   distance: 'Distance',
   elevationGain: 'Elevation Gain',
   duration: 'Duration',
@@ -108,7 +108,7 @@ export const METRIC_LABELS: Record<GarminMetric, string> = {
 /*  Activity classification                                            */
 /* ------------------------------------------------------------------ */
 
-/** Activity type used by Strava/Garmin for strength workouts. */
+/** Activity type used by Strava for strength workouts. */
 export const STRENGTH_ACTIVITY_TYPE = 'Weight Training';
 
 /** Check if an activity type is strength training. */
@@ -117,12 +117,12 @@ export function isStrengthTraining(activityType: string): boolean {
 }
 
 /** Split activities into cardio and strength training. */
-export function splitActivities(activities: GarminActivity[]): {
-  cardio: GarminActivity[];
-  strength: GarminActivity[];
+export function splitActivities(activities: StravaActivity[]): {
+  cardio: StravaActivity[];
+  strength: StravaActivity[];
 } {
-  const cardio: GarminActivity[] = [];
-  const strength: GarminActivity[] = [];
+  const cardio: StravaActivity[] = [];
+  const strength: StravaActivity[] = [];
   for (const a of activities) {
     if (isStrengthTraining(a.activityType)) {
       strength.push(a);
@@ -138,14 +138,14 @@ export function splitActivities(activities: GarminActivity[]): {
 /* ------------------------------------------------------------------ */
 
 /** Parse a year from a range string, or null if it's 'month'. */
-function parseYearRange(range: GarminTimeRange): number | null {
+function parseYearRange(range: StravaTimeRange): number | null {
   if (range === 'month') return null;
   const year = parseInt(range, 10);
   return year >= 2000 ? year : null;
 }
 
 /** Get the start date (inclusive) for a time range anchored to today. */
-export function getRangeStart(range: GarminTimeRange, today: Date = new Date()): Date {
+export function getRangeStart(range: StravaTimeRange, today: Date = new Date()): Date {
   const d = new Date(today);
   d.setHours(0, 0, 0, 0);
 
@@ -160,7 +160,7 @@ export function getRangeStart(range: GarminTimeRange, today: Date = new Date()):
 }
 
 /** Get the end date (inclusive) for a time range anchored to today. */
-export function getRangeEnd(range: GarminTimeRange, today: Date = new Date()): Date {
+export function getRangeEnd(range: StravaTimeRange, today: Date = new Date()): Date {
   const year = parseYearRange(range);
   if (year !== null) {
     // Specific year: Dec 31
@@ -180,17 +180,17 @@ export function getRangeEnd(range: GarminTimeRange, today: Date = new Date()): D
 /* ------------------------------------------------------------------ */
 
 /** Get unique activity types from the data. */
-export function getActivityTypes(activities: GarminActivity[]): string[] {
+export function getActivityTypes(activities: StravaActivity[]): string[] {
   return [...new Set(activities.map((a) => a.activityType))].sort();
 }
 
 /** Filter activities by date range and activity types. */
 export function filterActivities(
-  activities: GarminActivity[],
-  range: GarminTimeRange,
+  activities: StravaActivity[],
+  range: StravaTimeRange,
   selectedTypes: Set<string>,
   today: Date = new Date(),
-): GarminActivity[] {
+): StravaActivity[] {
   const start = getRangeStart(range, today);
   const end = getRangeEnd(range, today);
   const startStr = toISODate(start);
@@ -215,7 +215,7 @@ function toISODate(d: Date): string {
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Build the list of time range options: Month, then the current year and 5 prior years. */
-export function getTimeRangeOptions(today: Date = new Date()): { value: GarminTimeRange; label: string }[] {
+export function getTimeRangeOptions(today: Date = new Date()): { value: StravaTimeRange; label: string }[] {
   const currentYear = today.getFullYear();
   return [
     { value: 'month', label: 'Month' },
@@ -242,7 +242,7 @@ function getISOWeek(d: Date): number {
  * - week: ISO week number "W{n}"
  * - month: month index "0"-"11"
  */
-function getBucketKey(dateStr: string, aggregation: GarminAggregation): string {
+function getBucketKey(dateStr: string, aggregation: StravaAggregation): string {
   if (aggregation === 'day') return dateStr;
   const d = new Date(dateStr + 'T00:00:00');
   return aggregation === 'week' ? `W${getISOWeek(d)}` : String(d.getMonth());
@@ -250,8 +250,8 @@ function getBucketKey(dateStr: string, aggregation: GarminAggregation): string {
 
 /** Generate all expected bucket keys and labels for a time range and aggregation. */
 export function generateBucketSlots(
-  range: GarminTimeRange,
-  aggregation: GarminAggregation = 'week',
+  range: StravaTimeRange,
+  aggregation: StravaAggregation = 'week',
   today: Date = new Date(),
 ): { key: string; label: string }[] {
   const start = getRangeStart(range, today);
@@ -317,7 +317,7 @@ export function generateBucketSlots(
  */
 export function prorateGoal(
   annualGoal: number,
-  range: GarminTimeRange,
+  range: StravaTimeRange,
   today: Date = new Date(),
 ): number | null {
   const year = parseYearRange(range);
@@ -353,12 +353,12 @@ export function prorateGoal(
  * @param aggregation - Bucket granularity (day/week/month)
  */
 export function buildMetricChartData(
-  activities: GarminActivity[],
-  metric: GarminMetric,
-  range: GarminTimeRange,
+  activities: StravaActivity[],
+  metric: StravaMetric,
+  range: StravaTimeRange,
   goal: number | null,
   today: Date = new Date(),
-  aggregation: GarminAggregation = 'week',
+  aggregation: StravaAggregation = 'week',
 ): MetricChartData {
   // Check if any activity has data for this metric
   const hasData = activities.some((a) => {
@@ -444,7 +444,7 @@ export function buildMetricChartData(
 /* ------------------------------------------------------------------ */
 
 /** Format a display-unit value for axis labels. */
-export function formatMetricValue(v: number, metric: GarminMetric): string {
+export function formatMetricValue(v: number, metric: StravaMetric): string {
   if (metric === 'duration') {
     if (v >= 100) return `${Math.round(v)}`;
     if (v >= 10) return v.toFixed(1);

@@ -233,18 +233,18 @@ export interface CardioActivity {
 }
 
 // ---------------------------------------------------------------------------
-// Garmin / Strava activity (synced externally via GitHub Actions)
+// Strava activity (synced externally via GitHub Actions)
 // ---------------------------------------------------------------------------
 
-/** A single activity synced from Garmin via the Strava API. */
-export interface GarminActivity {
+/** A single activity synced from the Strava API. */
+export interface StravaActivity {
 	/** Activity date in YYYY-MM-DD format. */
 	date: string;
 	/** Strava activity ID (used for deduplication). */
 	stravaId: string;
 	/** Strava activity type (e.g. "Run", "Ride", "WeightTraining"). */
 	activityType: string;
-	/** Activity name as set in Strava/Garmin. */
+	/** Activity name as set in Strava. */
 	name: string;
 	/** Duration in seconds. */
 	duration: number;

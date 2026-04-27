@@ -41,8 +41,8 @@ export const SCHEDULE_TAB_NAME = 'Stronger - Schedule'
 /** Name of the tab that holds cardio activity definitions (id + name). */
 export const CARDIO_TAB_NAME = 'Stronger - Cardio'
 
-/** Name of the tab that holds Garmin/Strava synced activity data. */
-export const GARMIN_TAB_NAME = 'Stronger - Garmin'
+/** Name of the tab that holds Strava synced activity data. */
+export const STRAVA_TAB_NAME = 'Stronger - Strava'
 
 /** Name of the tab that holds app settings as key/value pairs. */
 export const SETTINGS_TAB_NAME = 'Stronger - Settings'

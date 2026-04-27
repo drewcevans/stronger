@@ -1,13 +1,13 @@
-# Garmin Sync Setup
+# Strava Sync Setup
 
-Stronger can sync Garmin activity data into Google Sheets via the Strava API. Garmin watches auto-sync to Strava, and a scheduled GitHub Actions workflow pulls that data into a "Stronger - Garmin" tab in your spreadsheet.
+Stronger can sync activity data into Google Sheets via the Strava API. Garmin watches auto-sync to Strava, and a scheduled GitHub Actions workflow pulls that data into a "Stronger - Strava" tab in your spreadsheet.
 
 The workflow runs daily at 06:00 UTC and can also be triggered manually. It's idempotent — re-runs won't create duplicate rows.
 
 ## How it works
 
 1. Your Garmin watch syncs activities to Strava (usually within 5–10 minutes).
-2. A GitHub Actions workflow runs `scripts/garmin-sync.mjs` on a daily schedule.
+2. A GitHub Actions workflow runs `scripts/strava-sync.mjs` on a daily schedule.
 3. The script refreshes a Strava OAuth2 token, fetches the 30 most recent activities, deduplicates by Strava activity ID, and appends new rows to the sheet via a Google service account.
 
 ### Why Strava instead of Garmin directly?
@@ -16,14 +16,14 @@ Garmin has no public API for individual developers. Strava's API is official, st
 
 ## Data stored
 
-Each activity row in the "Stronger - Garmin" tab contains:
+Each activity row in the "Stronger - Strava" tab contains:
 
 | Column | Description |
 |--------|-------------|
 | `date` | Activity date (YYYY-MM-DD) |
 | `stravaId` | Strava activity ID (used for deduplication) |
 | `activityType` | Strava activity type (e.g. Run, Ride, WeightTraining) |
-| `name` | Activity name as set in Strava/Garmin |
+| `name` | Activity name as set in Strava |
 | `duration` | Duration in seconds |
 | `distance` | Distance in meters (0 for stationary activities) |
 | `elevationGain` | Total elevation gain in meters |
@@ -103,10 +103,10 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions** an
 
 ## Step 6: Test the workflow
 
-1. Go to **Actions → Garmin Sync (Strava → Google Sheets)**.
+1. Go to **Actions → Strava Sync (Strava → Google Sheets)**.
 2. Click **Run workflow** → **Run workflow** (on the main branch).
 3. Check that the workflow completes successfully.
-4. Open your spreadsheet — you should see a new "Stronger - Garmin" tab with your recent activities.
+4. Open your spreadsheet — you should see a new "Stronger - Strava" tab with your recent activities.
 
 After verifying, the daily cron at 06:00 UTC will keep it updated automatically.
 

@@ -48,12 +48,12 @@ interface Props {
 	onOpenCalendar?: () => void
 	onOpenExercises?: () => void
 	onOpenProgress?: () => void
-	onOpenGarmin?: () => void
+	onOpenStrava?: () => void
 	onOpenSettings?: () => void
 	onGoToList?: () => void
 }
 
-export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onOpenExercises, onOpenProgress, onOpenGarmin, onOpenSettings, onGoToList }: Props) {
+export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCalendar, onOpenExercises, onOpenProgress, onOpenStrava, onOpenSettings, onGoToList }: Props) {
 	const [phase, setPhase] = useState<Phase>('loading')
 	const [error, setError] = useState<string | null>(null)
 	const [sheetUrl, setSheetUrl] = useState('')
@@ -437,8 +437,8 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 						<TrendingUp size={20} />
 					</button>
 				)}
-				{onOpenGarmin && (
-					<button className="btn-toolbar" onClick={onOpenGarmin} title="Activities">
+				{onOpenStrava && (
+					<button className="btn-toolbar" onClick={onOpenStrava} title="Activities">
 						<Activity size={20} />
 					</button>
 				)}

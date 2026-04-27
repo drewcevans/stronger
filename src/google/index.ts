@@ -54,13 +54,13 @@ export {
 	readCardioActivities,
 	writeDefaultCardioActivities,
 	writeCardioActivities,
-	garminActivityToRow,
-	parseGarminRow,
-	verifyGarminTab,
-	createGarminTab,
-	readGarminActivities,
-	GARMIN_SYNC_RANGE,
-	GARMIN_HEADER,
+	stravaActivityToRow,
+	parseStravaRow,
+	verifyStravaTab,
+	createStravaTab,
+	readStravaActivities,
+	STRAVA_SYNC_RANGE,
+	STRAVA_HEADER,
 	verifySettingsTab,
 	createSettingsTab,
 	readSettings,
@@ -74,7 +74,7 @@ export {
 export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
 export type { CalendarListEntry } from './types.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
-export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
+export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, STRAVA_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
 export {
 	listWritableCalendars,
 	buildDeepLink,

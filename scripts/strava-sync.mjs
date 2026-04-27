@@ -1,8 +1,8 @@
 /**
- * Garmin Sync — Strava → Google Sheets pipeline.
+ * Strava Sync — Strava → Google Sheets pipeline.
  *
  * Fetches recent activities from the Strava API and appends new rows
- * to the "Stronger - Garmin" tab in a Google Sheet. Uses a service
+ * to the "Stronger - Strava" tab in a Google Sheet. Uses a service
  * account for Sheets access and a Strava refresh token for API auth.
  *
  * Environment variables (all required):
@@ -13,14 +13,14 @@
  *   SPREADSHEET_ID         – Google Sheets spreadsheet ID
  *
  * Usage:
- *   node scripts/garmin-sync.mjs
+ *   node scripts/strava-sync.mjs
  */
 
 const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token'
 const STRAVA_ACTIVITIES_URL = 'https://www.strava.com/api/v3/athlete/activities'
 const SHEETS_API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets'
 
-const TAB_NAME = 'Stronger - Garmin'
+const TAB_NAME = 'Stronger - Strava'
 const HEADER = ['date', 'stravaId', 'activityType', 'name', 'duration', 'distance', 'elevationGain', 'calories', 'avgHR', 'maxHR']
 const COLUMN_COUNT = HEADER.length // 10 → columns A:J
 
@@ -206,7 +206,7 @@ async function ensureTab(spreadsheetId, googleToken) {
 		const text = await headerRes.text()
 		throw new Error(`Header write failed (${headerRes.status}): ${text}`)
 	}
-	console.log('Created "Stronger - Garmin" tab with header row.')
+	console.log('Created "Stronger - Strava" tab with header row.')
 }
 
 async function readExistingIds(spreadsheetId, googleToken) {
@@ -313,6 +313,6 @@ async function main() {
 }
 
 main().catch((err) => {
-	console.error('Garmin sync failed:', err.message)
+	console.error('Strava sync failed:', err.message)
 	process.exit(1)
 })
