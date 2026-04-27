@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { ArrowLeft, Minus, Plus, Sun, SunDim } from 'lucide-react';
-import type { ComputedSet, PreviousSetData, SetResult, SetType, Workout, AppSettings } from '../model/index.js';
+import { ArrowLeft, Minus, Plus, Sun, SunDim, X } from 'lucide-react';
+import type { ComputedSet, ComputedExercise, PreviousSetData, SetResult, SetType, Workout, LiftConfig, AppSettings } from '../model/index.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { saveDraft } from '../hooks/useWorkoutDraft.js';
 import { useRestTimer, resolveTimerExercise, formatElapsed } from '../hooks/useRestTimer.js';
@@ -13,6 +13,8 @@ interface WorkoutViewProps {
 	draftResults?: SetResult[][] | null;
 	/** User-configurable app settings. */
 	appSettings: AppSettings;
+	/** All available exercise configs, used for the "Add Exercise" picker. */
+	configs: LiftConfig[];
 	onBack: () => void;
 	onFinish: (workout: Workout, results: SetResult[][]) => void;
 }
@@ -64,7 +66,7 @@ function initResults(workout: Workout): SetResult[][] {
 	);
 }
 
-export function WorkoutView({ workout, previousSets, startTime, draftResults, appSettings, onBack, onFinish }: WorkoutViewProps) {
+export function WorkoutView({ workout, previousSets, startTime, draftResults, appSettings, configs, onBack, onFinish }: WorkoutViewProps) {
 	const { active: wakeLockActive, reacquire: reacquireWakeLock } = useWakeLock(appSettings.keepScreenOn);
 
 	const [results, setResults] = useState<SetResult[][]>(() => {
@@ -89,8 +91,15 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 		}
 		return workout.exercises.map(() => []);
 	});
+	const [addedExercises, setAddedExercises] = useState<ComputedExercise[]>([]);
+	const [showExercisePicker, setShowExercisePicker] = useState(false);
 	const [finished, setFinished] = useState(false);
 	const restTimer = useRestTimer();
+
+	/** The full exercise list: planned exercises + any user-added ones. */
+	const allExercises = [...workout.exercises, ...addedExercises];
+	/** A virtual workout object that includes added exercises. */
+	const effectiveWorkout: Workout = { ...workout, exercises: allExercises };
 
 	// Persist results to localStorage on every change so a refresh doesn't lose progress.
 	const isFirstRender = useRef(true);
@@ -159,6 +168,41 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 		[workout, addedSets],
 	);
 
+	const addExercise = useCallback(
+		(config: LiftConfig) => {
+			const newExercise: ComputedExercise = {
+				liftId: config.id,
+				name: config.name,
+				role: 'assistance',
+				sets: [
+					{
+						setType: 'work',
+						weight: config.barWeight,
+						minReps: 5,
+						maxReps: 5,
+						amrap: false,
+					},
+				],
+			};
+
+			setAddedExercises((prev) => [...prev, newExercise]);
+			setAddedSets((prev) => [...prev, []]);
+			setResults((prev) => [
+				...prev,
+				[
+					{
+						actualWeight: config.barWeight,
+						actualReps: 5,
+						completed: false,
+						actualSetType: 'work',
+					},
+				],
+			]);
+			setShowExercisePicker(false);
+		},
+		[],
+	);
+
 	const totalSets = results.flat().length;
 	const completedSets = results.flat().filter((s) => s.completed).length;
 
@@ -172,7 +216,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 	}
 
 	function handleComplete() {
-		onFinish(workout, results);
+		onFinish(effectiveWorkout, results);
 	}
 
 	if (finished) {
@@ -221,7 +265,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 				</button>
 			</header>
 
-			{workout.exercises.map((exercise, exerciseIdx) => {
+			{allExercises.map((exercise, exerciseIdx) => {
 				const allSets = [...exercise.sets, ...addedSets[exerciseIdx]];
 				return (
 				<section key={exerciseIdx} className="exercise-card">
@@ -396,6 +440,39 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 				</section>
 				);
 			})}
+
+			<button
+				type="button"
+				className="btn-add-exercise"
+				onClick={() => setShowExercisePicker(true)}
+			>
+				<Plus size={16} /> Add Exercise
+			</button>
+
+			{showExercisePicker && (
+				<div className="exercise-picker-overlay" onClick={() => setShowExercisePicker(false)}>
+					<div className="exercise-picker" onClick={(e) => e.stopPropagation()}>
+						<div className="exercise-picker-header">
+							<h3>Add Exercise</h3>
+							<button className="btn-close-picker" onClick={() => setShowExercisePicker(false)}>
+								<X size={20} />
+							</button>
+						</div>
+						<div className="exercise-picker-list">
+							{configs.map((config) => (
+								<button
+									key={config.id}
+									className="exercise-picker-item"
+									onClick={() => addExercise(config)}
+								>
+									<span className="exercise-picker-name">{config.name}</span>
+									<span className="exercise-picker-detail">{config.barWeight} lbs · {config.gear}</span>
+								</button>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
 
 		</div>
 	);

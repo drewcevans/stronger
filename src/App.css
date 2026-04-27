@@ -528,6 +528,110 @@ body {
 	background: var(--color-surface);
 }
 
+/* Add Exercise button & picker */
+.btn-add-exercise {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.75rem;
+	margin-top: 0.5rem;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	background: transparent;
+	border: 1px dashed var(--color-primary);
+	border-radius: var(--radius);
+	cursor: pointer;
+}
+
+.btn-add-exercise:active {
+	background: var(--color-surface);
+}
+
+.exercise-picker-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.7);
+}
+
+.exercise-picker {
+	width: 100%;
+	max-width: 480px;
+	max-height: 70vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--color-surface);
+	border-radius: var(--radius) var(--radius) 0 0;
+	border: 1px solid var(--color-border);
+	border-bottom: none;
+}
+
+.exercise-picker-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.exercise-picker-header h3 {
+	margin: 0;
+	font-size: 1rem;
+	color: var(--color-text);
+}
+
+.btn-close-picker {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.25rem;
+	background: transparent;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+}
+
+.exercise-picker-list {
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	padding: 0.5rem 0;
+}
+
+.exercise-picker-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	min-height: 48px;
+	padding: 0.75rem 1rem;
+	font-size: 0.9375rem;
+	color: var(--color-text);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+}
+
+.exercise-picker-item:active {
+	background: var(--color-surface-hover);
+}
+
+.exercise-picker-name {
+	font-weight: 500;
+}
+
+.exercise-picker-detail {
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+}
+
 .btn-finish {
 	margin-left: auto;
 	padding: 0.375rem 0.75rem;
