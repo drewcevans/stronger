@@ -764,6 +764,7 @@ function App() {
         startTime={startTime ?? new Date().toISOString()}
         draftResults={draftResults}
         appSettings={appSettings}
+        configs={configs}
         onBack={handleBack}
         onFinish={handleFinish}
       />
