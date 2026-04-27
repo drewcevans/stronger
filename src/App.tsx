@@ -45,6 +45,11 @@ function App() {
   const [garminActivities, setGarminActivities] = useState<GarminActivity[]>([]);
   const [garminGoals, setGarminGoals] = useState<GarminGoal[]>([]);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
+  const [pendingFinish, setPendingFinish] = useState<{
+    workout: Workout;
+    results: SetResult[][];
+    endTime: string;
+  } | null>(null);
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const settingsRef = useRef(new Map<string, string>());
 
@@ -169,19 +174,9 @@ function App() {
   const handleFinish = useCallback(
     (workout: Workout, results: SetResult[][]) => {
       const endTime = new Date().toISOString();
-      // Clear the in-progress draft and rest timer now that the workout is complete
-      clearDraft();
-      clearTimerSentinel();
-      if (spreadsheetId && startTime) {
-        // Fire-and-forget: log results to the sheet, then reload log data
-        void logWorkoutResults(
-          spreadsheetId,
-          workout,
-          results,
-          startTime,
-          endTime,
-        ).then(() => void loadLogData(spreadsheetId));
-      }
+
+      // Store pending finish data — workout will be saved when user confirms
+      setPendingFinish({ workout, results, endTime });
 
       // Compute progression proposals for the completed workout
       const workoutDef = definitions.find((d) => d.id === workout.id);
@@ -193,19 +188,31 @@ function App() {
           workoutDef.templates,
         );
         setProgressionProposals(proposals);
+      } else {
+        // Even with no proposals, show the confirm page
+        setProgressionProposals([]);
       }
-
-      setActiveWorkout(null);
-      setStartTime(null);
-      setPreviousSets(null);
-      navigateTo({ view: 'list' });
     },
-    [spreadsheetId, startTime, configs, definitions, navigateTo],
+    [configs, definitions],
   );
 
   const handleProgressionConfirm = useCallback(
     (updates: Map<string, { topSetWeight: number; backoffWeight: number }>) => {
-      // Apply updates to configs
+      // Save the pending workout results to the sheet
+      if (pendingFinish && spreadsheetId && startTime) {
+        clearDraft();
+        clearTimerSentinel();
+        const { workout, results, endTime } = pendingFinish;
+        void logWorkoutResults(
+          spreadsheetId,
+          workout,
+          results,
+          startTime,
+          endTime,
+        ).then(() => void loadLogData(spreadsheetId));
+      }
+
+      // Apply weight updates to configs
       const updatedConfigs = configs.map((c) => {
         const update = updates.get(c.id);
         if (!update) return c;
@@ -221,9 +228,20 @@ function App() {
       setConfigs(updatedConfigs);
       setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
       setProgressionProposals(null);
+      setPendingFinish(null);
+      setActiveWorkout(null);
+      setStartTime(null);
+      setPreviousSets(null);
+      navigateTo({ view: 'list' });
     },
-    [spreadsheetId, configs, definitions],
+    [spreadsheetId, startTime, pendingFinish, configs, definitions, navigateTo],
   );
+
+  const handleProgressionBack = useCallback(() => {
+    // Return to the active workout — discard pending finish and proposals
+    setProgressionProposals(null);
+    setPendingFinish(null);
+  }, []);
 
   const handleBack = useCallback(() => {
     // Don't clear the draft or timer sentinel — the user may return to this
@@ -721,12 +739,17 @@ function App() {
 
   const onOpenGarmin = garminActivities.length > 0 ? handleOpenGarmin : undefined;
 
-  // Show progression review after finishing a workout
-  if (progressionProposals) {
+  // Show progression review / confirm page after clicking Finish
+  if (progressionProposals && pendingFinish) {
+    const totalSets = pendingFinish.results.flat().length;
+    const completedSets = pendingFinish.results.flat().filter((s) => s.completed).length;
     return (
       <ProgressionReview
         proposals={progressionProposals}
+        completedSets={completedSets}
+        totalSets={totalSets}
         onConfirm={handleProgressionConfirm}
+        onBack={handleProgressionBack}
       />
     );
   }
