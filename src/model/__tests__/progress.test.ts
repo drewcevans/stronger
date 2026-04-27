@@ -196,8 +196,8 @@ describe('buildProgressData', () => {
     ];
     const data = buildProgressData(rows, 'squat', 'volume', 'all');
     expect(data).toHaveLength(2);
-    expect(data[0]).toEqual({ date: '2025-01-10', value: 1000 });
-    expect(data[1]).toEqual({ date: '2025-01-17', value: 550 });
+    expect(data[0]).toEqual({ date: '2025-01-10', value: 1000, label: '100 × 5' });
+    expect(data[1]).toEqual({ date: '2025-01-17', value: 550, label: '110 × 5' });
   });
 
   it('filters by lift ID', () => {
