@@ -89,7 +89,6 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 		}
 		return workout.exercises.map(() => []);
 	});
-	const [finished, setFinished] = useState(false);
 	const restTimer = useRestTimer();
 
 	// Persist results to localStorage on every change so a refresh doesn't lose progress.
@@ -164,37 +163,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 
 	function handleFinish() {
 		restTimer.stop();
-		setFinished(true);
-	}
-
-	function handleGoBack() {
-		setFinished(false);
-	}
-
-	function handleComplete() {
 		onFinish(workout, results);
-	}
-
-	if (finished) {
-		return (
-			<div className="workout-view">
-				<div className="finish-summary">
-					<h2>Finish Workout?</h2>
-					<p>
-						{completedSets} of {totalSets} sets completed.
-					</p>
-					<p className="finish-note">
-						Tap <strong>Complete</strong> to save results to your Google Sheet, or go back to continue your workout.
-					</p>
-					<button className="btn-primary" onClick={handleComplete}>
-						Complete Workout
-					</button>
-					<button className="btn-back finish-go-back" onClick={handleGoBack}>
-						<ArrowLeft size={20} /> Go Back
-					</button>
-				</div>
-			</div>
-		);
 	}
 
 	return (
