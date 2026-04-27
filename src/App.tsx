@@ -198,10 +198,12 @@ function App() {
 
   const handleProgressionConfirm = useCallback(
     (updates: Map<string, { topSetWeight: number; backoffWeight: number }>) => {
+      // Clear the in-progress draft and rest timer now that the workout is finalized
+      clearDraft();
+      clearTimerSentinel();
+
       // Save the pending workout results to the sheet
       if (pendingFinish && spreadsheetId && startTime) {
-        clearDraft();
-        clearTimerSentinel();
         const { workout, results, endTime } = pendingFinish;
         void logWorkoutResults(
           spreadsheetId,
