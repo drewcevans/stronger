@@ -1,19 +1,25 @@
 import { useState } from 'react';
-import { ArrowRight, Check, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Minus, Plus } from 'lucide-react';
 import type { ProgressionProposal } from '../model/index.js';
 
 const DEFAULT_STEP = 5;
 
 interface ProgressionReviewProps {
 	proposals: ProgressionProposal[];
+	completedSets: number;
+	totalSets: number;
 	onConfirm: (
 		updates: Map<string, { topSetWeight: number; backoffWeight: number }>,
 	) => void;
+	onBack: () => void;
 }
 
 export function ProgressionReview({
 	proposals,
+	completedSets,
+	totalSets,
 	onConfirm,
+	onBack,
 }: ProgressionReviewProps) {
 	const [edits, setEdits] = useState<
 		Map<string, { topSetWeight: number; backoffWeight: number }>
@@ -57,9 +63,20 @@ export function ProgressionReview({
 	return (
 		<div className="workout-view">
 			<header className="workout-header">
-				<h1 className="workout-title">Weight Progression</h1>
+				<h1 className="workout-title">Finish Workout?</h1>
 			</header>
 
+			<div className="finish-summary">
+				<p>
+					{completedSets} of {totalSets} sets completed.
+				</p>
+				<p className="finish-note">
+					Tap <strong>Confirm</strong> to save results to your Google Sheet, or go back to continue your workout.
+				</p>
+			</div>
+
+			{proposals.length > 0 && (
+			<>
 			<p className="progression-subtitle">
 				Review proposed weight changes based on your performance.
 			</p>
@@ -210,6 +227,8 @@ export function ProgressionReview({
 					);
 				})}
 			</div>
+			</>
+			)}
 
 			<div className="progression-actions">
 				<button
@@ -217,6 +236,9 @@ export function ProgressionReview({
 					onClick={() => onConfirm(edits)}
 				>
 					Confirm
+				</button>
+				<button className="btn-back finish-go-back" onClick={onBack}>
+					<ArrowLeft size={20} /> Go Back
 				</button>
 			</div>
 		</div>

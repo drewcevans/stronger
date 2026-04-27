@@ -93,7 +93,6 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 	});
 	const [addedExercises, setAddedExercises] = useState<ComputedExercise[]>([]);
 	const [showExercisePicker, setShowExercisePicker] = useState(false);
-	const [finished, setFinished] = useState(false);
 	const restTimer = useRestTimer();
 
 	/** The full exercise list: planned exercises + any user-added ones. */
@@ -208,37 +207,7 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 
 	function handleFinish() {
 		restTimer.stop();
-		setFinished(true);
-	}
-
-	function handleGoBack() {
-		setFinished(false);
-	}
-
-	function handleComplete() {
 		onFinish(effectiveWorkout, results);
-	}
-
-	if (finished) {
-		return (
-			<div className="workout-view">
-				<div className="finish-summary">
-					<h2>Finish Workout?</h2>
-					<p>
-						{completedSets} of {totalSets} sets completed.
-					</p>
-					<p className="finish-note">
-						Tap <strong>Complete</strong> to save results to your Google Sheet, or go back to continue your workout.
-					</p>
-					<button className="btn-primary" onClick={handleComplete}>
-						Complete Workout
-					</button>
-					<button className="btn-back finish-go-back" onClick={handleGoBack}>
-						<ArrowLeft size={20} /> Go Back
-					</button>
-				</div>
-			</div>
-		);
 	}
 
 	return (

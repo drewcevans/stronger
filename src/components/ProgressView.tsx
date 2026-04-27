@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { ParsedLogRow } from '../google/sheets.js';
-import type { ProgressMetric, TimeRange } from '../model/progress.js';
+import type { ProgressMetric, TimeRange, ProgressDataPoint } from '../model/progress.js';
 import {
   getLiftsWithData,
   buildProgressData,
@@ -254,7 +254,7 @@ function ProgressChart({
   metric,
   stableYMin,
 }: {
-  data: { date: string; value: number }[];
+  data: ProgressDataPoint[];
   metric: ProgressMetric;
   stableYMin?: number;
 }) {
@@ -396,7 +396,7 @@ function ProgressChart({
             left: `${(xScale(activeIndex) / viewBoxWidth) * 100}%`,
           }}
         >
-          <span className="chart-tooltip-value">{formatValue(active.value)}</span>
+          <span className="chart-tooltip-value">{active.label || formatValue(active.value)}</span>
           <span className="chart-tooltip-date">{formatDate(active.date)}</span>
         </div>
       )}

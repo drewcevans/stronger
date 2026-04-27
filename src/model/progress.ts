@@ -4,6 +4,8 @@ import type { ParsedLogRow } from '../google/sheets.js';
 export interface ProgressDataPoint {
   date: string;
   value: number;
+  /** Human-readable label for tooltips (e.g. "180 × 5" or "180 × 5 = 198"). */
+  label?: string;
 }
 
 export type ProgressMetric = 'volume' | 'heaviest' | 'e1rm';
@@ -21,40 +23,84 @@ function isQualifyingSet(row: ParsedLogRow): boolean {
   );
 }
 
+/** Result from a metric computation: the aggregate value plus a tooltip label. */
+interface MetricResult {
+  value: number;
+  label: string;
+}
+
 /**
  * Total volume: sum of (weight × reps) across all qualifying sets in a session.
+ * Label shows the top set (heaviest weight × its reps).
  */
 export function computeVolume(sets: ParsedLogRow[]): number {
-  return sets
-    .filter(isQualifyingSet)
-    .reduce((sum, s) => sum + s.actualWeight * s.actualReps, 0);
+  return computeVolumeWithLabel(sets).value;
+}
+
+function computeVolumeWithLabel(sets: ParsedLogRow[]): MetricResult {
+  const qualifying = sets.filter(isQualifyingSet);
+  const value = qualifying.reduce((sum, s) => sum + s.actualWeight * s.actualReps, 0);
+  if (qualifying.length === 0) return { value: 0, label: '' };
+  // Top set = heaviest weight; on tie pick the one with more reps
+  const top = qualifying.reduce((best, s) =>
+    s.actualWeight > best.actualWeight ||
+    (s.actualWeight === best.actualWeight && s.actualReps > best.actualReps)
+      ? s : best,
+  );
+  return { value, label: `${top.actualWeight} × ${top.actualReps}` };
 }
 
 /**
  * Heaviest weight: the maximum weight used in any qualifying set in a session.
+ * Label shows weight × reps for that set.
  */
 export function computeHeaviest(sets: ParsedLogRow[]): number {
+  return computeHeaviestWithLabel(sets).value;
+}
+
+function computeHeaviestWithLabel(sets: ParsedLogRow[]): MetricResult {
   const qualifying = sets.filter(isQualifyingSet);
-  if (qualifying.length === 0) return 0;
-  return Math.max(...qualifying.map((s) => s.actualWeight));
+  if (qualifying.length === 0) return { value: 0, label: '' };
+  const top = qualifying.reduce((best, s) =>
+    s.actualWeight > best.actualWeight ||
+    (s.actualWeight === best.actualWeight && s.actualReps > best.actualReps)
+      ? s : best,
+  );
+  return { value: top.actualWeight, label: `${top.actualWeight} × ${top.actualReps}` };
 }
 
 /**
  * Estimated 1RM using the Epley formula: weight × (1 + reps / 30).
  * Takes the highest result across all qualifying sets in a session.
+ * Label shows weight × reps = e1RM.
  */
 export function computeE1RM(sets: ParsedLogRow[]): number {
-  const qualifying = sets.filter(isQualifyingSet);
-  if (qualifying.length === 0) return 0;
-  return Math.max(
-    ...qualifying.map((s) => s.actualWeight * (1 + s.actualReps / 30)),
-  );
+  return computeE1RMWithLabel(sets).value;
 }
 
-const METRIC_FN: Record<ProgressMetric, (sets: ParsedLogRow[]) => number> = {
-  volume: computeVolume,
-  heaviest: computeHeaviest,
-  e1rm: computeE1RM,
+function computeE1RMWithLabel(sets: ParsedLogRow[]): MetricResult {
+  const qualifying = sets.filter(isQualifyingSet);
+  if (qualifying.length === 0) return { value: 0, label: '' };
+  let bestE1RM = 0;
+  let bestSet = qualifying[0];
+  for (const s of qualifying) {
+    const e = s.actualWeight * (1 + s.actualReps / 30);
+    if (e > bestE1RM) {
+      bestE1RM = e;
+      bestSet = s;
+    }
+  }
+  const rounded = Math.round(bestE1RM);
+  return {
+    value: bestE1RM,
+    label: `${bestSet.actualWeight} × ${bestSet.actualReps} = ${rounded}`,
+  };
+}
+
+const METRIC_FN_WITH_LABEL: Record<ProgressMetric, (sets: ParsedLogRow[]) => MetricResult> = {
+  volume: computeVolumeWithLabel,
+  heaviest: computeHeaviestWithLabel,
+  e1rm: computeE1RMWithLabel,
 };
 
 /**
@@ -119,13 +165,13 @@ export function buildProgressData(
   }
 
   // Compute metric per session
-  const fn = METRIC_FN[metric];
+  const fn = METRIC_FN_WITH_LABEL[metric];
   const points: ProgressDataPoint[] = [];
   for (const [key, sets] of sessions) {
-    const value = fn(sets);
+    const { value, label } = fn(sets);
     if (value > 0) {
       const date = key.split('|')[0];
-      points.push({ date, value });
+      points.push({ date, value, label });
     }
   }
 
