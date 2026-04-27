@@ -1,4 +1,4 @@
-name: Garmin Sync (Strava → Google Sheets)
+name: Strava Sync (Strava → Google Sheets)
 
 on:
   schedule:
@@ -21,11 +21,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Garmin sync script
+      - name: Run Strava sync script
         env:
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
           STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
           STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
           GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
-        run: node scripts/garmin-sync.mjs
+        run: node scripts/strava-sync.mjs

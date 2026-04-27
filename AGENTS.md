@@ -4,7 +4,7 @@ Operational reminders for AI agents working on this project. Read this before st
 
 ## Project overview
 
-Stronger is a barbell training tracker built as a single-page React app. It uses Google Sheets as its database — there is no backend. The app authenticates via Google OAuth, reads/writes lift configs, workout definitions, log entries, schedule data, and cardio activities directly to named tabs in the user's spreadsheet. A separate GitHub Actions workflow syncs Garmin/Strava activity data into another sheet tab. The app is deployed to GitHub Pages.
+Stronger is a barbell training tracker built as a single-page React app. It uses Google Sheets as its database — there is no backend. The app authenticates via Google OAuth, reads/writes lift configs, workout definitions, log entries, schedule data, and cardio activities directly to named tabs in the user's spreadsheet. A separate GitHub Actions workflow syncs Strava activity data into another sheet tab. The app is deployed to GitHub Pages.
 
 ## Tech stack
 
@@ -37,7 +37,7 @@ Core types, each building on the previous:
 7. **DayFlags** — boolean flags for calendar days (`home`, `elsewhere`, `travel`, `visitors`, `blocked`).
 8. **ScheduleEntry** — date→workoutId mapping with optional `flags`. Stored in the "Schedule" sheet tab.
 9. **CardioActivity** — simple `{id, name}` for cardio activities. Stored in the "Cardio" sheet tab.
-10. **GarminActivity** — synced Strava activity data (date, type, duration, distance, elevation, HR, etc.). Stored in the "Garmin" sheet tab.
+10. **StravaActivity** — synced Strava activity data (date, type, duration, distance, elevation, HR, etc.). Stored in the "Strava" sheet tab.
 11. **ProgressionProposal** — post-workout weight-change suggestions. Ephemeral, never stored.
 
 ### Google Sheets tabs and ranges (`src/google/sheets.ts`, `src/google/config.ts`)
@@ -51,7 +51,7 @@ The app uses six tabs in the user's spreadsheet. Each tab has a header constant,
 | `Stronger - Log`        | `LOG_READ_RANGE = A2:M`, `LOG_HEADER_RANGE = A1:M1`, `LOG_APPEND_RANGE = A2:M2` | 13 (`date` → `completed`) | A–M |
 | `Stronger - Schedule`   | `SCHEDULE_READ_RANGE = A2:G10000`, `SCHEDULE_FULL_RANGE = A1:G10000` | 7 (`date`, `workoutId`, `home`, `elsewhere`, `travel`, `visitors`, `blocked`) | A–G |
 | `Stronger - Cardio`     | `CARDIO_RANGE = A:B`  | 2 (`id`, `name`) | A–B |
-| `Stronger - Garmin`     | `GARMIN_SYNC_RANGE = A:J`, `GARMIN_HEADER_RANGE = A1:J1`, `GARMIN_READ_RANGE = A2:J` | 10 (`date` → `maxHR`) | A–J |
+| `Stronger - Strava`     | `STRAVA_SYNC_RANGE = A:J`, `STRAVA_HEADER_RANGE = A1:J1`, `STRAVA_READ_RANGE = A2:J` | 10 (`date` → `maxHR`) | A–J |
 
 ### Critical rule: keep ranges in sync with the data model
 
@@ -114,14 +114,14 @@ Default data loaded from JSON files in `lib/` and used as seed data when a user 
 - `lib/cardio.json` — cardio activity definitions
 - `lib/quotes.json` — motivational quotes
 
-### Garmin sync (`scripts/garmin-sync.mjs`)
+### Strava sync (`scripts/strava-sync.mjs`)
 
-A Node.js script run by the `garmin-sync.yml` GitHub Actions workflow on a daily cron. It fetches recent activities from the Strava API (which receives data from Garmin Connect auto-sync), then appends new rows to the "Stronger - Garmin" sheet tab via a Google service account. See [GARMIN_SYNC_SETUP.md](GARMIN_SYNC_SETUP.md) for configuration.
+A Node.js script run by the `strava-sync.yml` GitHub Actions workflow on a daily cron. It fetches recent activities from the Strava API (which receives data from Garmin Connect auto-sync), then appends new rows to the "Stronger - Strava" sheet tab via a Google service account. See [STRAVA_SYNC_SETUP.md](STRAVA_SYNC_SETUP.md) for configuration.
 
 ### GitHub Actions (`.github/workflows/`)
 
 - `deploy.yml` — builds and deploys to GitHub Pages on push to main
-- `garmin-sync.yml` — daily Strava → Google Sheets sync
+- `strava-sync.yml` — daily Strava → Google Sheets sync
 - `auto-spec-issues.yml` — creates GitHub issues from new spec files
 - `auto-archive-specs.yml` — moves spec files to `.archive/specs/` when their issue is closed
 
@@ -130,4 +130,4 @@ A Node.js script run by the `garmin-sync.yml` GitHub Actions workflow on a daily
 - **Sheet API 400 errors** usually mean a range doesn't cover enough columns for the data being written. Check that the range letter matches the header length.
 - **Open-ended ranges** (e.g., `A:I`) are preferred for reading — they don't silently truncate if more rows exist than expected. The schedule tab is an exception and uses a row limit.
 - **Old log rows** — rows written before schema changes may have fewer columns. Parse functions should handle missing columns gracefully with defaults.
-- **Garmin sync 404** — usually means the `SPREADSHEET_ID` repo secret is missing or wrong. The service account also needs Editor access to the spreadsheet.
+- **Strava sync 404** — usually means the `SPREADSHEET_ID` repo secret is missing or wrong. The service account also needs Editor access to the spreadsheet.

@@ -5,9 +5,9 @@
  * and provides read/write operations for the config and log zones.
  */
 
-import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, GARMIN_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
-import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, GarminActivity, AppSettings } from '../model/types.ts'
-import type { GarminGoal, GarminMetric } from '../model/garmin.ts'
+import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, STRAVA_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
+import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity, StravaActivity, AppSettings } from '../model/types.ts'
+import type { StravaGoal, StravaMetric } from '../model/strava.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -1455,19 +1455,19 @@ export async function writeCardioActivities(
 }
 
 /* ------------------------------------------------------------------ */
-/*  Garmin tab – constants                                             */
+/*  Strava tab – constants                                             */
 /* ------------------------------------------------------------------ */
 
-/** A1 range for the Garmin tab (open-ended rows, 10 columns). */
-export const GARMIN_SYNC_RANGE = `'${GARMIN_TAB_NAME}'!A:J`
+/** A1 range for the Strava tab (open-ended rows, 10 columns). */
+export const STRAVA_SYNC_RANGE = `'${STRAVA_TAB_NAME}'!A:J`
 
-/** A1 range for the Garmin tab header (row 1). */
-const GARMIN_HEADER_RANGE = `'${GARMIN_TAB_NAME}'!A1:J1`
+/** A1 range for the Strava tab header (row 1). */
+const STRAVA_HEADER_RANGE = `'${STRAVA_TAB_NAME}'!A1:J1`
 
-/** A1 range for reading Garmin data (row 2 onward, open-ended). */
-const GARMIN_READ_RANGE = `'${GARMIN_TAB_NAME}'!A2:J`
+/** A1 range for reading Strava data (row 2 onward, open-ended). */
+const STRAVA_READ_RANGE = `'${STRAVA_TAB_NAME}'!A2:J`
 
-export const GARMIN_HEADER: string[] = [
+export const STRAVA_HEADER: string[] = [
 	'date',
 	'stravaId',
 	'activityType',
@@ -1481,11 +1481,11 @@ export const GARMIN_HEADER: string[] = [
 ]
 
 /* ------------------------------------------------------------------ */
-/*  Garmin tab – serialization                                         */
+/*  Strava tab – serialization                                         */
 /* ------------------------------------------------------------------ */
 
-/** Convert a {@link GarminActivity} to a spreadsheet row. */
-export function garminActivityToRow(activity: GarminActivity): string[] {
+/** Convert a {@link StravaActivity} to a spreadsheet row. */
+export function stravaActivityToRow(activity: StravaActivity): string[] {
 	return [
 		activity.date,
 		activity.stravaId,
@@ -1501,10 +1501,10 @@ export function garminActivityToRow(activity: GarminActivity): string[] {
 }
 
 /**
- * Parse a single raw Garmin row (string array) into a {@link GarminActivity}.
+ * Parse a single raw Strava row (string array) into a {@link StravaActivity}.
  * Returns `null` for incomplete or invalid rows.
  */
-export function parseGarminRow(row: string[]): GarminActivity | null {
+export function parseStravaRow(row: string[]): StravaActivity | null {
 	if (!row || row.length < 10) return null
 
 	const date = (row[0] ?? '').trim()
@@ -1540,13 +1540,13 @@ export function parseGarminRow(row: string[]): GarminActivity | null {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Garmin tab – read/write                                            */
+/*  Strava tab – read/write                                            */
 /* ------------------------------------------------------------------ */
 
 /**
- * Check if the Garmin tab exists in the spreadsheet.
+ * Check if the Strava tab exists in the spreadsheet.
  */
-export async function verifyGarminTab(
+export async function verifyStravaTab(
 	spreadsheetId: string,
 ): Promise<boolean> {
 	const gapi = window.gapi
@@ -1557,14 +1557,14 @@ export async function verifyGarminTab(
 	})
 	const sheets = response.result.sheets ?? []
 	return sheets.some(
-		(s) => s.properties.title === GARMIN_TAB_NAME,
+		(s) => s.properties.title === STRAVA_TAB_NAME,
 	)
 }
 
 /**
- * Create the Garmin tab inside the given spreadsheet and write the header row.
+ * Create the Strava tab inside the given spreadsheet and write the header row.
  */
-export async function createGarminTab(
+export async function createStravaTab(
 	spreadsheetId: string,
 ): Promise<void> {
 	const gapi = window.gapi
@@ -1573,40 +1573,40 @@ export async function createGarminTab(
 	await gapi.client.sheets.spreadsheets.batchUpdate({
 		spreadsheetId,
 		resource: {
-			requests: [{ addSheet: { properties: { title: GARMIN_TAB_NAME } } }],
+			requests: [{ addSheet: { properties: { title: STRAVA_TAB_NAME } } }],
 		},
 	})
 
 	// Write header to row 1
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
-		range: GARMIN_HEADER_RANGE,
+		range: STRAVA_HEADER_RANGE,
 		valueInputOption: 'RAW',
-		resource: { values: [GARMIN_HEADER] },
+		resource: { values: [STRAVA_HEADER] },
 	})
 }
 
 /**
- * Read the Garmin tab and return parsed activities.
+ * Read the Strava tab and return parsed activities.
  * Returns an empty array if no valid rows exist.
  */
-export async function readGarminActivities(
+export async function readStravaActivities(
 	spreadsheetId: string,
-): Promise<GarminActivity[]> {
+): Promise<StravaActivity[]> {
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
 
 	const response = await gapi.client.sheets.spreadsheets.values.get({
 		spreadsheetId,
-		range: GARMIN_READ_RANGE,
+		range: STRAVA_READ_RANGE,
 	})
 
 	const rawRows = response.result.values
 	if (!rawRows || rawRows.length === 0) return []
 
 	return rawRows
-		.map(parseGarminRow)
-		.filter((r): r is GarminActivity => r !== null)
+		.map(parseStravaRow)
+		.filter((r): r is StravaActivity => r !== null)
 }
 
 /* ------------------------------------------------------------------ */
@@ -1725,29 +1725,29 @@ const GOAL_KEY_PREFIX = 'goal.'
 const VALID_GOAL_METRICS = new Set(['distance', 'elevationGain', 'duration'])
 
 /**
- * Extract {@link GarminGoal} entries from a settings map.
+ * Extract {@link StravaGoal} entries from a settings map.
  * Goal keys use the format `goal.<metric>` (e.g. `goal.distance`).
  */
-export function goalsFromSettings(settings: Map<string, string>): GarminGoal[] {
-	const goals: GarminGoal[] = []
+export function goalsFromSettings(settings: Map<string, string>): StravaGoal[] {
+	const goals: StravaGoal[] = []
 	for (const [key, raw] of settings) {
 		if (!key.startsWith(GOAL_KEY_PREFIX)) continue
 		const metric = key.slice(GOAL_KEY_PREFIX.length)
 		if (!VALID_GOAL_METRICS.has(metric)) continue
 		const value = Number(raw)
 		if (!isFinite(value) || value <= 0) continue
-		goals.push({ metric: metric as GarminMetric, value })
+		goals.push({ metric: metric as StravaMetric, value })
 	}
 	return goals
 }
 
 /**
- * Merge {@link GarminGoal} entries into a settings map.
+ * Merge {@link StravaGoal} entries into a settings map.
  * Removes any existing `goal.*` keys and replaces them with the new goals.
  * Returns the updated map (mutates the input).
  */
 export function goalsToSettings(
-	goals: GarminGoal[],
+	goals: StravaGoal[],
 	settings: Map<string, string>,
 ): Map<string, string> {
 	// Remove old goal keys

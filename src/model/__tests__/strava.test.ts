@@ -13,14 +13,14 @@ import {
   isStrengthTraining,
   splitActivities,
   STRENGTH_ACTIVITY_TYPE,
-} from '../garmin.js';
-import type { GarminActivity, GarminAggregation } from '../garmin.js';
+} from '../strava.js';
+import type { StravaActivity, StravaAggregation } from '../strava.js';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function makeActivity(overrides: Partial<GarminActivity> = {}): GarminActivity {
+function makeActivity(overrides: Partial<StravaActivity> = {}): StravaActivity {
   return {
     date: '2025-06-15',
     activityType: 'Run',

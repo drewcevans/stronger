@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { parseGarminRow, garminActivityToRow } from '../sheets.ts'
+import { parseStravaRow, stravaActivityToRow } from '../sheets.ts'
 
 /* ------------------------------------------------------------------ */
-/*  parseGarminRow                                                      */
+/*  parseStravaRow                                                      */
 /* ------------------------------------------------------------------ */
 
-describe('parseGarminRow', () => {
-	it('parses a valid Garmin row', () => {
+describe('parseStravaRow', () => {
+	it('parses a valid Strava row', () => {
 		expect(
-			parseGarminRow([
+			parseStravaRow([
 				'2026-04-01', '12345678', 'Run', 'Morning Run',
 				'1800', '5000', '50', '300', '145', '170',
 			]),
@@ -28,7 +28,7 @@ describe('parseGarminRow', () => {
 
 	it('trims whitespace', () => {
 		expect(
-			parseGarminRow([
+			parseStravaRow([
 				' 2026-04-01 ', ' 12345678 ', ' Run ', ' Morning Run ',
 				' 1800 ', ' 5000 ', ' 50 ', ' 300 ', ' 145 ', ' 170 ',
 			]),
@@ -47,7 +47,7 @@ describe('parseGarminRow', () => {
 	})
 
 	it('accepts zero values for numeric fields', () => {
-		const result = parseGarminRow([
+		const result = parseStravaRow([
 			'2026-04-01', '12345678', 'WeightTraining', 'Gym Session',
 			'3600', '0', '0', '0', '0', '0',
 		])
@@ -60,7 +60,7 @@ describe('parseGarminRow', () => {
 	})
 
 	it('allows empty name', () => {
-		const result = parseGarminRow([
+		const result = parseStravaRow([
 			'2026-04-01', '12345678', 'Run', '',
 			'1800', '5000', '50', '300', '145', '170',
 		])
@@ -69,58 +69,58 @@ describe('parseGarminRow', () => {
 	})
 
 	it('returns null for empty row', () => {
-		expect(parseGarminRow([])).toBeNull()
+		expect(parseStravaRow([])).toBeNull()
 	})
 
 	it('returns null for row with fewer than 10 columns', () => {
-		expect(parseGarminRow(['2026-04-01', '12345678', 'Run'])).toBeNull()
+		expect(parseStravaRow(['2026-04-01', '12345678', 'Run'])).toBeNull()
 	})
 
 	it('returns null for empty date', () => {
 		expect(
-			parseGarminRow(['', '12345678', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['', '12345678', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 	})
 
 	it('returns null for empty stravaId', () => {
 		expect(
-			parseGarminRow(['2026-04-01', '', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['2026-04-01', '', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 	})
 
 	it('returns null for empty activityType', () => {
 		expect(
-			parseGarminRow(['2026-04-01', '12345678', '', 'Run', '1800', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['2026-04-01', '12345678', '', 'Run', '1800', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 	})
 
 	it('returns null for invalid date format', () => {
 		expect(
-			parseGarminRow(['Apr 1 2026', '12345678', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['Apr 1 2026', '12345678', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 		expect(
-			parseGarminRow(['2026/04/01', '12345678', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['2026/04/01', '12345678', 'Run', 'Run', '1800', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 	})
 
 	it('returns null for negative numeric values', () => {
 		expect(
-			parseGarminRow(['2026-04-01', '12345678', 'Run', 'Run', '-1', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['2026-04-01', '12345678', 'Run', 'Run', '-1', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 	})
 
 	it('returns null for non-numeric values in numeric fields', () => {
 		expect(
-			parseGarminRow(['2026-04-01', '12345678', 'Run', 'Run', 'abc', '5000', '50', '300', '145', '170']),
+			parseStravaRow(['2026-04-01', '12345678', 'Run', 'Run', 'abc', '5000', '50', '300', '145', '170']),
 		).toBeNull()
 	})
 
 	it('returns null for null input', () => {
-		expect(parseGarminRow(null as unknown as string[])).toBeNull()
+		expect(parseStravaRow(null as unknown as string[])).toBeNull()
 	})
 
 	it('accepts decimal numeric values', () => {
-		const result = parseGarminRow([
+		const result = parseStravaRow([
 			'2026-04-01', '12345678', 'Ride', 'Bike Ride',
 			'3600.5', '25000.75', '150.2', '500.5', '140.3', '175.8',
 		])
@@ -131,13 +131,13 @@ describe('parseGarminRow', () => {
 })
 
 /* ------------------------------------------------------------------ */
-/*  garminActivityToRow                                                 */
+/*  stravaActivityToRow                                                 */
 /* ------------------------------------------------------------------ */
 
-describe('garminActivityToRow', () => {
-	it('converts a GarminActivity to a spreadsheet row', () => {
+describe('stravaActivityToRow', () => {
+	it('converts a StravaActivity to a spreadsheet row', () => {
 		expect(
-			garminActivityToRow({
+			stravaActivityToRow({
 				date: '2026-04-01',
 				stravaId: '12345678',
 				activityType: 'Run',
@@ -157,7 +157,7 @@ describe('garminActivityToRow', () => {
 
 	it('converts zero numeric values', () => {
 		expect(
-			garminActivityToRow({
+			stravaActivityToRow({
 				date: '2026-04-01',
 				stravaId: '12345678',
 				activityType: 'WeightTraining',
@@ -175,7 +175,7 @@ describe('garminActivityToRow', () => {
 		])
 	})
 
-	it('round-trips through parseGarminRow', () => {
+	it('round-trips through parseStravaRow', () => {
 		const activities = [
 			{
 				date: '2026-04-01',
@@ -203,8 +203,8 @@ describe('garminActivityToRow', () => {
 			},
 		]
 		for (const activity of activities) {
-			const row = garminActivityToRow(activity)
-			expect(parseGarminRow(row)).toEqual(activity)
+			const row = stravaActivityToRow(activity)
+			expect(parseStravaRow(row)).toEqual(activity)
 		}
 	})
 })

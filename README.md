@@ -30,5 +30,5 @@ React 19 · TypeScript 5.7 · Vite 6 · Vitest · Google Sheets API · GitHub Pa
 |------|---------|
 | [MANIFESTO.md](MANIFESTO.md) | Vision, principles, scope |
 | [GOOGLE_SETUP.md](GOOGLE_SETUP.md) | OAuth and Sheets configuration |
-| [GARMIN_SYNC_SETUP.md](GARMIN_SYNC_SETUP.md) | Garmin data sync via Strava API |
+| [STRAVA_SYNC_SETUP.md](STRAVA_SYNC_SETUP.md) | Strava data sync via Strava API |
 | [AGENTS.md](AGENTS.md) | Operational notes for AI agents |

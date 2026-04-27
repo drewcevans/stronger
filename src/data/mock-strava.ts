@@ -1,12 +1,12 @@
 /**
- * Mock Garmin activity data for development.
- * Replaced with real data from the "Stronger - Garmin" sheet tab once synced.
+ * Mock Strava activity data for development.
+ * Replaced with real data from the "Stronger - Strava" sheet tab once synced.
  */
-import type { GarminActivity, GarminGoal } from '../model/garmin.js';
+import type { StravaActivity, StravaGoal } from '../model/strava.js';
 
 /** Generate mock activities spanning the last ~6 months. */
-export function generateMockGarminActivities(): GarminActivity[] {
-  const activities: GarminActivity[] = [];
+export function generateMockStravaActivities(): StravaActivity[] {
+  const activities: StravaActivity[] = [];
   const today = new Date();
   const sixMonthsAgo = new Date(today);
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -52,7 +52,7 @@ export function generateMockGarminActivities(): GarminActivity[] {
 }
 
 /** Example goals for development. */
-export const mockGarminGoals: GarminGoal[] = [
+export const mockStravaGoals: StravaGoal[] = [
   { metric: 'distance', value: 1500 },      // 1500 miles
   { metric: 'elevationGain', value: 200000 }, // 200k feet
   { metric: 'duration', value: 500 },         // 500 hours
