@@ -472,13 +472,14 @@ export async function syncScheduleWithCalendar(
 		return { updatedSchedule: schedule, result }
 	}
 
-	// Extend range to ±30 days to catch moved events
+	// Extend range: 30 days back to catch moved events, 90 days forward to
+	// discover events planned further in advance (e.g., multi-month schedules).
 	const firstDate = allDates[0]
 	const lastDate = allDates[allDates.length - 1]
 	const [fy, fm, fd] = firstDate.split('-').map(Number)
 	const [ly, lm, ld] = lastDate.split('-').map(Number)
 	const rangeStart = new Date(fy, fm - 1, fd - 30)
-	const rangeEnd = new Date(ly, lm - 1, ld + 31)
+	const rangeEnd = new Date(ly, lm - 1, ld + 91)
 	const startStr = formatDateISO(rangeStart)
 	const endStr = formatDateISO(rangeEnd)
 
