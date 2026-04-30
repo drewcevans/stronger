@@ -1280,6 +1280,11 @@ export async function readSchedule(
 /**
  * Write the full schedule to the sheet (header + all entries).
  * This overwrites all existing schedule data.
+ *
+ * Uses a write-first approach: we update the data in place, then clear
+ * only the leftover rows below the new data. This prevents data loss if
+ * the clear or tail-clear call fails — the worst case is stale trailing
+ * rows rather than an empty sheet.
  */
 export async function writeSchedule(
 	spreadsheetId: string,
@@ -1293,18 +1298,25 @@ export async function writeSchedule(
 		...entries.map(scheduleEntryToRow),
 	]
 
-	// Clear existing data then write fresh
-	await gapi.client.sheets.spreadsheets.values.clear({
-		spreadsheetId,
-		range: SCHEDULE_FULL_RANGE,
-	})
-
+	// Write data first — this overwrites cells in place without clearing.
 	await gapi.client.sheets.spreadsheets.values.update({
 		spreadsheetId,
 		range: SCHEDULE_FULL_RANGE,
 		valueInputOption: 'RAW',
 		resource: { values: rows },
 	})
+
+	// Clear any leftover rows below the new data.
+	// Row 1 is the header, rows 2..N are data, so the tail starts at row N+1.
+	const tailStartRow = rows.length + 1
+	const SCHEDULE_MAX_ROW = 10000
+	if (tailStartRow <= SCHEDULE_MAX_ROW) {
+		const tailRange = `'${SCHEDULE_TAB_NAME}'!A${tailStartRow}:I${SCHEDULE_MAX_ROW}`
+		await gapi.client.sheets.spreadsheets.values.clear({
+			spreadsheetId,
+			range: tailRange,
+		})
+	}
 }
 
 /* ------------------------------------------------------------------ */
