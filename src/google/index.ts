@@ -67,11 +67,13 @@ export {
 	writeSettings,
 	goalsFromSettings,
 	goalsToSettings,
+	liftGoalsFromSettings,
+	liftGoalsToSettings,
 	DEFAULT_APP_SETTINGS,
 	appSettingsFromMap,
 	appSettingsToMap,
 } from './sheets.ts'
-export type { SheetInfo, LogContext, ParsedLogRow } from './sheets.ts'
+export type { SheetInfo, LogContext, ParsedLogRow, LiftGoal } from './sheets.ts'
 export type { CalendarListEntry } from './types.ts'
 export { GOOGLE_CLIENT_ID } from './config.ts'
 export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, STRAVA_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'

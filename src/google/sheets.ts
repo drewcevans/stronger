@@ -1776,6 +1776,59 @@ export function goalsToSettings(
 }
 
 /* ------------------------------------------------------------------ */
+/*  Settings tab – lift goal helpers                                    */
+/* ------------------------------------------------------------------ */
+
+/** Key prefix used for lift goal entries in the settings tab. */
+const LIFT_GOAL_KEY_PREFIX = 'liftGoal.'
+
+/** The four main barbell lifts that support goals. */
+const VALID_LIFT_GOAL_IDS = new Set(['squat', 'bench-press', 'deadlift', 'overhead-press'])
+
+/** A weight goal for one of the Big 4 barbell lifts. */
+export interface LiftGoal {
+	liftId: string;
+	weight: number;
+}
+
+/**
+ * Extract {@link LiftGoal} entries from a settings map.
+ * Goal keys use the format `liftGoal.<liftId>` (e.g. `liftGoal.squat`).
+ */
+export function liftGoalsFromSettings(settings: Map<string, string>): LiftGoal[] {
+	const goals: LiftGoal[] = []
+	for (const [key, raw] of settings) {
+		if (!key.startsWith(LIFT_GOAL_KEY_PREFIX)) continue
+		const liftId = key.slice(LIFT_GOAL_KEY_PREFIX.length)
+		if (!VALID_LIFT_GOAL_IDS.has(liftId)) continue
+		const weight = Number(raw)
+		if (!isFinite(weight) || weight <= 0) continue
+		goals.push({ liftId, weight })
+	}
+	return goals
+}
+
+/**
+ * Merge {@link LiftGoal} entries into a settings map.
+ * Removes any existing `liftGoal.*` keys and replaces them with the new goals.
+ * Returns the updated map (mutates the input).
+ */
+export function liftGoalsToSettings(
+	goals: LiftGoal[],
+	settings: Map<string, string>,
+): Map<string, string> {
+	for (const key of [...settings.keys()]) {
+		if (key.startsWith(LIFT_GOAL_KEY_PREFIX)) {
+			settings.delete(key)
+		}
+	}
+	for (const g of goals) {
+		settings.set(`${LIFT_GOAL_KEY_PREFIX}${g.liftId}`, String(g.weight))
+	}
+	return settings
+}
+
+/* ------------------------------------------------------------------ */
 /*  Settings tab – app settings helpers                                */
 /* ------------------------------------------------------------------ */
 

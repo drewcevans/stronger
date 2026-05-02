@@ -2850,6 +2850,66 @@ body {
 	font-size: 0.8rem;
 }
 
+.progress-big4-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.progress-goal-btn {
+	background: none;
+	border: none;
+	color: rgba(255, 255, 255, 0.4);
+	cursor: pointer;
+	padding: 2px;
+	display: flex;
+	align-items: center;
+	transition: color 0.15s;
+}
+
+.progress-goal-btn:hover {
+	color: var(--color-primary);
+}
+
+.progress-goal-input-row {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.progress-goal-input {
+	flex: 1;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 4px;
+	color: #fff;
+	padding: 4px 8px;
+	font-size: 0.8rem;
+	outline: none;
+}
+
+.progress-goal-input:focus {
+	border-color: var(--color-primary);
+}
+
+.progress-goal-save {
+	background: var(--color-primary);
+	color: #000;
+	border: none;
+	border-radius: 4px;
+	padding: 4px 10px;
+	font-size: 0.8rem;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.progress-goal-line {
+	fill: none;
+	stroke: rgba(255, 255, 255, 0.4);
+	stroke-width: 1.5;
+	stroke-dasharray: 6 4;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Settings view                                                      */
 /* ------------------------------------------------------------------ */
