@@ -199,7 +199,7 @@ export function buildProgressData(
  */
 export function filterDips(
   points: ProgressDataPoint[],
-  threshold = 0.10,
+  threshold = 0.15,
 ): ProgressDataPoint[] {
   if (points.length < 3) return points;
 

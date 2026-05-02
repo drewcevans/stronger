@@ -237,7 +237,7 @@ function Big4Chart({
           <input
             className="progress-goal-input"
             type="number"
-            placeholder="Goal weight (lbs)"
+            placeholder="Goal weight"
             value={goalInput}
             onChange={(e) => setGoalInput(e.target.value)}
           />
@@ -350,7 +350,7 @@ function ProgressChart({
     }
   }
 
-  const yUnit = metric === 'volume' ? 'lbs·reps' : 'lbs';
+  const yUnit = metric === 'volume' ? 'vol' : '';
 
   // Tooltip support
   const xPositions = useMemo(
@@ -452,7 +452,9 @@ function ProgressChart({
           />
         )}
       </svg>
-      <div className="progress-unit">{yUnit} · max {formatValue(maxVal)}</div>
+      <div className="progress-unit">
+        {yUnit ? `${yUnit} · ` : ''}{formatValue(maxVal)}{goalWeight !== undefined ? ` / ${formatValue(goalWeight)}` : ''}
+      </div>
 
       {/* Tooltip label */}
       {active != null && activeIndex !== null && (

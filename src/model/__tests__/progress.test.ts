@@ -304,9 +304,8 @@ describe('filterDips', () => {
   });
 
   it('removes points just beyond threshold', () => {
-    // 200 → 175 → 200 : 175/200 = 0.875, interpolated avg = 200,
-    // 200 * 0.90 = 180, 175 < 180 → dip
-    const data = pts([200, 175, 200]);
+    // 200 → 165 → 200 : 165/200 = 0.825, drop is 17.5%, above 15% threshold → dip
+    const data = pts([200, 165, 200]);
     const result = filterDips(data);
     expect(result).toHaveLength(2);
   });
@@ -322,12 +321,12 @@ describe('filterDips', () => {
   });
 
   it('accepts custom threshold', () => {
-    // With lenient 0.15, 175 out of avg 200 (12.5% drop) is kept
+    // With default 0.15, 175 out of 200 (12.5% drop) is kept
     const data = pts([200, 175, 200]);
-    expect(filterDips(data, 0.15)).toEqual(data);
-    // With default 0.10, 175 is removed (12.5% > 10%)
+    expect(filterDips(data)).toEqual(data);
+    // With stricter 0.10, 175 is removed (12.5% > 10%)
     expect(filterDips(data, 0.10)).toHaveLength(2);
-    // With stricter 0.05 threshold, 175 is also removed (12.5% > 5%)
+    // With even stricter 0.05 threshold, 175 is also removed (12.5% > 5%)
     expect(filterDips(data, 0.05)).toHaveLength(2);
   });
 
@@ -335,12 +334,13 @@ describe('filterDips', () => {
     // A lifter progressing 200→210, then 3 weeks of reduced weight, then recovery
     const data = pts([200, 210, 190, 170, 160, 180, 210]);
     const result = filterDips(data);
-    // 190 is ~9.5% below peak of 210, within 10% threshold → kept
+    // 190 is ~9.5% below peak of 210, within 15% threshold → kept
     expect(result.map((p) => p.value)).toContain(190);
-    // 170 (19%), 160 (24%), 180 (14%) are all >10% below peak → removed
+    // 180 is ~14.3% below peak of 210, within 15% threshold → kept
+    expect(result.map((p) => p.value)).toContain(180);
+    // 170 (19%), 160 (24%) are >15% below peak → removed
     expect(result.map((p) => p.value)).not.toContain(170);
     expect(result.map((p) => p.value)).not.toContain(160);
-    expect(result.map((p) => p.value)).not.toContain(180);
     // Endpoints and peak retained
     expect(result.map((p) => p.value)).toContain(200);
     expect(result.map((p) => p.value)).toContain(210);
