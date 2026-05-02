@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
 import { computeProgression, FLAG_SENTINEL } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readStravaActivities, verifyStravaTab, createStravaTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
+import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readStravaActivities, verifyStravaTab, createStravaTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, liftGoalsFromSettings, liftGoalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
+import type { LiftGoal } from './google/index.js';
 import { syncScheduleWithCalendar, generateStrongerId, withAuthRetry } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
@@ -44,6 +45,7 @@ function App() {
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
   const [stravaActivities, setStravaActivities] = useState<StravaActivity[]>([]);
   const [stravaGoals, setStravaGoals] = useState<StravaGoal[]>([]);
+  const [liftGoals, setLiftGoals] = useState<LiftGoal[]>([]);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
   const [pendingFinish, setPendingFinish] = useState<{
     workout: Workout;
@@ -304,6 +306,7 @@ function App() {
         const settings = await readSettings(sheetId);
         settingsRef.current = settings;
         setStravaGoals(goalsFromSettings(settings));
+        setLiftGoals(liftGoalsFromSettings(settings));
         setAppSettings(appSettingsFromMap(settings));
       });
     } catch {
@@ -550,6 +553,20 @@ function App() {
       if (spreadsheetId) {
         // Merge goals into settings and write the full settings map
         goalsToSettings(updated, settingsRef.current);
+        void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
+      }
+      return updated;
+    });
+  }, [spreadsheetId]);
+
+  const handleLiftGoalChange = useCallback((liftId: string, weight: number | null) => {
+    setLiftGoals((prev) => {
+      const updated = prev.filter((g) => g.liftId !== liftId);
+      if (weight !== null) {
+        updated.push({ liftId, weight });
+      }
+      if (spreadsheetId) {
+        liftGoalsToSettings(updated, settingsRef.current);
         void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
       }
       return updated;
@@ -891,7 +908,7 @@ function App() {
           onOpenStrava={onOpenStrava}
           onOpenSettings={handleOpenSettings}
         />
-        <ProgressView logRows={logRows} />
+        <ProgressView logRows={logRows} liftGoals={liftGoals} onLiftGoalChange={handleLiftGoalChange} />
       </>
     );
   }

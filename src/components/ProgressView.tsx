@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { ParsedLogRow } from '../google/sheets.js';
+import type { LiftGoal } from '../google/sheets.js';
 import type { ProgressMetric, TimeRange, ProgressDataPoint } from '../model/progress.js';
 import {
   getLiftsWithData,
@@ -7,9 +8,12 @@ import {
   filterDips,
 } from '../model/progress.js';
 import { useChartTooltip } from '../hooks/useChartTooltip.js';
+import { Target } from 'lucide-react';
 
 interface Props {
   logRows: ParsedLogRow[];
+  liftGoals?: LiftGoal[];
+  onLiftGoalChange?: (liftId: string, weight: number | null) => void;
 }
 
 const METRIC_LABELS: Record<ProgressMetric, string> = {
@@ -61,7 +65,7 @@ const CHART_HEIGHT = 260;
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-export function ProgressView({ logRows }: Props) {
+export function ProgressView({ logRows, liftGoals, onLiftGoalChange }: Props) {
   const lifts = useMemo(() => getLiftsWithData(logRows), [logRows]);
 
   // Separate big-4 lifts (that have data) from the rest
@@ -133,6 +137,8 @@ export function ProgressView({ logRows }: Props) {
                   metric={metric}
                   range={range}
                   skipDips={skipDips}
+                  goalWeight={liftGoals?.find((g) => g.liftId === liftId)?.weight}
+                  onGoalChange={onLiftGoalChange}
                 />
               ))}
             </div>
@@ -181,6 +187,8 @@ function Big4Chart({
   metric,
   range,
   skipDips,
+  goalWeight,
+  onGoalChange,
 }: {
   liftId: string;
   label: string;
@@ -188,7 +196,12 @@ function Big4Chart({
   metric: ProgressMetric;
   range: TimeRange;
   skipDips: boolean;
+  goalWeight?: number;
+  onGoalChange?: (liftId: string, weight: number | null) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
+
   const data = useMemo(() => {
     const raw = buildProgressData(logRows, liftId, metric, range);
     return skipDips ? filterDips(raw) : raw;
@@ -199,13 +212,51 @@ function Big4Chart({
     [logRows, liftId, metric],
   );
 
+  // Only show goal on heaviest and e1rm charts
+  const showGoal = goalWeight !== undefined && metric !== 'volume';
+
   return (
     <div className="progress-big4-item">
-      <h3 className="progress-big4-label">{label}</h3>
+      <div className="progress-big4-header">
+        <h3 className="progress-big4-label">{label}</h3>
+        {onGoalChange && metric !== 'volume' && (
+          <button
+            className="progress-goal-btn"
+            onClick={() => {
+              setGoalInput(goalWeight !== undefined ? String(goalWeight) : '');
+              setEditing(!editing);
+            }}
+            title="Set 1RM goal"
+          >
+            <Target size={14} />
+          </button>
+        )}
+      </div>
+      {editing && onGoalChange && (
+        <div className="progress-goal-input-row">
+          <input
+            className="progress-goal-input"
+            type="number"
+            placeholder="Goal weight (lbs)"
+            value={goalInput}
+            onChange={(e) => setGoalInput(e.target.value)}
+          />
+          <button
+            className="progress-goal-save"
+            onClick={() => {
+              const v = Number(goalInput);
+              onGoalChange(liftId, isFinite(v) && v > 0 ? v : null);
+              setEditing(false);
+            }}
+          >
+            Set
+          </button>
+        </div>
+      )}
       {data.length === 0 ? (
         <p className="progress-empty">No data yet.</p>
       ) : (
-        <ProgressChart data={data} metric={metric} stableYMin={stableYMin} />
+        <ProgressChart data={data} metric={metric} stableYMin={stableYMin} goalWeight={showGoal ? goalWeight : undefined} />
       )}
     </div>
   );
@@ -253,10 +304,12 @@ function ProgressChart({
   data,
   metric,
   stableYMin,
+  goalWeight,
 }: {
   data: ProgressDataPoint[];
   metric: ProgressMetric;
   stableYMin?: number;
+  goalWeight?: number;
 }) {
   // We use a viewBox so the chart is responsive
   const viewBoxWidth = 400;
@@ -270,7 +323,9 @@ function ProgressChart({
   // y-axis doesn't jump when toggling time-range or skip-dips filters.
   // Fall back to the visible data minimum if no stable floor is provided.
   const yMin = stableYMin !== undefined ? Math.min(stableYMin, minVal) : minVal;
-  const yMax = Math.ceil(maxVal / 10) * 10 || 10;
+  // Extend yMax to include the goal weight so the goal line is always visible
+  const effectiveMax = goalWeight !== undefined ? Math.max(maxVal, goalWeight) : maxVal;
+  const yMax = Math.ceil(effectiveMax / 10) * 10 || 10;
   const yRange = yMax - yMin || 1;
 
   const xScale = (i: number) =>
@@ -374,6 +429,17 @@ function ProgressChart({
             className={`progress-dot${i === activeIndex ? ' active' : ''}`}
           />
         ))}
+
+        {/* Goal line (horizontal dashed) */}
+        {goalWeight !== undefined && (
+          <line
+            x1={CHART_PADDING.left}
+            y1={yScale(goalWeight)}
+            x2={viewBoxWidth - CHART_PADDING.right}
+            y2={yScale(goalWeight)}
+            className="progress-goal-line"
+          />
+        )}
 
         {/* Tooltip crosshair */}
         {active != null && activeIndex !== null && (
