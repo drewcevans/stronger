@@ -253,11 +253,14 @@ describe('filterDips', () => {
   const pts = (values: number[]) =>
     values.map((v, i) => ({ date: `2025-01-${String(i + 1).padStart(2, '0')}`, value: v }));
 
-  it('returns input unchanged when fewer than 3 points', () => {
-    const two = pts([100, 200]);
-    expect(filterDips(two)).toEqual(two);
+  it('returns input unchanged when fewer than 2 points', () => {
     expect(filterDips([])).toEqual([]);
     expect(filterDips(pts([100]))).toEqual(pts([100]));
+  });
+
+  it('returns two points unchanged when no dip', () => {
+    const two = pts([100, 200]);
+    expect(filterDips(two)).toEqual(two);
   });
 
   it('removes a single obvious dip (deload session)', () => {
@@ -269,7 +272,7 @@ describe('filterDips', () => {
     expect(result[1].value).toBe(200);
   });
 
-  it('removes consecutive deload sessions via iteration', () => {
+  it('removes consecutive deload sessions', () => {
     // 200 → 120 → 120 → 200 : both 120s are deload dips
     const data = pts([200, 120, 120, 200]);
     const result = filterDips(data);
@@ -277,8 +280,9 @@ describe('filterDips', () => {
     expect(result.map((p) => p.value)).toEqual([200, 200]);
   });
 
-  it('preserves steady decline (not a dip pattern)', () => {
-    const data = pts([200, 190, 180, 170, 160]);
+  it('preserves steady decline within threshold', () => {
+    // Each step is ~5% decline, within 10% threshold
+    const data = pts([200, 190, 181, 172]);
     const result = filterDips(data);
     expect(result).toEqual(data);
   });
@@ -289,11 +293,13 @@ describe('filterDips', () => {
     expect(result).toEqual(data);
   });
 
-  it('keeps first and last points always', () => {
-    const data = pts([50, 200, 50]);
+  it('truncates series when last point is a dip', () => {
+    // 200 → 255 → 198 : 198 is 22% below 255, should be filtered (series ends at 255)
+    const data = pts([200, 255, 198]);
     const result = filterDips(data);
-    // 50 is the first and last, 200 is not a dip (it's higher)
-    expect(result).toEqual(data);
+    expect(result).toHaveLength(2);
+    expect(result[0].value).toBe(200);
+    expect(result[1].value).toBe(255);
   });
 
   it('does not remove small fluctuations below threshold', () => {
@@ -304,8 +310,8 @@ describe('filterDips', () => {
   });
 
   it('removes points just beyond threshold', () => {
-    // 200 → 165 → 200 : 165/200 = 0.825, drop is 17.5%, above 15% threshold → dip
-    const data = pts([200, 165, 200]);
+    // 200 → 175 → 200 : 175/200 = 0.875, drop is 12.5%, above 10% threshold → dip
+    const data = pts([200, 175, 200]);
     const result = filterDips(data);
     expect(result).toHaveLength(2);
   });
@@ -318,32 +324,29 @@ describe('filterDips', () => {
     // Everything else should stay
     expect(result.map((p) => p.value)).toContain(120);
     expect(result.map((p) => p.value)).toContain(125);
+    expect(result.map((p) => p.value)).toContain(130);
   });
 
   it('accepts custom threshold', () => {
-    // With default 0.15, 175 out of 200 (12.5% drop) is kept
-    const data = pts([200, 175, 200]);
+    // With default 0.10, 185 out of 200 (7.5% drop) is kept
+    const data = pts([200, 185, 200]);
     expect(filterDips(data)).toEqual(data);
-    // With stricter 0.10, 175 is removed (12.5% > 10%)
-    expect(filterDips(data, 0.10)).toHaveLength(2);
-    // With even stricter 0.05 threshold, 175 is also removed (12.5% > 5%)
+    // With stricter 0.05 threshold, 185 is removed (7.5% > 5%)
     expect(filterDips(data, 0.05)).toHaveLength(2);
   });
 
   it('removes gradual multi-week dips (illness / travel)', () => {
-    // A lifter progressing 200→210, then 3 weeks of reduced weight, then recovery
-    const data = pts([200, 210, 190, 170, 160, 180, 210]);
+    // A lifter progressing 200→210, then drops, then recovery
+    const data = pts([200, 210, 170, 160, 180, 210]);
     const result = filterDips(data);
-    // 190 is ~9.5% below peak of 210, within 15% threshold → kept
-    expect(result.map((p) => p.value)).toContain(190);
-    // 180 is ~14.3% below peak of 210, within 15% threshold → kept
-    expect(result.map((p) => p.value)).toContain(180);
-    // 170 (19%), 160 (24%) are >15% below peak → removed
+    // 170 is ~19% below peak of 210 → removed
     expect(result.map((p) => p.value)).not.toContain(170);
+    // 160 would compare against last kept (210) → also removed
     expect(result.map((p) => p.value)).not.toContain(160);
-    // Endpoints and peak retained
-    expect(result.map((p) => p.value)).toContain(200);
-    expect(result.map((p) => p.value)).toContain(210);
+    // 180 compares against last kept (210), 14% below → removed
+    expect(result.map((p) => p.value)).not.toContain(180);
+    // 210 at the end compares against last kept (210), 0% → kept
+    expect(result.map((p) => p.value)).toEqual([200, 210, 210]);
   });
 
   it('removes a long deload block', () => {
@@ -357,5 +360,12 @@ describe('filterDips', () => {
     expect(result.map((p) => p.value)).toContain(210);
     expect(result.map((p) => p.value)).toContain(205);
     expect(result.map((p) => p.value)).toContain(215);
+  });
+
+  it('filters the user example: 255 → 198 (22% drop at end)', () => {
+    const data = pts([230, 240, 255, 198]);
+    const result = filterDips(data);
+    // 198 is 22% below 255, should be truncated
+    expect(result.map((p) => p.value)).toEqual([230, 240, 255]);
   });
 });
