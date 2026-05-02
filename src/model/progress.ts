@@ -183,50 +183,25 @@ export function buildProgressData(
 /**
  * Remove data points that are obviously from deload / taper / illness sessions.
  *
- * Uses a bi-directional running-peak algorithm:
- *
- * 1. **Forward pass** — walk left-to-right tracking the highest value seen so
- *    far.  Any point more than `threshold` (default 10 %) below that peak is
- *    marked as a dip.
- * 2. **Backward pass** — walk right-to-left doing the same, which preserves
- *    legitimate long-term declines (a gradual downtrend is reachable from both
- *    ends).
- * 3. A point is kept if **either** pass considers it valid.
- *
- * This handles multi-week dips (illness, travel, deload blocks) naturally
- * because every low point is compared against the running peak, not just its
- * immediate neighbors.
+ * Hard filter: any point more than `threshold` (default 10%) below the
+ * previous *kept* point is removed. If the last point in the series is a dip,
+ * the series is truncated (ends early) rather than showing the drop.
  */
 export function filterDips(
   points: ProgressDataPoint[],
-  threshold = 0.15,
+  threshold = 0.10,
 ): ProgressDataPoint[] {
-  if (points.length < 3) return points;
+  if (points.length < 2) return points;
 
-  const n = points.length;
-  const kept = new Set<number>();
-
-  // Forward pass: keep points within threshold of the running peak
-  kept.add(0);
-  let peak = points[0].value;
-  for (let i = 1; i < n; i++) {
-    const v = points[i].value;
-    if (v >= peak * (1 - threshold)) {
-      kept.add(i);
-      if (v > peak) peak = v;
+  const result: ProgressDataPoint[] = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const prev = result[result.length - 1].value;
+    const curr = points[i].value;
+    if (curr >= prev * (1 - threshold)) {
+      result.push(points[i]);
     }
+    // else: skip this point (it's a dip)
   }
 
-  // Backward pass: same logic from the right
-  kept.add(n - 1);
-  peak = points[n - 1].value;
-  for (let i = n - 2; i >= 0; i--) {
-    const v = points[i].value;
-    if (v >= peak * (1 - threshold)) {
-      kept.add(i);
-      if (v > peak) peak = v;
-    }
-  }
-
-  return points.filter((_, i) => kept.has(i));
+  return result;
 }
