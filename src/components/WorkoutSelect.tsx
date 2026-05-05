@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
 import type { LogSession } from './CalendarView.js';
 import { groupLogByDate } from './CalendarView.js';
 import { Banner } from './Banner.js';
 import { MotivationalQuote } from './MotivationalQuote.js';
-import { BicepsFlexed, ChevronDown, Pencil, Plus, Star, Bike, Trash2, Check, X } from 'lucide-react';
+import { BicepsFlexed, ChevronDown, Pencil, Plus, Star, Bike, Trash2, Check, X, Copy, MoreVertical } from 'lucide-react';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -15,6 +15,8 @@ interface WorkoutSelectProps {
 	onSelect: (workout: Workout) => void;
 	onViewSession?: (session: LogSession) => void;
 	onEdit?: (workoutId: string) => void;
+	onDuplicate?: (workoutId: string) => void;
+	onDelete?: (workoutId: string) => void;
 	onNew?: () => void;
 	onToggleFavorite?: (workoutId: string, favorite: boolean) => void;
 	cardioActivities?: CardioActivity[];
@@ -25,15 +27,35 @@ function WorkoutCard({
 	w,
 	onSelect,
 	onEdit,
+	onDuplicate,
+	onDelete,
 	onToggleFavorite,
 	done,
 }: {
 	w: Workout;
 	onSelect: (w: Workout) => void;
 	onEdit?: (id: string) => void;
+	onDuplicate?: (id: string) => void;
+	onDelete?: (id: string) => void;
 	onToggleFavorite?: (id: string, fav: boolean) => void;
 	done?: boolean;
 }) {
+	const [menuOpen, setMenuOpen] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!menuOpen) return;
+		const handleClick = (e: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+				setMenuOpen(false);
+			}
+		};
+		document.addEventListener('mousedown', handleClick);
+		return () => document.removeEventListener('mousedown', handleClick);
+	}, [menuOpen]);
+
+	const hasMenu = onEdit || onDuplicate || onDelete;
+
 	return (
 		<div className={`workout-card-wrapper${done ? ' workout-card-wrapper-done' : ''}`}>
 			{onToggleFavorite && (
@@ -52,14 +74,35 @@ function WorkoutCard({
 				<span className="strength-badge"><BicepsFlexed size={24} /></span>
 				<span className="workout-name">{w.name}</span>
 			</button>
-			{onEdit && (
-				<button
-					className="btn-edit-workout"
-					aria-label={`Edit ${w.name}`}
-					onClick={() => onEdit(w.id)}
-				>
-					<Pencil size={16} />
-				</button>
+			{hasMenu && (
+				<div className="workout-menu-container" ref={menuRef}>
+					<button
+						className="btn-edit-workout"
+						aria-label={`Actions for ${w.name}`}
+						onClick={() => setMenuOpen(!menuOpen)}
+					>
+						<MoreVertical size={16} />
+					</button>
+					{menuOpen && (
+						<div className="workout-dropdown-menu">
+							{onEdit && (
+								<button className="workout-dropdown-item" onClick={() => { setMenuOpen(false); onEdit(w.id); }}>
+									<Pencil size={14} /> Edit
+								</button>
+							)}
+							{onDuplicate && (
+								<button className="workout-dropdown-item" onClick={() => { setMenuOpen(false); onDuplicate(w.id); }}>
+									<Copy size={14} /> Duplicate
+								</button>
+							)}
+							{onDelete && (
+								<button className="workout-dropdown-item workout-dropdown-item-danger" onClick={() => { setMenuOpen(false); onDelete(w.id); }}>
+									<Trash2 size={14} /> Delete
+								</button>
+							)}
+						</div>
+					)}
+				</div>
 			)}
 		</div>
 	);
@@ -71,7 +114,7 @@ function todayDateString(): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onViewSession, onEdit, onNew, onToggleFavorite, cardioActivities, onCardioSave }: WorkoutSelectProps) {
+export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onSelect, onViewSession, onEdit, onDuplicate, onDelete, onNew, onToggleFavorite, cardioActivities, onCardioSave }: WorkoutSelectProps) {
 	const { favorites, others } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
@@ -164,7 +207,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 			) : (
 				<div className="workout-list">
 					{favorites.map((w) => (
-						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
+						<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
 					))}
 					{others.length > 0 && (
 						<>
@@ -177,7 +220,7 @@ export function WorkoutSelect({ workouts, missingLiftIds, schedule, logRows, onS
 								<ChevronDown size={16} className={`more-chevron${moreOpen ? ' more-chevron-open' : ''}`} />
 							</button>
 							{moreOpen && others.map((w) => (
-								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onToggleFavorite={onToggleFavorite} />
+								<WorkoutCard key={w.id} w={w} onSelect={onSelect} onEdit={onEdit} onDuplicate={onDuplicate} onDelete={onDelete} onToggleFavorite={onToggleFavorite} />
 							))}
 						</>
 					)}
