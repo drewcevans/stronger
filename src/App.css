@@ -2382,6 +2382,10 @@ body {
 	text-align: left;
 }
 
+.workout-dropdown-item:hover {
+	background: rgba(0, 229, 255, 0.05);
+}
+
 .workout-dropdown-item:active {
 	background: rgba(0, 229, 255, 0.1);
 	color: var(--color-primary);
@@ -2389,6 +2393,10 @@ body {
 
 .workout-dropdown-item-danger {
 	color: var(--color-accent);
+}
+
+.workout-dropdown-item-danger:hover {
+	background: rgba(255, 45, 123, 0.05);
 }
 
 .workout-dropdown-item-danger:active {
