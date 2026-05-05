@@ -600,6 +600,36 @@ function App() {
     navigateTo({ view: 'editor' });
   }, [navigateTo]);
 
+  const handleDuplicateWorkout = useCallback(
+    (workoutId: string) => {
+      const source = definitions.find((d) => d.id === workoutId);
+      if (!source) return;
+      const newId = generateStrongerId();
+      const newDef = { ...source, id: newId, name: `${source.name} (Copy)`, favorite: false };
+      const updatedDefs = [...definitions, newDef];
+      setDefinitions(updatedDefs);
+      setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
+      if (spreadsheetId) {
+        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
+      }
+      navigateTo({ view: 'editor', workoutId: newId });
+    },
+    [definitions, configs, spreadsheetId, navigateTo],
+  );
+
+  const handleDeleteWorkoutFromList = useCallback(
+    (workoutId: string) => {
+      if (!confirm('Delete this workout?')) return;
+      const updatedDefs = definitions.filter((d) => d.id !== workoutId);
+      setDefinitions(updatedDefs);
+      setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
+      if (spreadsheetId) {
+        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
+      }
+    },
+    [definitions, configs, spreadsheetId],
+  );
+
   const handleToggleFavorite = useCallback(
     (workoutId: string, favorite: boolean) => {
       const updatedDefs = definitions.map((d) =>
@@ -1012,6 +1042,8 @@ function App() {
         onSelect={handleSelectWorkout}
         onViewSession={handleViewSession}
         onEdit={handleEditWorkout}
+        onDuplicate={handleDuplicateWorkout}
+        onDelete={handleDeleteWorkoutFromList}
         onNew={handleNewWorkout}
         onToggleFavorite={handleToggleFavorite}
         cardioActivities={cardioActivities}
