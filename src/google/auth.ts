@@ -225,20 +225,46 @@ export function clearAuth(): void {
 }
 
 /**
+ * Extract the HTTP status code from a gapi error object.
+ * Returns `undefined` if the status cannot be determined.
+ */
+export function getGapiErrorStatus(err: unknown): number | undefined {
+	if (err && typeof err === 'object') {
+		const e = err as Record<string, unknown>
+		if (typeof e.status === 'number') return e.status
+		const result = e.result as Record<string, unknown> | undefined
+		if (result?.error) {
+			const apiError = result.error as Record<string, unknown>
+			if (typeof apiError.code === 'number') return apiError.code
+		}
+	}
+	return undefined
+}
+
+/**
  * Check whether an error thrown by gapi.client is a 401 auth error,
  * indicating the access token has expired or been revoked.
  */
 export function isAuthError(err: unknown): boolean {
-	if (err && typeof err === 'object') {
-		const e = err as Record<string, unknown>
-		if (e.status === 401) return true
-		const result = e.result as Record<string, unknown> | undefined
-		if (result?.error) {
-			const apiError = result.error as Record<string, unknown>
-			if (apiError.code === 401) return true
-		}
+	return getGapiErrorStatus(err) === 401
+}
+
+/**
+ * Return a user-friendly error message for a sheet connection failure.
+ * Uses the HTTP status code to give actionable guidance.
+ */
+export function describeSheetError(err: unknown): string {
+	const status = getGapiErrorStatus(err)
+	switch (status) {
+		case 404:
+			return 'This spreadsheet was not found — it may have been deleted or moved to Trash.'
+		case 403:
+			return 'You don\'t have permission to access this spreadsheet. Check that it hasn\'t been unshared.'
+		default:
+			return err instanceof Error
+				? err.message
+				: 'Unable to access the sheet.'
 	}
-	return false
 }
 
 /* ------------------------------------------------------------------ */
