@@ -15,6 +15,7 @@ import {
 	extractSheetId,
 	saveSheetId,
 	loadSheetId,
+	clearSheetId,
 	createSpreadsheet,
 	connectToSheet,
 	readConfigZone,
@@ -28,6 +29,7 @@ import {
 	createCardioTab,
 	readCardioActivities,
 	writeDefaultCardioActivities,
+	describeSheetError,
 	GOOGLE_CLIENT_ID,
 } from '../google/index.ts'
 import { defaultCardioActivities } from '../data/sample-workouts.ts'
@@ -218,11 +220,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 						await attemptConnect()
 						return
 					} catch (retryErr) {
-						setError(
-							retryErr instanceof Error
-								? retryErr.message
-								: 'Unable to access the sheet after re-authenticating. Please check your permissions.',
-						)
+						setError(describeSheetError(retryErr))
 						setPhase('error')
 						return
 					}
@@ -232,9 +230,7 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 					return
 				}
 			}
-			setError(
-				err instanceof Error ? err.message : 'Unable to access the sheet.',
-			)
+			setError(describeSheetError(err))
 			setPhase('error')
 		}
 	}, [onConnected, onNeedsSetup])
@@ -301,6 +297,12 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 			setPhase('sheet-input')
 		}
 	}, [tryConnect])
+
+	const handleConnectDifferent = useCallback(() => {
+		clearSheetId()
+		setError(null)
+		setPhase('sheet-input')
+	}, [])
 
 	const handleSignOut = useCallback(async () => {
 		await signOut()
@@ -405,6 +407,9 @@ export function GoogleAuth({ onConnected, onDisconnected, onNeedsSetup, onOpenCa
 				{error && <p className="auth-error">{error}</p>}
 				<button className="btn-primary" onClick={handleRetry}>
 					Retry
+				</button>
+				<button className="btn-link" onClick={handleConnectDifferent}>
+					Connect a different sheet
 				</button>
 				<button className="btn-link" onClick={handleSignOut}>
 					Sign out
