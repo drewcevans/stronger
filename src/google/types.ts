@@ -175,6 +175,9 @@ export interface SheetRequest {
 			title: string
 		}
 	}
+	deleteSheet?: {
+		sheetId: number
+	}
 	deleteDimension?: {
 		range: {
 			sheetId: number
