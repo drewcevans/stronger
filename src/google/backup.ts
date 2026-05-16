@@ -30,6 +30,9 @@ const TABS_TO_BACKUP: string[] = [
 	SETTINGS_TAB_NAME,
 ]
 
+/** Open-ended column range used when reading/writing entire tab contents. */
+const FULL_COLUMN_RANGE = 'A:ZZ'
+
 /* ------------------------------------------------------------------ */
 /*  Core backup logic                                                  */
 /* ------------------------------------------------------------------ */
@@ -51,7 +54,7 @@ export async function performBackup(
 	const gapi = window.gapi
 	if (!gapi) throw new Error('gapi not loaded')
 
-	let backupId = settings.get(BACKUP_SETTING_KEY) ?? null
+	let backupId = settings.get(BACKUP_SETTING_KEY) ?? undefined
 
 	// Verify existing backup sheet is still accessible
 	if (backupId) {
@@ -59,7 +62,7 @@ export async function performBackup(
 			await gapi.client.sheets.spreadsheets.get({ spreadsheetId: backupId })
 		} catch {
 			// Backup sheet inaccessible — will create a new one
-			backupId = null
+			backupId = undefined
 		}
 	}
 
@@ -68,6 +71,9 @@ export async function performBackup(
 		const response = await gapi.client.sheets.spreadsheets.create({
 			resource: { properties: { title: BACKUP_SHEET_TITLE } },
 		})
+		if (!response.result.spreadsheetId) {
+			throw new Error('Failed to create backup spreadsheet — no ID returned')
+		}
 		backupId = response.result.spreadsheetId
 	}
 
@@ -91,7 +97,7 @@ export async function performBackup(
 		if (!sourceTabs.has(tabName)) continue
 
 		// Read all data from the source tab (open-ended range)
-		const readRange = `'${tabName}'!A:ZZ`
+		const readRange = `'${tabName}'!${FULL_COLUMN_RANGE}`
 		let values: string[][] = []
 		try {
 			const response = await gapi.client.sheets.spreadsheets.values.get({
@@ -116,7 +122,7 @@ export async function performBackup(
 		}
 
 		// Clear existing backup data and write fresh
-		const writeRange = `'${tabName}'!A:ZZ`
+		const writeRange = `'${tabName}'!${FULL_COLUMN_RANGE}`
 		await gapi.client.sheets.spreadsheets.values.clear({
 			spreadsheetId: backupId,
 			range: writeRange,
