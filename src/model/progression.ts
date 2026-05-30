@@ -102,7 +102,11 @@ export function computeProgression(
 				actualType === 'work' &&
 				templateSet.weightBasis.kind === 'topSet'
 			) {
-				if (hitTarget) signals.topSetHit = true;
+				// Only suggest incrementing if the set is at 100% of the top-set
+				// weight. Sub-100% sets (e.g. easy/hypertrophy days) should not
+				// trigger a weight increase.
+				if (hitTarget && templateSet.percentage >= 1.0)
+					signals.topSetHit = true;
 				// Prefer the highest-percentage set for back-calculating the reference
 				const prev = actualTopRef.get(liftId);
 				if (!prev || templateSet.percentage > prev.percentage) {
@@ -115,7 +119,10 @@ export function computeProgression(
 				actualType === 'backoff' &&
 				templateSet.weightBasis.kind === 'backoff'
 			) {
-				if (hitTarget) signals.backoffHit = true;
+				// Only suggest incrementing backoff if the set is at 100% of the
+				// backoff weight.
+				if (hitTarget && templateSet.percentage >= 1.0)
+					signals.backoffHit = true;
 				const prev = actualBackoffRef.get(liftId);
 				if (!prev || templateSet.percentage > prev.percentage) {
 					actualBackoffRef.set(liftId, {
