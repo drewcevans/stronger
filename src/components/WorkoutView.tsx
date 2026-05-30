@@ -213,25 +213,32 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 	return (
 		<div className="workout-view">
 			<header className="workout-header">
-				<button className="btn-back" onClick={onBack}>
-					<ArrowLeft size={20} /> Back
-				</button>
-				<h1 className="workout-title">{workout.name}</h1>
-				<span className="progress-badge">
-					{completedSets}/{totalSets}
-				</span>
-				{appSettings.keepScreenOn && (
-					<button
-						className={`btn-wake-lock ${wakeLockActive ? 'active' : 'inactive'}`}
-						onClick={reacquireWakeLock}
-						title={wakeLockActive ? 'Screen staying on' : 'Tap to keep screen on'}
-					>
-						{wakeLockActive ? <Sun size={16} /> : <SunDim size={16} />}
+				<div className="workout-header-row">
+					<button className="btn-back" onClick={onBack}>
+						<ArrowLeft size={20} /> Back
 					</button>
-				)}
-				<button className="btn-finish" onClick={handleFinish}>
-					Finish
-				</button>
+					<h1 className="workout-title">{workout.name}</h1>
+					<span className="progress-badge">
+						{completedSets}/{totalSets}
+					</span>
+					{appSettings.keepScreenOn && (
+						<button
+							className={`btn-wake-lock ${wakeLockActive ? 'active' : 'inactive'}`}
+							onClick={reacquireWakeLock}
+							title={wakeLockActive ? 'Screen staying on' : 'Tap to keep screen on'}
+						>
+							{wakeLockActive ? <Sun size={16} /> : <SunDim size={16} />}
+						</button>
+					)}
+					<button className="btn-finish" onClick={handleFinish}>
+						Finish
+					</button>
+				</div>
+				<div className="workout-header-timer">
+					{appSettings.showRestTimer && restTimer.exerciseIdx !== null && (
+						<span className="rest-timer" aria-label="Rest timer">{formatElapsed(restTimer.elapsed)}</span>
+					)}
+				</div>
 			</header>
 
 			{allExercises.map((exercise, exerciseIdx) => {
@@ -240,9 +247,6 @@ export function WorkoutView({ workout, previousSets, startTime, draftResults, ap
 				<section key={exerciseIdx} className="exercise-card">
 					<h2 className="exercise-name">
 						{exercise.name}
-						{appSettings.showRestTimer && restTimer.exerciseIdx === exerciseIdx && (
-							<span className="rest-timer">{formatElapsed(restTimer.elapsed)}</span>
-						)}
 						<span className={`role-tag role-${exercise.role}`}>{exercise.role}</span>
 					</h2>
 					<div className="sets-list">
