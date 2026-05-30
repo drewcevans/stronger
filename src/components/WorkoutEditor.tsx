@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import type { SetTemplate, WeightBasis, SetType, LiftConfig, ExerciseRole } from '../model/index.js';
 import type { WorkoutDefinition } from '../data/sample-workouts.js';
 
@@ -121,6 +121,7 @@ export function WorkoutEditor({
 	);
 	const [saving, setSaving] = useState(false);
 	const [confirmDelete, setConfirmDelete] = useState(false);
+	const [commentTarget, setCommentTarget] = useState<{ exerciseIdx: number; setIdx: number } | null>(null);
 
 	const isNew = !existing;
 
@@ -399,6 +400,7 @@ export function WorkoutEditor({
 									<span className="editor-col-reps">Min</span>
 									<span className="editor-col-reps">Max</span>
 									<span className="editor-col-amrap">AMRAP</span>
+									<span className="editor-col-comment"></span>
 									<span className="editor-col-remove"></span>
 								</div>
 								{exercise.sets.map((set, setIdx) => (
@@ -530,6 +532,14 @@ export function WorkoutEditor({
 										</label>
 										<button
 											type="button"
+											className={`btn-set-comment ${set.comment ? 'has-comment' : ''}`}
+											aria-label="Edit comment"
+											onClick={() => setCommentTarget({ exerciseIdx, setIdx })}
+										>
+											<MessageSquare size={14} />
+										</button>
+										<button
+											type="button"
 											className="btn-remove-set"
 											aria-label="Remove set"
 											onClick={() => removeSet(exerciseIdx, setIdx)}
@@ -601,6 +611,38 @@ export function WorkoutEditor({
 					)}
 				</section>
 			)}
+
+			{/* Comment editing overlay */}
+			{commentTarget && (() => {
+				const { exerciseIdx, setIdx } = commentTarget;
+				const currentComment = workout.exercises[exerciseIdx]?.sets[setIdx]?.comment ?? '';
+				return (
+					<div className="comment-overlay" onClick={() => setCommentTarget(null)}>
+						<div className="comment-overlay-content" onClick={(e) => e.stopPropagation()}>
+							<h3 className="comment-overlay-title">Set Comment</h3>
+							<textarea
+								className="comment-overlay-input"
+								value={currentComment}
+								placeholder="Add a note for this set…"
+								rows={3}
+								autoFocus
+								onChange={(e) =>
+									updateSet(exerciseIdx, setIdx, {
+										comment: e.target.value || undefined,
+									})
+								}
+							/>
+							<button
+								type="button"
+								className="comment-overlay-done"
+								onClick={() => setCommentTarget(null)}
+							>
+								Done
+							</button>
+						</div>
+					</div>
+				);
+			})()}
 		</div>
 	);
 }
