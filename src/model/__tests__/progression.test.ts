@@ -551,9 +551,11 @@ describe('computeProgression', () => {
 		expect(p.proposedBackoffWeight).toBe(167.5); // 165 + 2.5
 	});
 
-	it('back-calculates reference weight correctly from non-100% sets', () => {
+	it('back-calculates reference weight correctly from non-100% sets but does not increment', () => {
 		// User has an 85% work set (no 100% set). Planned: 85% × 200 = 170
 		// User keeps the weight at 170 → effective reference = 170 / 0.85 = 200
+		// Since the set is below 100%, no increment should be proposed even if
+		// the rep target is met (supports "easy day" / hypertrophy workouts).
 		const exercises: ComputedExercise[] = [
 			{
 				liftId: 'bench',
@@ -582,7 +584,50 @@ describe('computeProgression', () => {
 		expect(proposals).toHaveLength(1);
 		// 170 / 0.85 = 200, rounded to nearest 5 = 200
 		expect(proposals[0].currentTopSetWeight).toBe(200);
-		expect(proposals[0].proposedTopSetWeight).toBe(202.5);
+		// No increment because the set was below 100%
+		expect(proposals[0].proposedTopSetWeight).toBe(200);
+		expect(proposals[0].topSetHit).toBe(false);
+	});
+
+	it('does not suggest backoff increment when backoff set is below 100%', () => {
+		const exercises: ComputedExercise[] = [
+			{
+				liftId: 'bench',
+				name: 'Bench Press',
+				role: 'primary',
+				sets: [
+					{ setType: 'work', weight: 200, minReps: 3, maxReps: 5, amrap: true },
+					{ setType: 'backoff', weight: 144.5, minReps: 5, maxReps: 8, amrap: true },
+				],
+			},
+		];
+		const templates: ExerciseTemplate[] = [
+			{
+				liftId: 'bench',
+				name: 'Bench Press',
+				role: 'primary',
+				sets: [
+					{ setType: 'work', percentage: 1.0, weightBasis: { kind: 'topSet' }, minReps: 3, maxReps: 5, amrap: true },
+					{ setType: 'backoff', percentage: 0.85, weightBasis: { kind: 'backoff' }, minReps: 5, maxReps: 8, amrap: true },
+				],
+			},
+		];
+		const results: SetResult[][] = [
+			[
+				{ actualWeight: 200, actualReps: 5, completed: true, actualSetType: 'work' },
+				{ actualWeight: 144.5, actualReps: 8, completed: true, actualSetType: 'backoff' },
+			],
+		];
+
+		const proposals = computeProgression(exercises, results, configs, templates);
+		expect(proposals).toHaveLength(1);
+		const p = proposals[0];
+		// Top set at 100% → should increment
+		expect(p.topSetHit).toBe(true);
+		expect(p.proposedTopSetWeight).toBe(202.5);
+		// Backoff at 85% → should NOT increment even though rep target was hit
+		expect(p.backoffHit).toBe(false);
+		expect(p.proposedBackoffWeight).toBe(p.currentBackoffWeight);
 	});
 
 	it('handles a full Workout A scenario (bench primary + press secondary + skull crusher assistance)', () => {
