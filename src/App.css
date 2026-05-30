@@ -208,13 +208,25 @@ body {
 
 .workout-header {
 	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding: 1rem 0;
+	flex-direction: column;
 	position: sticky;
 	top: 0;
 	background: var(--color-bg);
 	z-index: 10;
+}
+
+.workout-header-row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 1rem 0 0.5rem;
+}
+
+.workout-header-timer {
+	height: 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .btn-back {
@@ -290,8 +302,6 @@ body {
 
 /* Rest timer */
 .rest-timer {
-	flex: 1;
-	text-align: center;
 	font-family: 'Courier New', 'Consolas', monospace;
 	font-size: 0.9rem;
 	font-weight: 700;
