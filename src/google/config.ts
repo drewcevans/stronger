@@ -1,48 +1,28 @@
 /**
- * Google API configuration.
- *
- * Replace the client ID with your own from the Google Cloud Console.
- * The project must have the Google Sheets API enabled and an OAuth 2.0
- * client ID configured for a web application with the correct origins.
+ * Stronger app configuration.
+ * Data is served via Google Apps Script webhook — no OAuth required.
  */
 
-/** OAuth 2.0 client ID from Google Cloud Console. */
-export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
-
-/** OAuth scope – read/write access to Google Sheets. */
-export const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
-
-/** OAuth scope – full access to Google Calendar (list calendars + manage events). */
-export const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar'
-
-/** Combined OAuth scopes requested during sign-in. */
-export const OAUTH_SCOPES = `${SHEETS_SCOPE} ${CALENDAR_SCOPE}`
-
-/** Sheets API discovery document URL for gapi client initialization. */
-export const SHEETS_DISCOVERY_DOC =
-	'https://sheets.googleapis.com/$discovery/rest?version=v4'
-
-/** Calendar API discovery document URL for gapi client initialization. */
-export const CALENDAR_DISCOVERY_DOC =
-	'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
+/** Apps Script web app URL — all data reads and writes go here. */
+export const API_URL = 'https://script.google.com/macros/s/AKfycbwbDZ90Z1yPHjIJ7fCcmXlCjyajWhPmhPcT0nB9FMpCohIwnRcoqeu2Vta8HvzXBLAAfA/exec'
 
 /** Name of the tab the app targets for lift configurations. */
-export const TARGET_TAB_NAME = 'Stronger - Exercises'
+export const TARGET_TAB_NAME = 'Exercises'
 
 /** Name of the tab that holds workout definitions (exercise structure). */
-export const WORKOUT_DEFS_TAB_NAME = 'Stronger - Workouts'
+export const WORKOUT_DEFS_TAB_NAME = 'Workouts'
 
 /** Name of the tab that holds the workout log (completed set data). */
-export const LOG_TAB_NAME = 'Stronger - Log'
+export const LOG_TAB_NAME = 'Log'
 
 /** Name of the tab that holds the workout schedule (date→workoutId mapping). */
-export const SCHEDULE_TAB_NAME = 'Stronger - Schedule'
+export const SCHEDULE_TAB_NAME = 'Schedule'
 
 /** Name of the tab that holds cardio activity definitions (id + name). */
-export const CARDIO_TAB_NAME = 'Stronger - Cardio'
+export const CARDIO_TAB_NAME = 'Cardio'
 
-/** Name of the tab that holds Strava synced activity data. */
-export const STRAVA_TAB_NAME = 'Stronger - Strava'
+/** Name of the tab that holds nutrition logging. */
+export const NUTRITION_TAB_NAME = 'Nutrition'
 
-/** Name of the tab that holds app settings as key/value pairs. */
-export const SETTINGS_TAB_NAME = 'Stronger - Settings'
+/** Name of the tab that holds body composition stats. */
+export const BODY_STATS_TAB_NAME = 'Body Stats'

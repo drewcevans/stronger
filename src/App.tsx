@@ -1,9 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
 import { computeProgression, FLAG_SENTINEL } from './model/index.js';
-import { appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets, writeConfigValues, writeDefaultConfig, verifyScheduleTab, createScheduleTab, readSchedule, writeSchedule, writeWorkoutDefs, readWorkoutDefs, writeDefaultWorkoutDefs, updateLogRows, deleteLogSession, writeCardioActivities, readCardioActivities, writeDefaultCardioActivities, readStravaActivities, verifyStravaTab, createStravaTab, verifySettingsTab, createSettingsTab, readSettings, writeSettings, goalsFromSettings, goalsToSettings, liftGoalsFromSettings, liftGoalsToSettings, DEFAULT_APP_SETTINGS, appSettingsFromMap, appSettingsToMap } from './google/index.js';
+import {
+  appendLogRows, buildLogRow, readLogZone, findPreviousWorkoutSets,
+  writeConfigValues, readSchedule, writeSchedule,
+  writeWorkoutDefs, readWorkoutDefs, updateLogRows, deleteLogSession,
+  writeCardioActivities, readCardioActivities, readConfigZone,
+  syncScheduleWithCalendar, generateStrongerId, withAuthRetry,
+} from './google/index.js';
 import type { LiftGoal } from './google/index.js';
-import { syncScheduleWithCalendar, generateStrongerId, withAuthRetry, performBackup, BACKUP_SETTING_KEY } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
 import type { WorkoutDefinition } from './data/sample-workouts.js';
 import type { ParsedLogRow } from './google/index.js';
@@ -17,34 +22,33 @@ import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView, SessionDetail } from './components/CalendarView.js';
 import type { LogSession } from './components/CalendarView.js';
 import { ProgressView } from './components/ProgressView.js';
-import { StravaView } from './components/StravaView.js';
 import { SettingsView } from './components/SettingsView.js';
-import { SetupPage } from './components/SetupPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import { loadDraft, saveDraft, clearDraft } from './hooks/useWorkoutDraft.js';
 import { clearSentinel as clearTimerSentinel } from './hooks/useRestTimer.js';
-import type { StravaActivity, StravaGoal, StravaMetric } from './model/strava.js';
 import './App.css';
+
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  showRestTimer: true,
+  showSetComments: true,
+  keepScreenOn: true,
+};
 
 function App() {
   const { route, navigateTo, replaceTo } = useHashRouter();
+  const [loading, setLoading] = useState(true);
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [previousSets, setPreviousSets] = useState<PreviousSetData[][] | null>(null);
-  const [sheetConnected, setSheetConnected] = useState(false);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [startTime, setStartTime] = useState<string | null>(null);
-  const [spreadsheetId, setSpreadsheetId] = useState<string | null>(null);
   const [configs, setConfigs] = useState<LiftConfig[]>([]);
   const [definitions, setDefinitions] = useState<WorkoutDefinition[]>([]);
   const [progressionProposals, setProgressionProposals] = useState<ProgressionProposal[] | null>(null);
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [logRows, setLogRows] = useState<ParsedLogRow[]>([]);
-  const [needsSetup, setNeedsSetup] = useState(false);
   const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
-  const [stravaActivities, setStravaActivities] = useState<StravaActivity[]>([]);
-  const [stravaGoals, setStravaGoals] = useState<StravaGoal[]>([]);
   const [liftGoals, setLiftGoals] = useState<LiftGoal[]>([]);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
   const [pendingFinish, setPendingFinish] = useState<{
@@ -55,143 +59,105 @@ function App() {
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const settingsRef = useRef(new Map<string, string>());
 
-  const handleConnected = useCallback(
-    (loadedWorkouts: Workout[], loadedConfigs: LiftConfig[], sheetId: string, defs: WorkoutDefinition[], cardio: CardioActivity[]) => {
-      setWorkouts(loadedWorkouts);
-      setConfigs(loadedConfigs);
-      setDefinitions(defs);
-      setSpreadsheetId(sheetId);
-      setSheetConnected(true);
-      setNeedsSetup(false);
-      setCardioActivities(cardio);
-      // Fire-and-forget: load schedule and log data
-      void loadScheduleData(sheetId);
-      void loadLogData(sheetId);
-      void loadStravaData(sheetId);
-    },
-    [],
-  );
-
-  const handleNeedsSetup = useCallback((sheetId: string) => {
-    setSpreadsheetId(sheetId);
-    setSheetConnected(true);
-    setNeedsSetup(true);
+  const loadScheduleData = useCallback(async () => {
+    try {
+      const entries = await readSchedule();
+      setSchedule(entries);
+    } catch {
+      // Silently ignore — schedule data is optional
+    }
   }, []);
 
-  const handleSetupConfirm = useCallback(
-    async (configs: LiftConfig[]) => {
-      if (!spreadsheetId) return;
+  const loadLogData = useCallback(async () => {
+    try {
+      const rows = await readLogZone();
+      setLogRows(rows);
+    } catch {
+      // Silently ignore — log data is optional
+    }
+  }, []);
 
-      // Write the user's configs to the sheet (writeDefaultConfig writes
-      // the header row too, which is needed for a fresh config zone).
-      await writeDefaultConfig(spreadsheetId, configs);
-      setConfigs(configs);
+  // Load all data on mount
+  useEffect(() => {
+    async function init() {
+      try {
+        const cfgs = await readConfigZone();
+        const loadedConfigs = cfgs ?? [];
+        const liftNames = new Map(loadedConfigs.map((c) => [c.id, c.name]));
+        const [defs, cardio] = await Promise.all([
+          readWorkoutDefs(liftNames),
+          readCardioActivities(),
+        ]);
+        const loadedDefs = defs ?? workoutDefinitions;
+        const loadedCardio = cardio ?? [...defaultCardioActivities];
 
-      // Read or write default workout definitions
-      const liftNames = new Map(configs.map((c) => [c.id, c.name]));
-      let defs = await readWorkoutDefs(spreadsheetId, liftNames);
-      if (!defs) {
-        await writeDefaultWorkoutDefs(spreadsheetId, workoutDefinitions);
-        defs = workoutDefinitions;
+        setConfigs(loadedConfigs);
+        setDefinitions(loadedDefs);
+        setCardioActivities(loadedCardio);
+        setWorkouts(buildWorkoutsFromConfigs(loadedConfigs, loadedDefs));
+
+        void loadScheduleData();
+        void loadLogData();
+      } catch (err) {
+        console.error('Failed to load app data:', err);
+      } finally {
+        setLoading(false);
       }
-      setDefinitions(defs);
-
-      // Read or seed default cardio activities
-      let cardio = await readCardioActivities(spreadsheetId);
-      if (!cardio) {
-        await writeDefaultCardioActivities(spreadsheetId, defaultCardioActivities);
-        cardio = [...defaultCardioActivities];
-      }
-      setCardioActivities(cardio);
-
-      const builtWorkouts = buildWorkoutsFromConfigs(configs, defs);
-      setWorkouts(builtWorkouts);
-      setNeedsSetup(false);
-
-      // Fire-and-forget: load schedule and log data
-      void loadScheduleData(spreadsheetId);
-      void loadLogData(spreadsheetId);
-      void loadStravaData(spreadsheetId);
-    },
-    [spreadsheetId],
-  );
+    }
+    void init();
+  }, [loadScheduleData, loadLogData]);
 
   const handleDisconnected = useCallback(() => {
-    setSheetConnected(false);
     setActiveWorkout(null);
     setPreviousSets(null);
     setWorkouts([]);
     setConfigs([]);
     setDefinitions([]);
-    setSpreadsheetId(null);
     setStartTime(null);
     setProgressionProposals(null);
     setSchedule([]);
     setLogRows([]);
-    setNeedsSetup(false);
     setCardioActivities([]);
-    setStravaActivities([]);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
-  const loadPreviousSets = useCallback(
-    async (sheetId: string, workoutId: string) => {
-      try {
-        await withAuthRetry(async () => {
-          const logRows = await readLogZone(sheetId);
-          const prev = findPreviousWorkoutSets(logRows, workoutId);
-          setPreviousSets(prev);
-        });
-      } catch {
-        // Silently ignore — previous data is optional context
-      }
-    },
-    [],
-  );
+  const loadPreviousSets = useCallback(async (workoutId: string) => {
+    try {
+      const rows = await readLogZone();
+      const prev = findPreviousWorkoutSets(rows, workoutId);
+      setPreviousSets(prev);
+    } catch {
+      // Silently ignore — previous data is optional context
+    }
+  }, []);
 
   const handleSelectWorkout = useCallback((workout: Workout) => {
-    // Check for an existing in-progress draft for this workout
     const draft = loadDraft();
     if (draft && draft.workoutId === workout.id) {
-      // Resume the previous session
       setStartTime(draft.startTime);
       setDraftResults(draft.results.length > 0 ? draft.results : null);
     } else {
-      // Start a fresh session
       const now = new Date().toISOString();
       setStartTime(now);
       setDraftResults(null);
-      // Persist the draft so a refresh can restore the active workout
       saveDraft({ workoutId: workout.id, startTime: now, results: [] });
     }
     setActiveWorkout(workout);
     setPreviousSets(null);
     navigateTo({ view: 'workout', workoutId: workout.id });
-    // Fire-and-forget: load previous workout data for context
-    if (spreadsheetId) {
-      void loadPreviousSets(spreadsheetId, workout.id);
-    }
-  }, [spreadsheetId, loadPreviousSets, navigateTo]);
+    void loadPreviousSets(workout.id);
+  }, [loadPreviousSets, navigateTo]);
 
   const handleFinish = useCallback(
     (workout: Workout, results: SetResult[][]) => {
       const endTime = new Date().toISOString();
-
-      // Store pending finish data — workout will be saved when user confirms
       setPendingFinish({ workout, results, endTime });
 
-      // Compute progression proposals for the completed workout
       const workoutDef = definitions.find((d) => d.id === workout.id);
       if (workoutDef && configs.length > 0) {
-        const proposals = computeProgression(
-          workout.exercises,
-          results,
-          configs,
-          workoutDef.templates,
-        );
+        const proposals = computeProgression(workout.exercises, results, configs, workoutDef.templates);
         setProgressionProposals(proposals);
       } else {
-        // Even with no proposals, show the confirm page
         setProgressionProposals([]);
       }
     },
@@ -200,40 +166,24 @@ function App() {
 
   const handleProgressionConfirm = useCallback(
     (updates: Map<string, { topSetWeight: number; backoffWeight: number }>) => {
-      // Clear the in-progress draft and rest timer now that the workout is finalized
       clearDraft();
       clearTimerSentinel();
 
-      // Save the pending workout results to the sheet
-      if (pendingFinish && spreadsheetId && startTime) {
+      if (pendingFinish && startTime) {
         const { workout, results, endTime } = pendingFinish;
-        const sid = spreadsheetId;
-        void logWorkoutResults(
-          sid,
-          workout,
-          results,
-          startTime,
-          endTime,
-        ).then(() => {
-          void loadLogData(sid);
-          // Fire-and-forget backup after successful save
-          void runBackup(sid, settingsRef.current);
+        void logWorkoutResults(workout, results, startTime, endTime).then(() => {
+          void loadLogData();
         });
       }
 
-      // Apply weight updates to configs
       const updatedConfigs = configs.map((c) => {
         const update = updates.get(c.id);
         if (!update) return c;
         return { ...c, topSetWeight: update.topSetWeight, backoffWeight: update.backoffWeight };
       });
 
-      // Write updated configs back to the sheet
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeConfigValues(spreadsheetId, updatedConfigs));
-      }
+      void writeConfigValues(updatedConfigs);
 
-      // Update local state so the next workout uses the new weights
       setConfigs(updatedConfigs);
       setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
       setProgressionProposals(null);
@@ -243,18 +193,15 @@ function App() {
       setPreviousSets(null);
       navigateTo({ view: 'list' });
     },
-    [spreadsheetId, startTime, pendingFinish, configs, definitions, navigateTo],
+    [startTime, pendingFinish, configs, definitions, navigateTo, loadLogData],
   );
 
   const handleProgressionBack = useCallback(() => {
-    // Return to the active workout — discard pending finish and proposals
     setProgressionProposals(null);
     setPendingFinish(null);
   }, []);
 
   const handleBack = useCallback(() => {
-    // Don't clear the draft or timer sentinel — the user may return to this
-    // workout later and expects to resume where they left off.
     setActiveWorkout(null);
     setStartTime(null);
     setPreviousSets(null);
@@ -262,85 +209,22 @@ function App() {
     navigateTo({ view: 'list' });
   }, [navigateTo]);
 
-  // Schedule handlers
-  const loadScheduleData = useCallback(async (sheetId: string) => {
-    try {
-      await withAuthRetry(async () => {
-        const tabExists = await verifyScheduleTab(sheetId);
-        if (!tabExists) {
-          await createScheduleTab(sheetId);
-        }
-        const entries = await readSchedule(sheetId);
-        setSchedule(entries);
-      });
-    } catch {
-      // Silently ignore — schedule data is optional
-    }
-  }, []);
-
-  const loadLogData = useCallback(async (sheetId: string) => {
-    try {
-      await withAuthRetry(async () => {
-        const rows = await readLogZone(sheetId);
-        setLogRows(rows);
-      });
-    } catch {
-      // Silently ignore — log data is optional for calendar history
-    }
-  }, []);
-
-  const loadStravaData = useCallback(async (sheetId: string) => {
-    try {
-      await withAuthRetry(async () => {
-        const tabExists = await verifyStravaTab(sheetId);
-        if (!tabExists) {
-          await createStravaTab(sheetId);
-        }
-        const activities = await readStravaActivities(sheetId);
-        setStravaActivities(activities);
-      });
-    } catch {
-      // Silently ignore — Strava data is optional
-    }
-    try {
-      await withAuthRetry(async () => {
-        const settingsTabExists = await verifySettingsTab(sheetId);
-        if (!settingsTabExists) {
-          await createSettingsTab(sheetId);
-        }
-        const settings = await readSettings(sheetId);
-        settingsRef.current = settings;
-        setStravaGoals(goalsFromSettings(settings));
-        setLiftGoals(liftGoalsFromSettings(settings));
-        setAppSettings(appSettingsFromMap(settings));
-      });
-    } catch {
-      // Silently ignore — settings data is optional
-    }
-  }, []);
-
   const handleScheduleAssign = useCallback(
     (date: string, workoutId: string) => {
       const updated = [...schedule, { date, workoutId, strongerId: generateStrongerId() }];
       setSchedule(updated);
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
-      }
+      void withAuthRetry(() => writeSchedule(updated));
     },
-    [schedule, spreadsheetId],
+    [schedule],
   );
 
   const handleBulkSchedule = useCallback(
     (entries: ScheduleEntry[]) => {
-      // Separate rest signals from actual additions
       const datesToRest = new Set(
         entries.filter((e) => e.workoutId === '__rest__').map((e) => e.date),
       );
       const toAdd = entries.filter((e) => e.workoutId !== '__rest__');
 
-      // For rest dates: blank out workoutIds instead of deleting rows
-      // (preserves calendarEventIds and strongerIds for sync cleanup)
-      // Skip flag sentinel rows — those are independent of workout scheduling.
       let updated = schedule.map((e) => {
         if (datesToRest.has(e.date) && e.workoutId && e.workoutId !== FLAG_SENTINEL) {
           return { ...e, workoutId: '' };
@@ -348,29 +232,21 @@ function App() {
         return e;
       });
 
-      // Add new entries with strongerIds, deduplicating (skip if same date+workoutId already exists)
       for (const entry of toAdd) {
-        const exists = updated.some(
-          (e) => e.date === entry.date && e.workoutId === entry.workoutId,
-        );
+        const exists = updated.some((e) => e.date === entry.date && e.workoutId === entry.workoutId);
         if (!exists) {
           updated.push({ ...entry, strongerId: entry.strongerId ?? generateStrongerId() });
         }
       }
 
       setSchedule(updated);
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
-      }
+      void withAuthRetry(() => writeSchedule(updated));
     },
-    [schedule, spreadsheetId],
+    [schedule],
   );
 
   const handleScheduleRemove = useCallback(
     (date: string, workoutId: string) => {
-      // Blank out the workoutId instead of deleting the row.
-      // This preserves calendarEventId and strongerId for calendar sync cleanup.
-      // Never touch flag sentinel rows.
       let blanked = false;
       const updated = schedule.map((e) => {
         if (!blanked && e.date === date && e.workoutId === workoutId && e.workoutId !== FLAG_SENTINEL) {
@@ -380,47 +256,37 @@ function App() {
         return e;
       });
       setSchedule(updated);
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
-      }
+      void withAuthRetry(() => writeSchedule(updated));
     },
-    [schedule, spreadsheetId],
+    [schedule],
   );
 
   const handleUpdateFlags = useCallback(
     (date: string, flags: DayFlags) => {
       const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
-      // Flags live in their own dedicated row with FLAG_SENTINEL.
       const flagIdx = schedule.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
       let updated: ScheduleEntry[];
       if (flagIdx >= 0) {
         if (hasFlags) {
-          updated = schedule.map((e, i) =>
-            i === flagIdx ? { ...e, flags } : e,
-          );
+          updated = schedule.map((e, i) => i === flagIdx ? { ...e, flags } : e);
         } else {
-          // Remove the flag row entirely (no flags left)
           updated = schedule.filter((_, i) => i !== flagIdx);
         }
       } else if (hasFlags) {
         updated = [...schedule, { date, workoutId: FLAG_SENTINEL, flags }];
       } else {
-        return; // Nothing to do
+        return;
       }
       setSchedule(updated);
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeSchedule(spreadsheetId, updated));
-      }
+      void withAuthRetry(() => writeSchedule(updated));
     },
-    [schedule, spreadsheetId],
+    [schedule],
   );
 
   const handleCalendarOpenWorkout = useCallback(
     (workoutId: string) => {
       const match = workouts.find((w) => w.id === workoutId);
-      if (match) {
-        handleSelectWorkout(match);
-      }
+      if (match) handleSelectWorkout(match);
     },
     [workouts, handleSelectWorkout],
   );
@@ -429,43 +295,33 @@ function App() {
     async (calendarId: string): Promise<CalendarSyncResult> => {
       const resolveWorkoutName = (workoutId: string): string | null => {
         if (workoutId.startsWith('cardio:')) {
-          const cardioId = workoutId.slice('cardio:'.length);
-          const c = cardioActivities.find((a) => a.id === cardioId);
+          const c = cardioActivities.find((a) => a.id === workoutId.slice('cardio:'.length));
           return c?.name ?? null;
         }
-        const w = workouts.find((wk) => wk.id === workoutId);
-        return w?.name ?? null;
+        return workouts.find((wk) => wk.id === workoutId)?.name ?? null;
       };
 
       const resolveWorkoutId = (name: string): string | null => {
-        // Try strength workouts first
         const w = workouts.find((wk) => wk.name === name);
         if (w) return w.id;
-        // Try cardio activities
         const c = cardioActivities.find((a) => a.name === name);
         if (c) return `cardio:${c.id}`;
         return null;
       };
 
-      const { updatedSchedule, result } = await withAuthRetry(() => syncScheduleWithCalendar(
-        calendarId,
-        schedule,
-        resolveWorkoutName,
-        resolveWorkoutId,
-      ));
+      const { updatedSchedule, result } = await withAuthRetry(() =>
+        syncScheduleWithCalendar(calendarId, schedule, resolveWorkoutName, resolveWorkoutId),
+      );
 
       setSchedule(updatedSchedule);
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeSchedule(spreadsheetId, updatedSchedule));
-      }
+      void withAuthRetry(() => writeSchedule(updatedSchedule));
       return result;
     },
-    [schedule, workouts, cardioActivities, spreadsheetId],
+    [schedule, workouts, cardioActivities],
   );
 
   const handleUpdateLogRows = useCallback(
     (sessionDate: string, sessionWorkoutId: string, sessionStartTime: string, updatedRows: ParsedLogRow[]) => {
-      // Update local state
       setLogRows((prev) => {
         const next = [...prev];
         for (const updated of updatedRows) {
@@ -477,35 +333,25 @@ function App() {
               r.exerciseName === updated.exerciseName &&
               r.setNumber === updated.setNumber,
           );
-          if (idx >= 0) {
-            next[idx] = updated;
-          }
+          if (idx >= 0) next[idx] = updated;
         }
         return next;
       });
-      // Fire-and-forget: write to sheet
-      if (spreadsheetId) {
-        void withAuthRetry(() => updateLogRows(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime, updatedRows));
-      }
+      void withAuthRetry(() => updateLogRows(sessionDate, sessionWorkoutId, sessionStartTime, updatedRows));
     },
-    [spreadsheetId],
+    [],
   );
 
   const handleDeleteSession = useCallback(
     (sessionDate: string, sessionWorkoutId: string, sessionStartTime: string) => {
-      // Remove matching rows from local state
       setLogRows((prev) =>
         prev.filter(
-          (r) =>
-            !(r.date === sessionDate && r.workoutId === sessionWorkoutId && r.startTime === sessionStartTime),
+          (r) => !(r.date === sessionDate && r.workoutId === sessionWorkoutId && r.startTime === sessionStartTime),
         ),
       );
-      // Fire-and-forget: delete from sheet
-      if (spreadsheetId) {
-        void withAuthRetry(() => deleteLogSession(spreadsheetId, sessionDate, sessionWorkoutId, sessionStartTime));
-      }
+      void withAuthRetry(() => deleteLogSession(sessionDate, sessionWorkoutId, sessionStartTime));
     },
-    [spreadsheetId],
+    [],
   );
 
   const handleViewSession = useCallback((session: LogSession) => {
@@ -525,78 +371,28 @@ function App() {
     setViewingSession(null);
   }, []);
 
-  const handleGoToList = useCallback(() => {
-    navigateTo({ view: 'list' });
-  }, [navigateTo]);
-
-  const handleOpenCalendar = useCallback(() => {
-    navigateTo({ view: 'calendar' });
-  }, [navigateTo]);
-
-  const handleOpenExercises = useCallback(() => {
-    navigateTo({ view: 'exercises' });
-  }, [navigateTo]);
-
-  const handleOpenProgress = useCallback(() => {
-    navigateTo({ view: 'progress' });
-  }, [navigateTo]);
-
-  const handleOpenSettings = useCallback(() => {
-    navigateTo({ view: 'settings' });
-  }, [navigateTo]);
-
-  const handleOpenStrava = useCallback(() => {
-    navigateTo({ view: 'strava' });
-  }, [navigateTo]);
-
-  const handleStravaGoalChange = useCallback((metric: StravaMetric, value: number | null) => {
-    setStravaGoals((prev) => {
-      const updated = prev.filter((g) => g.metric !== metric);
-      if (value !== null) {
-        updated.push({ metric, value });
-      }
-      if (spreadsheetId) {
-        // Merge goals into settings and write the full settings map
-        goalsToSettings(updated, settingsRef.current);
-        void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
-      }
-      return updated;
-    });
-  }, [spreadsheetId]);
+  const handleGoToList = useCallback(() => navigateTo({ view: 'list' }), [navigateTo]);
+  const handleOpenCalendar = useCallback(() => navigateTo({ view: 'calendar' }), [navigateTo]);
+  const handleOpenExercises = useCallback(() => navigateTo({ view: 'exercises' }), [navigateTo]);
+  const handleOpenProgress = useCallback(() => navigateTo({ view: 'progress' }), [navigateTo]);
+  const handleOpenSettings = useCallback(() => navigateTo({ view: 'settings' }), [navigateTo]);
 
   const handleLiftGoalChange = useCallback((liftId: string, weight: number | null) => {
     setLiftGoals((prev) => {
       const updated = prev.filter((g) => g.liftId !== liftId);
-      if (weight !== null) {
-        updated.push({ liftId, weight });
-      }
-      if (spreadsheetId) {
-        liftGoalsToSettings(updated, settingsRef.current);
-        void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
-      }
+      if (weight !== null) updated.push({ liftId, weight });
       return updated;
     });
-  }, [spreadsheetId]);
+  }, []);
 
   const handleAppSettingChange = useCallback((key: keyof AppSettings, value: boolean) => {
-    setAppSettings((prev) => {
-      const updated = { ...prev, [key]: value };
-      if (spreadsheetId) {
-        appSettingsToMap(updated, settingsRef.current);
-        void withAuthRetry(() => writeSettings(spreadsheetId, settingsRef.current)).catch(() => {});
-      }
-      return updated;
-    });
-  }, [spreadsheetId]);
+    setAppSettings((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   const handleImportComplete = useCallback(() => {
-    // Refresh log data so progress charts and calendar history reflect the import
-    if (spreadsheetId) {
-      void loadLogData(spreadsheetId);
-    }
-  }, [spreadsheetId]);
+    void loadLogData();
+  }, [loadLogData]);
 
-  // Editor handlers
   const handleEditWorkout = useCallback((workoutId: string) => {
     navigateTo({ view: 'editor', workoutId });
   }, [navigateTo]);
@@ -614,12 +410,10 @@ function App() {
       const updatedDefs = [...definitions, newDef];
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
-      }
+      void withAuthRetry(() => writeWorkoutDefs(updatedDefs));
       navigateTo({ view: 'editor', workoutId: newId });
     },
-    [definitions, configs, spreadsheetId, navigateTo],
+    [definitions, configs, navigateTo],
   );
 
   const handleDeleteWorkoutFromList = useCallback(
@@ -628,35 +422,27 @@ function App() {
       const updatedDefs = definitions.filter((d) => d.id !== workoutId);
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
-      }
+      void withAuthRetry(() => writeWorkoutDefs(updatedDefs));
     },
-    [definitions, configs, spreadsheetId],
+    [definitions, configs],
   );
 
   const handleToggleFavorite = useCallback(
     (workoutId: string, favorite: boolean) => {
-      const updatedDefs = definitions.map((d) =>
-        d.id === workoutId ? { ...d, favorite } : d,
-      );
+      const updatedDefs = definitions.map((d) => d.id === workoutId ? { ...d, favorite } : d);
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
-      }
+      void withAuthRetry(() => writeWorkoutDefs(updatedDefs));
     },
-    [definitions, configs, spreadsheetId],
+    [definitions, configs],
   );
 
   const handleCardioSave = useCallback(
     (updated: CardioActivity[]) => {
       setCardioActivities(updated);
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeCardioActivities(spreadsheetId, updated));
-      }
+      void withAuthRetry(() => writeCardioActivities(updated));
     },
-    [spreadsheetId],
+    [],
   );
 
   const handleEditorCancel = useCallback(() => {
@@ -668,15 +454,12 @@ function App() {
       const updatedDefs = definitions.filter((d) => d.id !== workoutId);
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
-      }
+      void withAuthRetry(() => writeWorkoutDefs(updatedDefs));
       navigateTo({ view: 'list' });
     },
-    [definitions, configs, spreadsheetId, navigateTo],
+    [definitions, configs, navigateTo],
   );
 
-  // Exercise editor handlers
   const handleEditExercise = useCallback((exerciseId: string) => {
     navigateTo({ view: 'exerciseEditor', exerciseId });
   }, [navigateTo]);
@@ -698,14 +481,10 @@ function App() {
 
       setConfigs(updatedConfigs);
       setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
-
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeConfigValues(spreadsheetId, updatedConfigs));
-      }
-
+      void withAuthRetry(() => writeConfigValues(updatedConfigs));
       navigateTo({ view: 'exercises' });
     },
-    [configs, definitions, spreadsheetId, navigateTo],
+    [configs, definitions, navigateTo],
   );
 
   const handleEditorSave = useCallback(
@@ -717,29 +496,20 @@ function App() {
 
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
-
-      if (spreadsheetId) {
-        void withAuthRetry(() => writeWorkoutDefs(spreadsheetId, updatedDefs));
-      }
-
+      void withAuthRetry(() => writeWorkoutDefs(updatedDefs));
       navigateTo({ view: 'list' });
     },
-    [definitions, configs, spreadsheetId, navigateTo],
+    [definitions, configs, navigateTo],
   );
 
-  // Deep-link resolution: when auth completes and workouts are loaded,
-  // check if the URL contains a workout ID and auto-select it.
-  // If a draft exists in localStorage for this workout, restore startTime
-  // and set results so the user doesn't lose progress after a refresh.
+  // Deep-link resolution: when workouts are loaded, auto-select a workout from the URL
   useEffect(() => {
-    if (!sheetConnected || workouts.length === 0) return;
+    if (loading || workouts.length === 0) return;
     if (route.view !== 'workout') return;
-    // Already showing the right workout — nothing to do
     if (activeWorkout?.id === route.workoutId) return;
 
     const match = workouts.find((w) => w.id === route.workoutId);
     if (match) {
-      // Check for a saved draft from a previous session (page refresh)
       const draft = loadDraft();
       if (draft && draft.workoutId === match.id) {
         setStartTime(draft.startTime);
@@ -750,18 +520,13 @@ function App() {
       }
       setActiveWorkout(match);
       setPreviousSets(null);
-      if (spreadsheetId) {
-        void loadPreviousSets(spreadsheetId, match.id);
-      }
+      void loadPreviousSets(match.id);
     } else {
-      // Invalid workout ID — redirect to list
       replaceTo({ view: 'list' });
     }
-  }, [sheetConnected, workouts, route, activeWorkout?.id, spreadsheetId, loadPreviousSets, replaceTo]);
+  }, [loading, workouts, route, activeWorkout?.id, loadPreviousSets, replaceTo]);
 
-  // Sync state when the user presses the browser back button:
-  // if the URL changed to list while a workout is active, clear React state
-  // but preserve the localStorage draft/timer so the user can resume later.
+  // Sync state when the user presses the browser back button
   useEffect(() => {
     if (route.view === 'list' && activeWorkout && !progressionProposals) {
       setActiveWorkout(null);
@@ -771,29 +536,15 @@ function App() {
     }
   }, [route, activeWorkout, progressionProposals]);
 
-  // Gate: require auth + sheet connection before showing workouts
-  if (!sheetConnected) {
+  // Show loading spinner while data loads
+  if (loading) {
     return (
-      <GoogleAuth
-        onConnected={handleConnected}
-        onDisconnected={handleDisconnected}
-        onNeedsSetup={handleNeedsSetup}
-      />
+      <div className="auth-screen">
+        <p className="auth-status">Loading…</p>
+      </div>
     );
   }
 
-  // Show setup page for first-time users (empty config zone)
-  if (needsSetup) {
-    return (
-      <SetupPage
-        onConfirm={handleSetupConfirm}
-      />
-    );
-  }
-
-  const onOpenStrava = stravaActivities.length > 0 ? handleOpenStrava : undefined;
-
-  // Show progression review / confirm page after clicking Finish
   if (progressionProposals && pendingFinish) {
     const totalSets = pendingFinish.results.flat().length;
     const completedSets = pendingFinish.results.flat().filter((s) => s.completed).length;
@@ -823,22 +574,22 @@ function App() {
     );
   }
 
+  const navBar = (
+    <GoogleAuth
+      onDisconnected={handleDisconnected}
+      onGoToList={handleGoToList}
+      onOpenCalendar={handleOpenCalendar}
+      onOpenExercises={handleOpenExercises}
+      onOpenProgress={handleOpenProgress}
+      onOpenSettings={handleOpenSettings}
+    />
+  );
+
   if (route.view === 'exerciseEditor') {
-    const editConfig = route.exerciseId
-      ? configs.find((c) => c.id === route.exerciseId)
-      : undefined;
+    const editConfig = route.exerciseId ? configs.find((c) => c.id === route.exerciseId) : undefined;
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
+        {navBar}
         <ExerciseEditor
           existing={editConfig}
           allConfigs={configs}
@@ -852,41 +603,17 @@ function App() {
   if (route.view === 'exercises') {
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
-        <ExerciseLibrary
-          configs={configs}
-          onEdit={handleEditExercise}
-          onNew={handleNewExercise}
-        />
+        {navBar}
+        <ExerciseLibrary configs={configs} onEdit={handleEditExercise} onNew={handleNewExercise} />
       </>
     );
   }
 
   if (route.view === 'editor') {
-    const editDef = route.workoutId
-      ? definitions.find((d) => d.id === route.workoutId)
-      : undefined;
+    const editDef = route.workoutId ? definitions.find((d) => d.id === route.workoutId) : undefined;
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
+        {navBar}
         <WorkoutEditor
           existing={editDef}
           allDefinitions={definitions}
@@ -902,16 +629,7 @@ function App() {
   if (route.view === 'calendar') {
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
+        {navBar}
         <CalendarView
           workouts={workouts}
           cardioActivities={cardioActivities}
@@ -933,60 +651,20 @@ function App() {
   if (route.view === 'progress') {
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
+        {navBar}
         <ProgressView logRows={logRows} liftGoals={liftGoals} onLiftGoalChange={handleLiftGoalChange} />
       </>
     );
   }
 
-  if (route.view === 'strava') {
+  if (route.view === 'settings') {
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
-        <StravaView
-          activities={stravaActivities}
-          goals={stravaGoals}
-          onGoalChange={handleStravaGoalChange}
-        />
-      </>
-    );
-  }
-
-  if (route.view === 'settings' && spreadsheetId) {
-    return (
-      <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
+        {navBar}
         <SettingsView
-          spreadsheetId={spreadsheetId}
+          spreadsheetId=""
           onImportComplete={handleImportComplete}
-          appendLogRows={appendLogRows}
+          appendLogRows={(_, rows) => appendLogRows(rows)}
           onDisconnectSheet={handleDisconnected}
           appSettings={appSettings}
           onAppSettingChange={handleAppSettingChange}
@@ -995,28 +673,17 @@ function App() {
     );
   }
 
-  // Compute missing liftIds: referenced in definitions but absent from configs
   const configIds = new Set(configs.map((c) => c.id));
   const missingLiftIds = [...new Set(
     definitions.flatMap((d) => d.templates.map((t) => t.liftId))
   )].filter((id) => !configIds.has(id));
 
-  // Build workout names map for SessionDetail
   const workoutNames = new Map<string, string>(workouts.map((w) => [w.id, w.name]));
 
   if (viewingSession) {
     return (
       <>
-        <GoogleAuth
-          onConnected={handleConnected}
-          onDisconnected={handleDisconnected}
-          onGoToList={handleGoToList}
-          onOpenCalendar={handleOpenCalendar}
-          onOpenExercises={handleOpenExercises}
-          onOpenProgress={handleOpenProgress}
-          onOpenStrava={onOpenStrava}
-          onOpenSettings={handleOpenSettings}
-        />
+        {navBar}
         <SessionDetail
           session={viewingSession}
           workoutNames={workoutNames}
@@ -1029,16 +696,7 @@ function App() {
 
   return (
     <>
-      <GoogleAuth
-        onConnected={handleConnected}
-        onDisconnected={handleDisconnected}
-        onGoToList={handleGoToList}
-        onOpenCalendar={handleOpenCalendar}
-        onOpenExercises={handleOpenExercises}
-        onOpenProgress={handleOpenProgress}
-        onOpenStrava={onOpenStrava}
-        onOpenSettings={handleOpenSettings}
-      />
+      {navBar}
       <WorkoutSelect
         workouts={workouts}
         missingLiftIds={missingLiftIds}
@@ -1065,7 +723,6 @@ export default App;
 /* ------------------------------------------------------------------ */
 
 async function logWorkoutResults(
-  sheetId: string,
   workout: Workout,
   results: SetResult[][],
   startTime: string,
@@ -1090,41 +747,10 @@ async function logWorkoutResults(
               amrap: false,
             };
       rows.push(
-        buildLogRow(
-          ctx,
-          exercise.name,
-          exercise.liftId,
-          si + 1,
-          results[ei][si].actualSetType,
-          planned,
-          results[ei][si],
-        ),
+        buildLogRow(ctx, exercise.name, exercise.liftId, si + 1, results[ei][si].actualSetType, planned, results[ei][si]),
       );
     }
   }
 
-  await withAuthRetry(() => appendLogRows(sheetId, rows));
-}
-
-/**
- * Run a full backup of all tabs to the backup spreadsheet.
- * If a new backup sheet is created, the backup ID is persisted in app settings.
- * Errors are silently caught — backup should never block the user.
- */
-async function runBackup(
-  sheetId: string,
-  settings: Map<string, string>,
-): Promise<void> {
-  try {
-    const backupId = await withAuthRetry(() => performBackup(sheetId, settings));
-
-    // Persist the backup spreadsheet ID in settings if it's new or changed
-    if (backupId && settings.get(BACKUP_SETTING_KEY) !== backupId) {
-      settings.set(BACKUP_SETTING_KEY, backupId);
-      await withAuthRetry(() => writeSettings(sheetId, settings));
-    }
-  } catch {
-    // Backup is best-effort — don't disrupt the user's workflow
-    console.warn('Backup failed — will retry on next workout save');
-  }
+  await appendLogRows(rows);
 }

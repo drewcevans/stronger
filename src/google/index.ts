@@ -1,25 +1,20 @@
 export { extractSheetId } from './url.ts'
 export { saveSheetId, loadSheetId, clearSheetId, saveCalendarId, loadCalendarId, clearCalendarId } from './storage.ts'
 export {
-	loadGis,
-	loadGapi,
-	initGapiClient,
 	signIn,
 	signOut,
 	hasToken,
 	restoreToken,
 	clearAuth,
+	withAuthRetry,
+	loadGis,
+	loadGapi,
+	initGapiClient,
 	isAuthError,
 	describeSheetError,
-	withAuthRetry,
 } from './auth.ts'
 export {
-	verifySheetAccess,
-	createStrongerTab,
-	createSpreadsheet,
-	connectToSheet,
 	readConfigZone,
-	writeDefaultConfig,
 	writeConfigValues,
 	appendLogRows,
 	buildLogRow,
@@ -30,13 +25,8 @@ export {
 	workoutDefsToRows,
 	parseWorkoutDefRow,
 	rowsToWorkoutDefs,
-	verifyWorkoutDefsTab,
-	createWorkoutDefsTab,
 	readWorkoutDefs,
-	writeDefaultWorkoutDefs,
 	writeWorkoutDefs,
-	verifyLogTab,
-	createLogTab,
 	parseLogRow,
 	findPreviousWorkoutSets,
 	readLogZone,
@@ -44,41 +34,18 @@ export {
 	deleteLogSession,
 	parseScheduleRow,
 	scheduleEntryToRow,
-	verifyScheduleTab,
-	createScheduleTab,
 	readSchedule,
 	writeSchedule,
 	cardioActivityToRow,
 	parseCardioRow,
-	verifyCardioTab,
-	createCardioTab,
 	readCardioActivities,
-	writeDefaultCardioActivities,
 	writeCardioActivities,
-	stravaActivityToRow,
-	parseStravaRow,
-	verifyStravaTab,
-	createStravaTab,
-	readStravaActivities,
-	STRAVA_SYNC_RANGE,
-	STRAVA_HEADER,
-	verifySettingsTab,
-	createSettingsTab,
-	readSettings,
-	writeSettings,
-	goalsFromSettings,
-	goalsToSettings,
-	liftGoalsFromSettings,
-	liftGoalsToSettings,
-	DEFAULT_APP_SETTINGS,
-	appSettingsFromMap,
-	appSettingsToMap,
 } from './sheets.ts'
-export type { SheetInfo, LogContext, ParsedLogRow, LiftGoal } from './sheets.ts'
+export type { LogContext, ParsedLogRow, LiftGoal } from './sheets.ts'
 export { performBackup, BACKUP_SETTING_KEY } from './backup.ts'
+export { readSheet, appendRow, updateRow } from './api.ts'
 export type { CalendarListEntry } from './types.ts'
-export { GOOGLE_CLIENT_ID } from './config.ts'
-export { WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME, STRAVA_TAB_NAME, SETTINGS_TAB_NAME } from './config.ts'
+export { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
 export {
 	listWritableCalendars,
 	buildDeepLink,
