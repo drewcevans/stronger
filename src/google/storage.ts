@@ -48,7 +48,7 @@ export function clearCalendarId(): void {
 /* ------------------------------------------------------------------ */
 
 function setCookie(name: string, value: string, maxAgeSecs: number): void {
-	document.cookie = `${name}=${encodeURIComponent(value)};max-age=${maxAgeSecs};path=/;SameSite=Strict;Secure`
+	document.cookie = `${name}=${encodeURIComponent(value)};max-age=${maxAgeSecs};path=/stronger/;SameSite=Strict;Secure`
 }
 
 function getCookie(name: string): string | null {
@@ -57,7 +57,7 @@ function getCookie(name: string): string | null {
 }
 
 function deleteCookie(name: string): void {
-	document.cookie = `${name}=;max-age=0;path=/;SameSite=Strict;Secure`
+	document.cookie = `${name}=;max-age=0;path=/stronger/;SameSite=Strict;Secure`
 }
 
 /* ------------------------------------------------------------------ */
