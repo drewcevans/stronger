@@ -106,9 +106,9 @@ describe('scheduleEntryToRow', () => {
 			scheduleEntryToRow({
 				date: '2025-01-15',
 				workoutId: 'A',
-				flags: { home: true, elsewhere: false, travel: true, visitors: false, blocked: false },
+				flags: { home: true, travel: true, event: false, blocked: false },
 			}),
-		).toEqual(['2025-01-15', 'A', 'TRUE', '', 'TRUE', '', '', '', ''])
+		).toEqual(['2025-01-15', 'A', 'TRUE', 'TRUE', '', '', '', ''])
 	})
 
 	it('converts a flag-only row', () => {
@@ -116,9 +116,9 @@ describe('scheduleEntryToRow', () => {
 			scheduleEntryToRow({
 				date: '2025-01-15',
 				workoutId: '',
-				flags: { home: false, elsewhere: true, travel: false, visitors: true, blocked: false },
+				flags: { home: false, travel: false, event: true, blocked: false },
 			}),
-		).toEqual(['2025-01-15', '', '', 'TRUE', '', 'TRUE', '', '', ''])
+		).toEqual(['2025-01-15', '', '', '', 'TRUE', '', '', ''])
 	})
 
 	it('converts a blocked flag row', () => {
@@ -126,9 +126,9 @@ describe('scheduleEntryToRow', () => {
 			scheduleEntryToRow({
 				date: '2025-01-15',
 				workoutId: '',
-				flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
+				flags: { home: false, travel: false, event: false, blocked: true },
 			}),
-		).toEqual(['2025-01-15', '', '', '', '', '', 'TRUE', '', ''])
+		).toEqual(['2025-01-15', '', '', '', '', 'TRUE', '', ''])
 	})
 
 	it('round-trips through parseScheduleRow', () => {
@@ -147,7 +147,7 @@ describe('scheduleEntryToRow', () => {
 		const entry = {
 			date: '2025-01-15',
 			workoutId: 'A',
-			flags: { home: true, elsewhere: false, travel: false, visitors: true, blocked: false },
+			flags: { home: true, travel: false, event: true, blocked: false },
 		}
 		const row = scheduleEntryToRow(entry)
 		expect(parseScheduleRow(row)).toEqual(entry)
@@ -157,7 +157,7 @@ describe('scheduleEntryToRow', () => {
 		const entry = {
 			date: '2025-01-15',
 			workoutId: '',
-			flags: { home: false, elsewhere: false, travel: false, visitors: false, blocked: true },
+			flags: { home: false, travel: false, event: false, blocked: true },
 		}
 		const row = scheduleEntryToRow(entry)
 		expect(parseScheduleRow(row)).toEqual(entry)

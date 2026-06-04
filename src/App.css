@@ -896,6 +896,16 @@ body {
 	color: var(--color-text);
 }
 
+.btn-toolbar-spinning {
+	color: var(--color-primary);
+	opacity: 0.7;
+	cursor: default;
+}
+
+.btn-toolbar-spinning svg {
+	animation: spin 0.9s linear infinite;
+}
+
 /* -----------------------------------------------------------------------
    Progression review page
    ----------------------------------------------------------------------- */
@@ -1148,23 +1158,14 @@ body {
 
 .calendar-day {
 	background: var(--color-surface);
-	border: 1px solid var(--color-border);
-	border-left: 4px solid var(--color-weekday);
+	border: 1px solid rgba(255, 255, 255, 0.1);
 	border-radius: var(--radius);
 	padding: 0.75rem 1rem;
 }
 
 .calendar-day-today {
-	border-color: var(--color-primary);
-	border-left-color: var(--color-weekday);
-}
-
-.calendar-day-weekend {
-	border-left-color: var(--color-weekend);
-}
-
-.calendar-day-today.calendar-day-weekend {
-	border-left-color: var(--color-weekend);
+	border: 1px solid #00bcd4;
+	box-shadow: 0 0 8px #00bcd4, 0 0 16px rgba(0, 188, 212, 0.3);
 }
 
 .calendar-day-header {
@@ -1430,17 +1431,12 @@ body {
 	opacity: 1;
 }
 
-.calendar-flag-active.calendar-flag-elsewhere {
-	color: #ff9800;
-	opacity: 1;
-}
-
 .calendar-flag-active.calendar-flag-travel {
 	color: #ff2d7b;
 	opacity: 1;
 }
 
-.calendar-flag-active.calendar-flag-visitors {
+.calendar-flag-active.calendar-flag-event {
 	color: #bb86fc;
 	opacity: 1;
 }
@@ -2852,7 +2848,7 @@ body {
 }
 
 .progress-title {
-	color: var(--color-accent);
+	color: #ff1493;
 	font-size: 1.25rem;
 	font-weight: 700;
 	margin: 0.75rem 0;
@@ -2984,7 +2980,7 @@ body {
 }
 
 .progress-big4-label {
-	color: var(--color-accent);
+	color: #ff1493;
 	font-size: 0.85rem;
 	font-weight: 600;
 	margin: 0 0 0.25rem;
@@ -3664,4 +3660,1695 @@ body {
 .progress-dot.active {
 	fill: #fff;
 	filter: drop-shadow(0 0 4px var(--color-primary));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Settings – Personal Profile / Body Stats / Goals                   */
+/* ------------------------------------------------------------------ */
+
+/* Generic field row (label left, control right) */
+.settings-field-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.settings-field-row:last-child {
+	border-bottom: none;
+}
+
+/* Compact number input */
+.settings-num-input {
+	width: 5rem;
+	padding: 0.375rem 0.5rem;
+	text-align: center;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-bg);
+	color: var(--color-text);
+	-moz-appearance: textfield;
+}
+
+.settings-num-input::-webkit-outer-spin-button,
+.settings-num-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.settings-num-input:focus {
+	outline: none;
+	border-color: var(--color-primary);
+}
+
+/* Height row (ft + in side by side) */
+.settings-height-row {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+}
+
+.settings-height-row .settings-num-input {
+	width: 3.5rem;
+}
+
+/* Male / Female segmented toggle */
+.settings-seg-toggle {
+	display: flex;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.settings-seg-btn {
+	flex: 1;
+	padding: 0.375rem 0.875rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	background: transparent;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
+}
+
+.settings-seg-btn + .settings-seg-btn {
+	border-left: 1px solid var(--color-border);
+}
+
+.settings-seg-active {
+	background: var(--color-primary);
+	color: #000;
+	font-weight: 600;
+}
+
+/* Dropdown select used inside field rows */
+.settings-field-select {
+	padding: 0.375rem 0.5rem;
+	font-size: 0.875rem;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	cursor: pointer;
+	max-width: 12rem;
+}
+
+.settings-field-select:focus {
+	outline: none;
+	border-color: var(--color-primary);
+}
+
+/* Date line above body-stats grid */
+.settings-stat-date {
+	display: block;
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+	margin-bottom: 0.75rem;
+}
+
+/* "Log New Stats" ghost button */
+.settings-log-open-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	margin-top: 0.75rem;
+	padding: 0.5rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-primary);
+	background: transparent;
+	border: 1px dashed var(--color-primary);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.settings-log-open-btn:active {
+	background: rgba(0, 229, 255, 0.08);
+}
+
+/* Inline log-stats form */
+.settings-log-form {
+	margin-top: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	padding: 0.875rem;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-bg);
+}
+
+.settings-log-field {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.settings-log-label {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+}
+
+.settings-log-input {
+	width: 9rem;
+	padding: 0.375rem 0.5rem;
+	font-size: 0.9375rem;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-surface);
+	color: var(--color-text);
+	text-align: right;
+	-moz-appearance: textfield;
+}
+
+.settings-log-input::-webkit-outer-spin-button,
+.settings-log-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.settings-log-input:focus {
+	outline: none;
+	border-color: var(--color-primary);
+}
+
+.settings-log-actions {
+	display: flex;
+	gap: 0.625rem;
+	margin-top: 0.25rem;
+}
+
+/* Goal rows */
+.settings-goal-row {
+	padding: 0.875rem 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.settings-goal-row:last-child {
+	border-bottom: none;
+}
+
+.settings-goal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.625rem;
+}
+
+.settings-goal-bar-track {
+	height: 4px;
+	background: var(--color-border);
+	border-radius: 2px;
+	overflow: hidden;
+	margin-bottom: 0.375rem;
+}
+
+.settings-goal-bar-fill {
+	height: 100%;
+	background: var(--color-primary);
+	border-radius: 2px;
+	transition: width 0.4s ease;
+}
+
+.settings-goal-caption {
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Calendar – Log Macros button                                        */
+/* ------------------------------------------------------------------ */
+
+.calendar-macros-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	color: #39ff14;
+	cursor: pointer;
+	padding: 0.375rem;
+	min-width: 30px;
+	min-height: 30px;
+	border-radius: 8px;
+	opacity: 0.75;
+	transition: opacity 0.15s, background 0.15s;
+}
+
+.calendar-macros-btn:active {
+	opacity: 1;
+	background: rgba(57, 255, 20, 0.12);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Nutrition Page                                                      */
+/* ------------------------------------------------------------------ */
+
+.nutr-page {
+	padding: 1rem;
+	max-width: 600px;
+	margin: 0 auto;
+	padding-bottom: 6rem;
+}
+
+.nutr-title {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #39ff14;
+	margin: 0 0 1rem;
+	text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+}
+
+.nutr-loading {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 40vh;
+	color: #39ff14;
+}
+
+/* Date navigator */
+.nutr-date-nav {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	margin-bottom: 1.25rem;
+}
+
+.nutr-date-arrow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	background: none;
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	transition: border-color 0.15s, color 0.15s;
+}
+
+.nutr-date-arrow:active {
+	border-color: #39ff14;
+	color: #39ff14;
+}
+
+.nutr-date-label {
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--color-text);
+	min-width: 10rem;
+	text-align: center;
+}
+
+/* Targets card */
+.nutr-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 1rem 1.25rem;
+	margin-bottom: 1.25rem;
+}
+
+.nutr-phase-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: #39ff14;
+	margin-bottom: 0.875rem;
+}
+
+/* Macro progress bars */
+.nutr-bar-row {
+	margin-bottom: 0.75rem;
+}
+
+.nutr-bar-row:last-of-type {
+	margin-bottom: 0;
+}
+
+.nutr-bar-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin-bottom: 0.3rem;
+}
+
+.nutr-bar-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-text);
+}
+
+.nutr-bar-values {
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+.nutr-bar-track {
+	height: 5px;
+	background: var(--color-border);
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.nutr-bar-fill {
+	height: 100%;
+	background: #39ff14;
+	border-radius: 3px;
+	transition: width 0.35s ease;
+	box-shadow: 0 0 6px rgba(57, 255, 20, 0.5);
+}
+
+.nutr-co2-target {
+	margin-top: 0.75rem;
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+	border-top: 1px solid var(--color-border);
+	padding-top: 0.625rem;
+}
+
+/* Log section */
+.nutr-log-section {
+	margin-bottom: 1.25rem;
+}
+
+.nutr-log-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--color-text-muted);
+	margin: 0 0 0.625rem;
+}
+
+.nutr-entries-loading {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 1rem 0;
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+}
+
+.nutr-empty {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	text-align: center;
+	padding: 1.5rem 0;
+}
+
+.nutr-entry-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	padding: 0.625rem 0.75rem;
+	margin-bottom: 0.5rem;
+}
+
+.nutr-entry-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.375rem;
+}
+
+.nutr-entry-type {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #39ff14;
+	background: rgba(57, 255, 20, 0.1);
+	padding: 0.125rem 0.375rem;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+
+.nutr-entry-desc {
+	font-size: 0.875rem;
+	color: var(--color-text);
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.nutr-entry-delete {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: none;
+	color: var(--color-text-muted);
+	cursor: pointer;
+	padding: 0.25rem;
+	border-radius: 4px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.nutr-entry-delete:active {
+	color: var(--color-danger);
+}
+
+.nutr-entry-macros {
+	display: flex;
+	gap: 0.75rem;
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+	flex-wrap: wrap;
+}
+
+/* Action buttons */
+.nutr-actions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.625rem;
+	margin-bottom: 1.25rem;
+}
+
+.nutr-actions-2col {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.625rem;
+	margin-bottom: 1.25rem;
+}
+
+.nutr-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	padding: 0.75rem 1rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+	border: none;
+	border-radius: var(--radius);
+	background: #39ff14;
+	color: #000;
+	cursor: pointer;
+	min-height: 44px;
+	transition: opacity 0.15s;
+}
+
+.nutr-btn:active {
+	opacity: 0.8;
+}
+
+.nutr-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.nutr-btn-ghost {
+	padding: 0.625rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	background: transparent;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	color: var(--color-text-muted);
+	cursor: pointer;
+	min-height: 40px;
+	transition: border-color 0.15s;
+}
+
+.nutr-btn-ghost:active {
+	border-color: var(--color-text-muted);
+}
+
+/* Misc form */
+.nutr-misc-form {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 0.875rem;
+	margin-bottom: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.nutr-input {
+	padding: 0.5rem 0.625rem;
+	font-size: 0.9375rem;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-bg);
+	color: var(--color-text);
+	-moz-appearance: textfield;
+}
+
+.nutr-input::-webkit-outer-spin-button,
+.nutr-input::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+}
+
+.nutr-input:focus {
+	outline: none;
+	border-color: #39ff14;
+}
+
+.nutr-input-full {
+	width: 100%;
+}
+
+.nutr-form-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.625rem;
+}
+
+.nutr-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.nutr-form-label {
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+}
+
+.nutr-form-field .nutr-input {
+	width: 100%;
+}
+
+.nutr-auto-cal {
+	font-size: 0.8125rem;
+	color: #39ff14;
+	font-weight: 600;
+}
+
+.nutr-form-actions {
+	display: flex;
+	gap: 0.625rem;
+}
+
+/* Staple confirm overlay */
+.nutr-confirm-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 200;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.75);
+	padding: 1rem;
+}
+
+.nutr-confirm-card {
+	width: 100%;
+	max-width: 340px;
+	background: var(--color-surface);
+	border: 1px solid #39ff14;
+	border-radius: var(--radius);
+	padding: 1.25rem;
+}
+
+.nutr-confirm-title {
+	font-size: 1rem;
+	font-weight: 700;
+	color: #39ff14;
+	margin: 0 0 1rem;
+}
+
+.nutr-confirm-grid {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.375rem 1rem;
+	margin-bottom: 1.25rem;
+	font-size: 0.9rem;
+}
+
+.nutr-confirm-grid span:nth-child(odd) {
+	color: var(--color-text-muted);
+}
+
+.nutr-confirm-grid span:nth-child(even) {
+	font-weight: 600;
+	color: var(--color-text);
+}
+
+.nutr-confirm-actions {
+	display: flex;
+	gap: 0.625rem;
+}
+
+/* ── Fasting mode ────────────────────────────────────────────────── */
+
+/* Fasting toggle row (sits between date nav and targets card) */
+.nutr-fasting-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.75rem;
+	padding: 0.5rem 0;
+	cursor: pointer;
+	position: relative;
+}
+
+.nutr-fasting-label {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	font-weight: 500;
+	transition: color 0.2s;
+}
+
+.nutr-fasting-label--active {
+	color: #8fb0c8;
+	font-weight: 700;
+}
+
+/* Override toggle-switch colour when fasting is on */
+.nutr-fasting-switch {
+	background: #607080 !important;
+}
+
+.nutr-fasting-switch::after {
+	background: #c8dce8 !important;
+}
+
+/* Card modifier — muted blue-grey border & tinted background */
+.nutr-card--fasting {
+	border-color: #445566;
+	background: color-mix(in srgb, var(--color-surface) 85%, #334455 15%);
+}
+
+/* Phase label in fasting mode */
+.nutr-phase-label--fasting {
+	color: #8fb0c8;
+}
+
+/* Bar fill in fasting mode — muted slate blue */
+.nutr-bar-fill--fasting {
+	background: #607080;
+	box-shadow: 0 0 4px rgba(96, 112, 128, 0.5);
+}
+
+/* Confirm card in fasting mode */
+.nutr-confirm-card--fasting {
+	border-color: #607080;
+}
+
+.nutr-confirm-card--fasting .nutr-confirm-title {
+	color: #8fb0c8;
+}
+
+/* ── Calories burned input ─────────────────────────────────────────── */
+
+.nutr-burned-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.75rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	margin-bottom: 0.875rem;
+}
+
+.nutr-burned-label {
+	font-size: 0.875rem;
+	color: var(--color-text);
+	font-weight: 500;
+}
+
+.nutr-burned-input {
+	width: 6rem;
+	padding: 0.375rem 0.5rem;
+	text-align: right;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	border: 1px solid var(--color-border);
+	border-radius: 6px;
+	background: var(--color-bg);
+	color: var(--color-text);
+	-moz-appearance: textfield;
+}
+
+.nutr-burned-input::-webkit-outer-spin-button,
+.nutr-burned-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+.nutr-burned-input:focus {
+	outline: none;
+	border-color: #39ff14;
+}
+
+/* ── Daily summary card ────────────────────────────────────────────── */
+
+.nutr-summary-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 0.875rem;
+	margin-bottom: 1.25rem;
+}
+
+.nutr-summary-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.25rem 0;
+}
+
+.nutr-summary-row--net {
+	border-top: 1px solid var(--color-border);
+	margin-top: 0.25rem;
+	padding-top: 0.5rem;
+}
+
+.nutr-summary-key {
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+}
+
+.nutr-summary-val {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--color-text);
+}
+
+.nutr-summary-net {
+	font-weight: 700;
+}
+
+.nutr-net--ok    { color: #39ff14; }
+.nutr-net--over  { color: #ffeb3b; }
+.nutr-net--under { color: #64b5f6; }
+
+.nutr-summary-divider {
+	height: 1px;
+	background: var(--color-border);
+	margin: 0.375rem 0;
+}
+
+/* ── Weekly rollup ─────────────────────────────────────────────────── */
+
+.nutr-week-section {
+	margin-bottom: 1.25rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	overflow: hidden;
+}
+
+.nutr-week-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 0.75rem;
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: var(--color-text);
+}
+
+.nutr-week-header-label {
+	font-size: 0.8125rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #39ff14;
+}
+
+.nutr-week-chevron {
+	color: var(--color-text-muted);
+	transition: transform 0.2s;
+	flex-shrink: 0;
+}
+
+.nutr-week-chevron--open {
+	transform: rotate(180deg);
+}
+
+.nutr-week-body {
+	padding: 0 0.75rem 0.75rem;
+}
+
+.nutr-week-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.3rem 0;
+	border-bottom: 1px solid var(--color-border);
+	font-size: 0.8125rem;
+}
+
+.nutr-week-row:last-of-type {
+	border-bottom: none;
+}
+
+.nutr-week-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.nutr-week-dot--ok    { background: #39ff14; }
+.nutr-week-dot--over  { background: #ffeb3b; }
+.nutr-week-dot--under { background: #64b5f6; }
+.nutr-week-dot--none  { background: var(--color-border); }
+
+.nutr-week-day {
+	flex: 1;
+	color: var(--color-text-muted);
+	font-size: 0.75rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.nutr-week-sep {
+	color: var(--color-text-muted);
+	font-size: 0.75rem;
+}
+
+.nutr-week-num {
+	min-width: 3rem;
+	text-align: right;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--color-text);
+}
+
+.nutr-week-net--ok    { color: #39ff14; }
+.nutr-week-net--over  { color: #ffeb3b; }
+.nutr-week-net--under { color: #64b5f6; }
+.nutr-week-net--none  { color: var(--color-text-muted); }
+
+.nutr-week-totals {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0 0.25rem;
+	border-top: 1px solid var(--color-border);
+	margin-top: 0.25rem;
+	font-size: 0.8125rem;
+}
+
+.nutr-week-totals-label {
+	flex: 1;
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--color-text-muted);
+}
+
+.nutr-week-avg {
+	font-size: 0.75rem;
+	color: var(--color-text-muted);
+	padding-top: 0.25rem;
+	text-align: right;
+}
+
+.nutr-week-avg strong {
+	color: #39ff14;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Week Strip (home page)                                             */
+/* ------------------------------------------------------------------ */
+
+.week-strip {
+	display: flex;
+	gap: 0.3rem;
+	overflow-x: auto;
+	padding: 0.5rem 0 0.75rem;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.week-strip::-webkit-scrollbar { display: none; }
+
+.week-day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.15rem;
+	flex: 1 0 0;
+	min-width: 40px;
+	padding: 0.5rem 0.25rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.week-day--past {
+	opacity: 0.4;
+}
+
+.week-day--past.week-day--has-log {
+	opacity: 0.5;
+}
+
+.week-day--today {
+	border-color: #e8ff00;
+	background: rgba(232, 255, 0, 0.07);
+}
+
+.week-day--selected {
+	border-color: #e8ff00;
+	background: rgba(232, 255, 0, 0.12);
+}
+
+.week-day-name {
+	font-size: 0.5625rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	letter-spacing: 0.03em;
+}
+
+.week-day-num {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--color-text);
+}
+
+.week-day--today .week-day-name,
+.week-day--today .week-day-num {
+	color: #e8ff00;
+}
+
+.week-day-check {
+	font-size: 0.625rem;
+	color: #ff1493;
+	line-height: 1;
+}
+
+.week-day-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: #e8ff00;
+}
+
+/* Expanded selected-day workouts */
+.week-selected-day {
+	margin-bottom: 1rem;
+	border: 1px solid rgba(232, 255, 0, 0.25);
+	border-radius: var(--radius);
+	padding: 0.75rem;
+	background: var(--color-surface);
+}
+
+.week-selected-day-label {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #e8ff00;
+	margin-bottom: 0.625rem;
+}
+
+.week-selected-none {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	text-align: center;
+	padding: 0.5rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Stacked week day cards (home page)                                 */
+/* ------------------------------------------------------------------ */
+
+.week-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-bottom: 1.5rem;
+}
+
+.week-stack-card {
+	background: var(--color-surface);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: var(--radius);
+	padding: 0.75rem;
+}
+
+.week-stack-card--today {
+	border: 1px solid #e8ff00;
+	box-shadow: 0 0 8px #e8ff00, 0 0 16px rgba(232, 255, 0, 0.3);
+}
+
+.week-stack-card--past {
+	opacity: 0.7;
+}
+
+
+.week-stack-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.week-stack-date {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted);
+}
+
+.week-stack-card--today .week-stack-date {
+	color: #e8ff00;
+}
+
+.week-stack-card:not(.week-stack-card--today):not(.week-stack-card--past) .week-stack-date {
+	color: var(--color-text);
+}
+
+.week-stack-done-chip {
+	margin-left: auto;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	color: #ff1493;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.week-stack-check {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #ff1493;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.week-stack-rest {
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+	font-style: italic;
+	margin: 0;
+	padding: 0.125rem 0.25rem;
+}
+
+.week-stack-completed-names {
+	font-size: 0.8125rem;
+	color: #ff1493;
+	font-weight: 600;
+	margin: 0;
+	padding: 0.125rem 0.25rem;
+}
+
+.week-stack-scheduled-names {
+	font-size: 0.8125rem;
+	color: var(--color-text);
+	margin: 0;
+	padding: 0.125rem 0.25rem;
+}
+
+.week-stack-past-items {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.week-stack-past-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 0.125rem 0.25rem;
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+}
+
+.week-stack-past-name {
+	flex: 1;
+	text-align: left;
+	margin-right: auto;
+}
+
+.week-stack-past-check {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--color-text-muted);
+	opacity: 0.3;
+	flex-shrink: 0;
+	margin-left: 8px;
+}
+
+.week-stack-past-row--done .week-stack-past-name {
+	color: #ff1493;
+}
+
+.week-stack-past-row--done .week-stack-past-check {
+	color: #ff1493;
+	opacity: 1;
+}
+
+.week-cardio-card {
+	cursor: default;
+}
+
+.week-cardio-badge {
+	background: rgba(255, 20, 147, 0.12);
+	color: #ff1493;
+}
+
+.week-stack-workouts {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Monthly Calendar (progress page)                                   */
+/* ------------------------------------------------------------------ */
+
+.month-cal {
+	margin-bottom: 1.25rem;
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 0.75rem 0.625rem;
+}
+
+.month-cal-title {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-text-muted);
+	text-align: center;
+	margin-bottom: 0.5rem;
+}
+
+.month-cal-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 2px;
+}
+
+.month-cal-dow {
+	font-size: 0.5625rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--color-text-muted);
+	text-align: center;
+	padding-bottom: 0.25rem;
+}
+
+.month-cal-cell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	aspect-ratio: 1;
+}
+
+.month-cal-num {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	font-size: 0.75rem;
+	font-weight: 500;
+	color: var(--color-text-muted);
+}
+
+.month-cal-cell--sched .month-cal-num {
+	background: #e8ff00;
+	color: #000;
+	font-weight: 700;
+}
+
+.month-cal-cell--done .month-cal-num {
+	background: #ff1493;
+	color: #fff;
+	font-weight: 700;
+}
+
+.month-cal-cell--today .month-cal-num {
+	box-shadow: 0 0 0 2px #e8ff00;
+}
+
+/* ------------------------------------------------------------------ */
+/*  CO2e Footprint Chart (stats/progress page)                        */
+/* ------------------------------------------------------------------ */
+
+.co2-chart-card {
+	background: var(--color-surface);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	padding: 1rem;
+	margin-top: 1.5rem;
+	margin-bottom: 1.5rem;
+}
+
+.co2-chart-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: #39ff14;
+	margin: 0 0 0.75rem 0;
+}
+
+.co2-summary {
+	margin-top: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.co2-summary-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.3rem 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	font-size: 0.8125rem;
+}
+
+.co2-summary-row:last-child {
+	border-bottom: none;
+}
+
+/* ------------------------------------------------------------------ */
+/*  CO2e Widget (nutrition page)                                       */
+/* ------------------------------------------------------------------ */
+
+.nutr-co2-card {
+	background: var(--color-surface);
+	border: 1px solid rgba(57, 255, 20, 0.25);
+	border-radius: var(--radius);
+	padding: 0.875rem 1rem;
+	margin-top: 1rem;
+	margin-bottom: 1.5rem;
+}
+
+.nutr-co2-card-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: #39ff14;
+	margin: 0 0 0.5rem 0;
+}
+
+.nutr-co2-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	margin-bottom: 0.5rem;
+	font-size: 0.8125rem;
+}
+
+.nutr-co2-row {
+	display: flex;
+	justify-content: space-between;
+}
+
+.nutr-co2-bar-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0.5rem 0;
+}
+
+.nutr-co2-bar-track {
+	flex: 1;
+	height: 6px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.nutr-co2-bar-fill {
+	height: 100%;
+	background: #39ff14;
+	border-radius: 3px;
+	transition: width 0.3s;
+}
+
+.nutr-co2-bar-fill--over {
+	background: #e8ff00;
+}
+
+.nutr-co2-label {
+	font-size: 0.6875rem;
+	color: var(--color-text-muted);
+	margin: 0.25rem 0 0;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Meal list card                                                     */
+/* ------------------------------------------------------------------ */
+
+.meal-list-card {
+	background: var(--color-surface);
+	border: 1px solid rgba(57, 255, 20, 0.2);
+	border-radius: var(--radius);
+	padding: 0 1rem;
+	margin-bottom: 0.75rem;
+}
+
+.meal-list-title {
+	font-size: 0.875rem;
+	font-weight: 700;
+	color: #39ff14;
+	padding: 0.75rem 0 0.5rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.meal-list-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 48px;
+	padding: 0.25rem 0;
+}
+
+.meal-list-row--divider {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.meal-list-name {
+	font-size: 0.9375rem;
+	color: var(--color-text);
+}
+
+.meal-list-check {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: #39ff14;
+	width: 36px;
+	text-align: center;
+	flex-shrink: 0;
+}
+
+.meal-list-add {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: #39ff14;
+	color: #000;
+	border: none;
+	font-size: 1.375rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	transition: opacity 0.15s;
+	line-height: 1;
+}
+
+.meal-list-add:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.meal-dinner-btn {
+	width: 100%;
+	background: var(--color-surface);
+	border: 1px solid rgba(57, 255, 20, 0.25);
+	border-radius: var(--radius);
+	padding: 0.75rem;
+	color: var(--color-text);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	cursor: pointer;
+	margin-bottom: 0.75rem;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.meal-dinner-btn:hover:not(:disabled) {
+	border-color: #39ff14;
+	background: rgba(57, 255, 20, 0.07);
+	color: #39ff14;
+}
+
+.meal-dinner-btn:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.nutr-misc-form-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: #39ff14;
+	margin-bottom: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Meal preview modal                                                 */
+/* ------------------------------------------------------------------ */
+
+.meal-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.75);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	z-index: 300;
+}
+
+.meal-modal {
+	background: #111;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-bottom: none;
+	border-radius: 16px 16px 0 0;
+	padding: 1.5rem 1.25rem 2rem;
+	width: 100%;
+	max-width: 480px;
+}
+
+.meal-modal-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: #39ff14;
+	margin: 0 0 1rem 0;
+	text-align: center;
+}
+
+.meal-modal-items {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	margin-bottom: 0.75rem;
+}
+
+.meal-modal-item {
+	font-size: 0.8125rem;
+	color: var(--color-text);
+}
+
+.meal-modal-divider {
+	border: none;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	margin: 0.75rem 0;
+}
+
+.meal-modal-total {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--color-text);
+	margin-bottom: 1rem;
+}
+
+.meal-modal-empty {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+	text-align: center;
+	padding: 0.5rem 0 1rem;
+	margin: 0;
+}
+
+.meal-modal-actions {
+	display: flex;
+	gap: 0.75rem;
+}
+
+.meal-modal-btn-add {
+	flex: 1;
+	padding: 0.75rem;
+	background: #39ff14;
+	color: #000;
+	border: none;
+	border-radius: var(--radius);
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	transition: opacity 0.15s;
+}
+
+.meal-modal-btn-add:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Cardio log modal                                                   */
+/* ------------------------------------------------------------------ */
+
+.cardio-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.75);
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	z-index: 300;
+	padding: 0;
+}
+
+.cardio-modal {
+	background: #111;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-bottom: none;
+	border-radius: 16px 16px 0 0;
+	padding: 1.5rem 1.25rem 2rem;
+	width: 100%;
+	max-width: 480px;
+}
+
+.cardio-modal-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: #ff1493;
+	margin: 0 0 1.25rem 0;
+	text-align: center;
+}
+
+.cardio-modal-times {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin-bottom: 1.25rem;
+}
+
+.cardio-time-btn {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: var(--radius);
+	padding: 0.75rem 1rem;
+	color: var(--color-text);
+	font-size: 0.9375rem;
+	cursor: pointer;
+	width: 100%;
+	text-align: left;
+	transition: background 0.15s;
+}
+
+.cardio-time-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.cardio-time-val {
+	color: #e8ff00;
+	font-weight: 700;
+	font-size: 0.875rem;
+}
+
+.cardio-modal-actions {
+	display: flex;
+	gap: 0.75rem;
+}
+
+.cardio-modal-btn-primary {
+	flex: 1;
+	padding: 0.75rem;
+	background: #ff1493;
+	color: #fff;
+	border: none;
+	border-radius: var(--radius);
+	font-size: 0.9375rem;
+	font-weight: 700;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	transition: opacity 0.15s;
+}
+
+.cardio-modal-btn-primary:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.cardio-modal-btn-ghost {
+	flex: 1;
+	padding: 0.75rem;
+	background: transparent;
+	color: var(--color-text-muted);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: var(--radius);
+	font-size: 0.9375rem;
+	cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Body composition chart header                                      */
+/* ------------------------------------------------------------------ */
+
+.body-chart-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 0.75rem;
+}
+
+.body-chart-select {
+	background: rgba(255, 255, 255, 0.07);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: var(--radius);
+	padding: 0.25rem 0.5rem;
+	color: var(--color-text);
+	font-size: 0.75rem;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.body-debug-panel {
+	margin-top: 0.75rem;
+	background: rgba(232, 255, 0, 0.05);
+	border: 1px solid rgba(232, 255, 0, 0.3);
+	border-radius: var(--radius);
+	padding: 0.75rem;
+	font-size: 0.75rem;
+	font-family: monospace;
+}
+
+.body-debug-title {
+	color: #e8ff00;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+}
+
+.body-debug-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.125rem 0;
+	color: var(--color-text-muted);
+}
+
+.body-debug-row span:last-child {
+	color: var(--color-text);
+	font-weight: 600;
 }

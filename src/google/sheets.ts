@@ -5,8 +5,9 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
-import { readSheet, appendRow, updateRow } from './api.ts'
+import { readSheet, appendRow, updateRow, writeSheet, upsertRow } from './api.ts'
 import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity } from '../model/types.ts'
+import { FLAG_SENTINEL } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
 
 /* ------------------------------------------------------------------ */
@@ -57,7 +58,7 @@ const WORKOUT_DEFS_HEADER: string[] = [
 	'favorite',
 ]
 
-const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'elsewhere', 'travel', 'visitors', 'blocked', 'calendarEventId', 'strongerId']
+const SCHEDULE_HEADER: string[] = ['date', 'workoutId', 'home', 'travel', 'event', 'blocked', 'calendarEventId', 'strongerId']
 
 const CARDIO_HEADER: string[] = ['id', 'name']
 
@@ -155,8 +156,18 @@ export async function readConfigZone(): Promise<LiftConfig[] | null> {
 }
 
 export async function writeConfigValues(configs: LiftConfig[]): Promise<void> {
-	for (let i = 0; i < configs.length; i++) {
-		await updateRow(TARGET_TAB_NAME, i, liftConfigToRow(configs[i]))
+	for (const config of configs) {
+		await upsertRow(TARGET_TAB_NAME, { id: config.id }, {
+			id: config.id,
+			name: config.name,
+			topSetWeight: config.topSetWeight,
+			backoffWeight: config.backoffWeight,
+			increment: config.increment,
+			minimumWeight: config.minimumWeight,
+			roundingFactor: config.roundingFactor,
+			barWeight: config.barWeight,
+			gear: config.gear,
+		})
 	}
 }
 
@@ -592,13 +603,12 @@ export function parseScheduleRow(row: string[]): ScheduleEntry | null {
 
 	const flags: DayFlags = {
 		home: String(row[2] ?? '').trim().toUpperCase() === 'TRUE',
-		elsewhere: String(row[3] ?? '').trim().toUpperCase() === 'TRUE',
-		travel: String(row[4] ?? '').trim().toUpperCase() === 'TRUE',
-		visitors: String(row[5] ?? '').trim().toUpperCase() === 'TRUE',
-		blocked: String(row[6] ?? '').trim().toUpperCase() === 'TRUE',
+		travel: String(row[3] ?? '').trim().toUpperCase() === 'TRUE',
+		event: String(row[4] ?? '').trim().toUpperCase() === 'TRUE',
+		blocked: String(row[5] ?? '').trim().toUpperCase() === 'TRUE',
 	}
 
-	const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked
+	const hasFlags = flags.home || flags.travel || flags.event || flags.blocked
 	const calendarEventId = String(row[7] ?? '').trim() || undefined
 	const strongerId = String(row[8] ?? '').trim() || undefined
 
@@ -619,9 +629,8 @@ export function scheduleEntryToRow(entry: ScheduleEntry): string[] {
 		entry.date,
 		entry.workoutId,
 		f?.home ? 'TRUE' : '',
-		f?.elsewhere ? 'TRUE' : '',
 		f?.travel ? 'TRUE' : '',
-		f?.visitors ? 'TRUE' : '',
+		f?.event ? 'TRUE' : '',
 		f?.blocked ? 'TRUE' : '',
 		entry.calendarEventId ?? '',
 		entry.strongerId ?? '',
@@ -632,25 +641,42 @@ export function scheduleEntryToRow(entry: ScheduleEntry): string[] {
 /*  Schedule – read/write                                              */
 /* ------------------------------------------------------------------ */
 
+/** Normalize any date value from Google Sheets to YYYY-MM-DD. */
+function normalizeSheetDate(d: string): string {
+	if (!d) return '';
+	// Google Sheets date serial number (e.g. "46000")
+	if (/^\d+$/.test(d.trim())) {
+		const date = new Date((Number(d.trim()) - 25569) * 86400 * 1000);
+		return date.toISOString().split('T')[0];
+	}
+	// ISO datetime string
+	if (d.includes('T')) return d.split('T')[0];
+	return d.trim().slice(0, 10);
+}
+
 export async function readSchedule(): Promise<ScheduleEntry[]> {
 	const rows = await readSheet<Record<string, string>>(SCHEDULE_TAB_NAME)
 	if (!rows || rows.length === 0) return []
 
 	return rows
-		.map((row) => SCHEDULE_HEADER.map((k) => row[k] ?? ''))
+		.map((row) => {
+			const normalized: Record<string, string> = { ...row, date: normalizeSheetDate(row['date'] ?? '') };
+			return SCHEDULE_HEADER.map((k) => normalized[k] ?? '');
+		})
 		.map(parseScheduleRow)
-		.filter((r): r is ScheduleEntry => r !== null)
+		.filter((r): r is ScheduleEntry => r !== null && r.workoutId !== FLAG_SENTINEL)
 }
 
 export async function writeSchedule(entries: ScheduleEntry[]): Promise<void> {
-	for (const entry of entries) {
+	const rows = entries.map((entry) => {
 		const row = scheduleEntryToRow(entry)
 		const obj: Record<string, unknown> = {}
 		for (let i = 0; i < SCHEDULE_HEADER.length; i++) {
 			obj[SCHEDULE_HEADER[i]] = row[i]
 		}
-		await appendRow(SCHEDULE_TAB_NAME, obj)
-	}
+		return obj
+	})
+	await writeSheet(SCHEDULE_TAB_NAME, rows)
 }
 
 /* ------------------------------------------------------------------ */

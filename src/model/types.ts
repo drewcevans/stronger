@@ -182,12 +182,10 @@ export interface SetResult {
 export interface DayFlags {
 	/** At home. */
 	home: boolean;
-	/** Away / vacation. */
-	elsewhere: boolean;
 	/** Traveling. */
 	travel: boolean;
-	/** Have visitors. */
-	visitors: boolean;
+	/** Social event or special occasion. */
+	event: boolean;
 	/** Blocked – all-day or firm commitment, unavailable. */
 	blocked: boolean;
 }

@@ -148,14 +148,16 @@ export function buildProgressData(
   const cutoff = getCutoffDate(range);
 
   // Filter to the selected lift
-  const liftRows = logRows.filter(
-    (r) => r.liftId === liftId && (cutoff === null || r.date >= cutoff),
-  );
+  const liftRows = logRows.filter((r) => {
+    const logDate = String(r.date).split('T')[0];
+    return r.liftId === liftId && (cutoff === null || logDate >= cutoff);
+  });
 
   // Group by session (date + startTime)
   const sessions = new Map<string, ParsedLogRow[]>();
   for (const row of liftRows) {
-    const key = `${row.date}|${row.startTime}`;
+    const logDate = String(row.date).split('T')[0];
+    const key = `${logDate}|${row.startTime}`;
     const list = sessions.get(key);
     if (list) {
       list.push(row);

@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import type { Workout, ScheduleEntry, SetType, CardioActivity, DayFlags } from '../model/index.js';
 import { FLAG_SENTINEL } from '../model/index.js';
 import type { ParsedLogRow, CalendarSyncResult } from '../google/index.js';
-import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Palmtree, Plane, Users, Ban, RefreshCw, Loader, CheckCircle, AlertCircle } from 'lucide-react';
+import { CalendarPlus, X, ChevronRight, ChevronLeft, Dumbbell, History, Save, Check, CalendarCog, HeartPulse, House, Plane, PartyPopper, Ban, RefreshCw, Loader, CheckCircle, AlertCircle, Apple } from 'lucide-react';
 import { CalendarPush } from './CalendarPush.js';
 import { CalendarSync } from './CalendarSync.js';
 
@@ -28,6 +28,7 @@ interface CalendarViewProps {
 	onBulkSchedule: (entries: ScheduleEntry[]) => void;
 	onUpdateFlags: (date: string, flags: DayFlags) => void;
 	onSyncCalendar: (calendarId: string) => Promise<CalendarSyncResult>;
+	onLogNutrition?: (date: string) => void;
 }
 
 /** Format a YYYY-MM-DD string for display. */
@@ -107,11 +108,12 @@ export interface LogSession {
 export function groupLogByDate(logRows: ParsedLogRow[], workoutNames?: Map<string, string>): Map<string, LogSession[]> {
 	const sessionMap = new Map<string, LogSession>();
 	for (const row of logRows) {
-		const key = `${row.date}|${row.workoutId}|${row.startTime}`;
+		const logDate = String(row.date).split('T')[0];
+		const key = `${logDate}|${row.workoutId}|${row.startTime}`;
 		let session = sessionMap.get(key);
 		if (!session) {
 			session = {
-				key: { date: row.date, workoutId: row.workoutId, startTime: row.startTime },
+				key: { date: logDate, workoutId: row.workoutId, startTime: row.startTime },
 				workoutName: workoutNames?.get(row.workoutId) ?? row.workoutId,
 				rows: [],
 			};
@@ -300,6 +302,7 @@ export function CalendarView({
 	onBulkSchedule,
 	onUpdateFlags,
 	onSyncCalendar,
+	onLogNutrition,
 }: CalendarViewProps) {
 	const [addingForDate, setAddingForDate] = useState<string | null>(null);
 	const [showPush, setShowPush] = useState(false);
@@ -552,12 +555,11 @@ export function CalendarView({
 								<div className="calendar-day-actions">
 									{([
 										['home', House],
-										['elsewhere', Palmtree],
 										['travel', Plane],
-										['visitors', Users],
+										['event', PartyPopper],
 										['blocked', Ban],
 									] as [keyof DayFlags, typeof House][]).map(([key, Icon]) => {
-										const currentFlags: DayFlags = dayInfo.flags ?? { home: false, elsewhere: false, travel: false, visitors: false, blocked: false };
+										const currentFlags: DayFlags = dayInfo.flags ?? { home: false, travel: false, event: false, blocked: false };
 										const active = currentFlags[key];
 										return (
 											<button
@@ -577,6 +579,16 @@ export function CalendarView({
 											aria-label={`Add workout to ${display}`}
 										>
 											<CalendarPlus size={18} />
+										</button>
+									)}
+									{onLogNutrition && (
+										<button
+											className="calendar-macros-btn"
+											onClick={() => onLogNutrition(dayInfo.date)}
+											title="Log macros"
+											aria-label={`Log macros for ${display}`}
+										>
+											<Apple size={15} />
 										</button>
 									)}
 								</div>

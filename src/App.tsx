@@ -7,6 +7,7 @@ import {
   writeWorkoutDefs, readWorkoutDefs, updateLogRows, deleteLogSession,
   writeCardioActivities, readCardioActivities, readConfigZone,
   syncScheduleWithCalendar, generateStrongerId, withAuthRetry,
+  upsertRow, deleteRows, readSheet, appendRow, findAndDeleteRows,
 } from './google/index.js';
 import type { LiftGoal } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
@@ -23,11 +24,24 @@ import { CalendarView, SessionDetail } from './components/CalendarView.js';
 import type { LogSession } from './components/CalendarView.js';
 import { ProgressView } from './components/ProgressView.js';
 import { SettingsView } from './components/SettingsView.js';
+import { NutritionPage } from './components/NutritionPage.js';
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import { loadDraft, saveDraft, clearDraft } from './hooks/useWorkoutDraft.js';
 import { clearSentinel as clearTimerSentinel } from './hooks/useRestTimer.js';
 import './App.css';
+
+function getFavoritesFromStorage(): Set<string> {
+  try {
+    const raw = localStorage.getItem('stronger_favorites');
+    return raw ? new Set<string>(JSON.parse(raw) as string[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveFavoritesToStorage(favs: Set<string>): void {
+  try { localStorage.setItem('stronger_favorites', JSON.stringify([...favs])); }
+  catch { /* ignore */ }
+}
 
 const DEFAULT_APP_SETTINGS: AppSettings = {
   showRestTimer: true,
@@ -38,6 +52,7 @@ const DEFAULT_APP_SETTINGS: AppSettings = {
 function App() {
   const { route, navigateTo, replaceTo } = useHashRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [previousSets, setPreviousSets] = useState<PreviousSetData[][] | null>(null);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -50,6 +65,9 @@ function App() {
   const [viewingSession, setViewingSession] = useState<LogSession | null>(null);
   const [cardioActivities, setCardioActivities] = useState<CardioActivity[]>([]);
   const [liftGoals, setLiftGoals] = useState<LiftGoal[]>([]);
+  const [nutritionRows, setNutritionRows] = useState<{ date: string; co2ekg: number; calories: number }[]>([]);
+  const [bodyStatRows, setBodyStatRows] = useState<{ date: string; bodyWeight: number; bodyFat: number; subcutaneousFat: number; fatFreeMass: number }[]>([]);
+  const [mealsRows, setMealsRows] = useState<{ phase: string; meal: string; item: string; calories: number; protein: number; carbs: number; fat: number; co2ekg: number }[]>([]);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
   const [pendingFinish, setPendingFinish] = useState<{
     workout: Workout;
@@ -59,53 +77,95 @@ function App() {
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS);
   const settingsRef = useRef(new Map<string, string>());
 
-  const loadScheduleData = useCallback(async () => {
-    try {
-      const entries = await readSchedule();
-      setSchedule(entries);
-    } catch {
-      // Silently ignore — schedule data is optional
-    }
+  // Fix 2 — sample data audit (runs once on mount)
+  useEffect(() => {
+    console.log('[Stronger] src/data/ contains: sample-workouts.ts (fallback defaults only), mock-strava.ts (not imported)');
+    console.log('[Stronger] Log/history data comes entirely from readSheet("Log") — no sample log data is used in progress views');
   }, []);
 
   const loadLogData = useCallback(async () => {
     try {
       const rows = await readLogZone();
       setLogRows(rows);
-    } catch {
-      // Silently ignore — log data is optional
+    } catch { /* silently ignore */ }
+  }, []);
+
+  // Fix 1 & 3 — fetch everything in parallel on mount (and on manual refresh)
+  const loadAllData = useCallback(async () => {
+    try {
+      // Exercises must come first (liftNames needed for workout defs)
+      const cfgs = await readConfigZone();
+      const loadedConfigs = cfgs ?? [];
+      const liftNames = new Map(loadedConfigs.map((c) => [c.id, c.name]));
+
+      // Everything else in parallel
+      const [defs, cardio, scheduleEntries, logEntries, nutritionData, bodyStatsData, mealsData] = await Promise.all([
+        readWorkoutDefs(liftNames),
+        readCardioActivities(),
+        readSchedule(),
+        readLogZone(),
+        readSheet<Record<string, string>>('Nutrition').catch(() => [] as Record<string, string>[]),
+        readSheet<Record<string, string>>('Body Stats').catch(() => [] as Record<string, string>[]),
+        readSheet<Record<string, string>>('Meals').catch(() => [] as Record<string, string>[]),
+      ]);
+
+      const favs = getFavoritesFromStorage();
+      const loadedDefs = (defs ?? workoutDefinitions).map((d) => ({
+        ...d,
+        favorite: favs.has(d.id),
+      }));
+
+      setConfigs(loadedConfigs);
+      setDefinitions(loadedDefs);
+      setCardioActivities(cardio ?? [...defaultCardioActivities]);
+      setWorkouts(buildWorkoutsFromConfigs(loadedConfigs, loadedDefs));
+      setSchedule(scheduleEntries);
+      setLogRows(logEntries);
+      setNutritionRows(
+        nutritionData
+          .map((r) => ({ date: String(r['date'] ?? '').trim().slice(0, 10), co2ekg: Number(r['co2ekg'] ?? 0), calories: Number(r['calories'] ?? 0) }))
+          .filter((r) => r.date),
+      );
+      setBodyStatRows(
+        bodyStatsData
+          .map((r) => ({
+            date: String(r['date'] ?? '').trim().slice(0, 10),
+            bodyWeight: Number(r['bodyWeight'] ?? 0),
+            bodyFat: Number(r['bodyFat'] ?? 0),
+            subcutaneousFat: Number(r['subcutaneousFat'] ?? 0),
+            fatFreeMass: Number(r['fatFreeMass'] ?? 0),
+          }))
+          .filter((r) => r.date && r.bodyWeight > 0),
+      );
+      setMealsRows(
+        mealsData
+          .map((r) => ({
+            phase: String(r['phase'] ?? '').trim(),
+            meal: String(r['meal'] ?? '').trim(),
+            item: String(r['item'] ?? '').trim(),
+            calories: Number(r['calories'] ?? 0),
+            protein: Number(r['protein'] ?? 0),
+            carbs: Number(r['carbs'] ?? 0),
+            fat: Number(r['fat'] ?? 0),
+            co2ekg: Number(r['co2ekg'] ?? 0),
+          }))
+          .filter((r) => r.phase && r.meal && r.item),
+      );
+    } catch (err) {
+      console.error('Failed to load app data:', err);
     }
   }, []);
 
-  // Load all data on mount
   useEffect(() => {
-    async function init() {
-      try {
-        const cfgs = await readConfigZone();
-        const loadedConfigs = cfgs ?? [];
-        const liftNames = new Map(loadedConfigs.map((c) => [c.id, c.name]));
-        const [defs, cardio] = await Promise.all([
-          readWorkoutDefs(liftNames),
-          readCardioActivities(),
-        ]);
-        const loadedDefs = defs ?? workoutDefinitions;
-        const loadedCardio = cardio ?? [...defaultCardioActivities];
+    setLoading(true);
+    loadAllData().finally(() => setLoading(false));
+  }, [loadAllData]);
 
-        setConfigs(loadedConfigs);
-        setDefinitions(loadedDefs);
-        setCardioActivities(loadedCardio);
-        setWorkouts(buildWorkoutsFromConfigs(loadedConfigs, loadedDefs));
-
-        void loadScheduleData();
-        void loadLogData();
-      } catch (err) {
-        console.error('Failed to load app data:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    void init();
-  }, [loadScheduleData, loadLogData]);
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadAllData();
+    setRefreshing(false);
+  }, [loadAllData]);
 
   const handleDisconnected = useCallback(() => {
     setActiveWorkout(null);
@@ -118,6 +178,9 @@ function App() {
     setSchedule([]);
     setLogRows([]);
     setCardioActivities([]);
+    setNutritionRows([]);
+    setBodyStatRows([]);
+    setMealsRows([]);
     replaceTo({ view: 'list' });
   }, [replaceTo]);
 
@@ -211,11 +274,15 @@ function App() {
 
   const handleScheduleAssign = useCallback(
     (date: string, workoutId: string) => {
-      const updated = [...schedule, { date, workoutId, strongerId: generateStrongerId() }];
-      setSchedule(updated);
-      void withAuthRetry(() => writeSchedule(updated));
+      const sheetName = 'Schedule';
+      const where = { date, workoutId };
+      // Include all Schedule sheet headers so the Apps Script upsert has the full row
+      const row = { date, workoutId, home: '', travel: '', event: '', blocked: '', calendarEventId: '', strongerId: '' };
+      console.log('[planner] upsertRow sheet:', sheetName, '| where:', where, '| row:', row);
+      setSchedule((prev) => [...prev, { date, workoutId, strongerId: generateStrongerId() }]);
+      void upsertRow(sheetName, where, row);
     },
-    [schedule],
+    [],
   );
 
   const handleBulkSchedule = useCallback(
@@ -225,62 +292,75 @@ function App() {
       );
       const toAdd = entries.filter((e) => e.workoutId !== '__rest__');
 
-      let updated = schedule.map((e) => {
-        if (datesToRest.has(e.date) && e.workoutId && e.workoutId !== FLAG_SENTINEL) {
-          return { ...e, workoutId: '' };
-        }
-        return e;
-      });
-
-      for (const entry of toAdd) {
-        const exists = updated.some((e) => e.date === entry.date && e.workoutId === entry.workoutId);
-        if (!exists) {
-          updated.push({ ...entry, strongerId: entry.strongerId ?? generateStrongerId() });
+      // Delete each workout assignment being rested (row-level)
+      for (const dateStr of datesToRest) {
+        for (const e of schedule) {
+          if (e.date === dateStr && e.workoutId && e.workoutId !== FLAG_SENTINEL) {
+            void findAndDeleteRows('Schedule', { date: dateStr, workoutId: e.workoutId });
+          }
         }
       }
 
-      setSchedule(updated);
-      void withAuthRetry(() => writeSchedule(updated));
+      // Upsert each new workout assignment (row-level)
+      for (const entry of toAdd) {
+        const exists = schedule.some((e) => e.date === entry.date && e.workoutId === entry.workoutId);
+        if (!exists) {
+          void upsertRow('Schedule', { date: entry.date, workoutId: entry.workoutId }, { date: entry.date, workoutId: entry.workoutId });
+        }
+      }
+
+      // Mirror changes in local state
+      const restDated = schedule.filter(
+        (e) => !(datesToRest.has(e.date) && e.workoutId && e.workoutId !== FLAG_SENTINEL),
+      );
+      const additions: ScheduleEntry[] = [];
+      for (const entry of toAdd) {
+        const exists = restDated.some((e) => e.date === entry.date && e.workoutId === entry.workoutId);
+        if (!exists) {
+          additions.push({ ...entry, strongerId: entry.strongerId ?? generateStrongerId() });
+        }
+      }
+      setSchedule([...restDated, ...additions]);
     },
     [schedule],
   );
 
   const handleScheduleRemove = useCallback(
     (date: string, workoutId: string) => {
-      let blanked = false;
-      const updated = schedule.map((e) => {
-        if (!blanked && e.date === date && e.workoutId === workoutId && e.workoutId !== FLAG_SENTINEL) {
-          blanked = true;
-          return { ...e, workoutId: '' };
-        }
-        return e;
-      });
-      setSchedule(updated);
-      void withAuthRetry(() => writeSchedule(updated));
+      setSchedule((prev) => prev.filter(
+        (e) => !(e.date === date && e.workoutId === workoutId && e.workoutId !== FLAG_SENTINEL),
+      ));
+      console.log('[planner] deleteRows', { date, workoutId });
+      void findAndDeleteRows('Schedule', { date, workoutId });
     },
-    [schedule],
+    [],
   );
 
   const handleUpdateFlags = useCallback(
     (date: string, flags: DayFlags) => {
-      const hasFlags = flags.home || flags.elsewhere || flags.travel || flags.visitors || flags.blocked;
-      const flagIdx = schedule.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
-      let updated: ScheduleEntry[];
-      if (flagIdx >= 0) {
-        if (hasFlags) {
-          updated = schedule.map((e, i) => i === flagIdx ? { ...e, flags } : e);
-        } else {
-          updated = schedule.filter((_, i) => i !== flagIdx);
-        }
-      } else if (hasFlags) {
-        updated = [...schedule, { date, workoutId: FLAG_SENTINEL, flags }];
+      const hasFlags = flags.home || flags.travel || flags.event || flags.blocked;
+      if (!hasFlags) {
+        // Remove flag row from state and sheet
+        setSchedule((prev) => prev.filter((e) => !(e.date === date && e.workoutId === FLAG_SENTINEL)));
+        void findAndDeleteRows('Schedule', { date, workoutId: FLAG_SENTINEL });
       } else {
-        return;
+        // Upsert flag row in state and sheet
+        setSchedule((prev) => {
+          const idx = prev.findIndex((e) => e.date === date && e.workoutId === FLAG_SENTINEL);
+          if (idx >= 0) return prev.map((e, i) => i === idx ? { ...e, flags } : e);
+          return [...prev, { date, workoutId: FLAG_SENTINEL, flags }];
+        });
+        void upsertRow('Schedule', { date, workoutId: FLAG_SENTINEL }, {
+          date,
+          workoutId: FLAG_SENTINEL,
+          home:    flags.home    ? 'TRUE' : '',
+          travel:  flags.travel  ? 'TRUE' : '',
+          event:   flags.event   ? 'TRUE' : '',
+          blocked: flags.blocked ? 'TRUE' : '',
+        });
       }
-      setSchedule(updated);
-      void withAuthRetry(() => writeSchedule(updated));
     },
-    [schedule],
+    [],
   );
 
   const handleCalendarOpenWorkout = useCallback(
@@ -373,9 +453,11 @@ function App() {
 
   const handleGoToList = useCallback(() => navigateTo({ view: 'list' }), [navigateTo]);
   const handleOpenCalendar = useCallback(() => navigateTo({ view: 'calendar' }), [navigateTo]);
+  const handleOpenNutrition = useCallback(() => navigateTo({ view: 'nutrition' }), [navigateTo]);
   const handleOpenExercises = useCallback(() => navigateTo({ view: 'exercises' }), [navigateTo]);
   const handleOpenProgress = useCallback(() => navigateTo({ view: 'progress' }), [navigateTo]);
   const handleOpenSettings = useCallback(() => navigateTo({ view: 'settings' }), [navigateTo]);
+  const handleLogNutrition = useCallback((date: string) => navigateTo({ view: 'nutrition', date }), [navigateTo]);
 
   const handleLiftGoalChange = useCallback((liftId: string, weight: number | null) => {
     setLiftGoals((prev) => {
@@ -429,13 +511,35 @@ function App() {
 
   const handleToggleFavorite = useCallback(
     (workoutId: string, favorite: boolean) => {
+      const favs = getFavoritesFromStorage();
+      if (favorite) favs.add(workoutId);
+      else favs.delete(workoutId);
+      saveFavoritesToStorage(favs);
       const updatedDefs = definitions.map((d) => d.id === workoutId ? { ...d, favorite } : d);
       setDefinitions(updatedDefs);
       setWorkouts(buildWorkoutsFromConfigs(configs, updatedDefs));
-      void withAuthRetry(() => writeWorkoutDefs(updatedDefs));
     },
     [definitions, configs],
   );
+
+  const handleCardioLogSave = useCallback(async (
+    date: string, workoutId: string, name: string, startTime: string, endTime: string,
+  ) => {
+    const cardioId = workoutId.startsWith('cardio:') ? workoutId.slice('cardio:'.length) : workoutId;
+    const newRow: ParsedLogRow = {
+      date, startTime, endTime, workoutId,
+      exerciseName: name, liftId: cardioId,
+      setNumber: 1, setType: 'cardio',
+      plannedWeight: 0, plannedReps: 0, actualWeight: 0, actualReps: 1, completed: true,
+    };
+    setLogRows((prev) => [...prev, newRow]);
+    await withAuthRetry(() => appendRow('Log', {
+      date, startTime, endTime, workoutId,
+      exerciseName: name, liftId: cardioId,
+      setNumber: 1, setType: 'cardio',
+      plannedWeight: 0, plannedReps: 0, actualWeight: 0, actualReps: 1, completed: 'TRUE',
+    }));
+  }, []);
 
   const handleCardioSave = useCallback(
     (updated: CardioActivity[]) => {
@@ -481,7 +585,7 @@ function App() {
 
       setConfigs(updatedConfigs);
       setWorkouts(buildWorkoutsFromConfigs(updatedConfigs, definitions));
-      void withAuthRetry(() => writeConfigValues(updatedConfigs));
+      void writeConfigValues(updatedConfigs);
       navigateTo({ view: 'exercises' });
     },
     [configs, definitions, navigateTo],
@@ -559,8 +663,11 @@ function App() {
     );
   }
 
+  const voltStyle = { '--color-primary': '#e8ff00', '--color-border-glow': '#e8ff00' } as React.CSSProperties;
+
   if (activeWorkout) {
     return (
+      <div style={voltStyle}>
       <WorkoutView
         workout={activeWorkout}
         previousSets={previousSets}
@@ -571,6 +678,7 @@ function App() {
         onBack={handleBack}
         onFinish={handleFinish}
       />
+      </div>
     );
   }
 
@@ -579,9 +687,12 @@ function App() {
       onDisconnected={handleDisconnected}
       onGoToList={handleGoToList}
       onOpenCalendar={handleOpenCalendar}
+      onOpenNutrition={handleOpenNutrition}
       onOpenExercises={handleOpenExercises}
       onOpenProgress={handleOpenProgress}
       onOpenSettings={handleOpenSettings}
+      onRefresh={handleRefresh}
+      refreshing={refreshing}
     />
   );
 
@@ -643,6 +754,7 @@ function App() {
           onBulkSchedule={handleBulkSchedule}
           onUpdateFlags={handleUpdateFlags}
           onSyncCalendar={handleSyncCalendar}
+          onLogNutrition={handleLogNutrition}
         />
       </>
     );
@@ -652,7 +764,7 @@ function App() {
     return (
       <>
         {navBar}
-        <ProgressView logRows={logRows} liftGoals={liftGoals} onLiftGoalChange={handleLiftGoalChange} />
+        <ProgressView logRows={logRows} schedule={schedule} liftGoals={liftGoals} onLiftGoalChange={handleLiftGoalChange} nutritionRows={nutritionRows} bodyStatRows={bodyStatRows} />
       </>
     );
   }
@@ -669,6 +781,15 @@ function App() {
           appSettings={appSettings}
           onAppSettingChange={handleAppSettingChange}
         />
+      </>
+    );
+  }
+
+  if (route.view === 'nutrition') {
+    return (
+      <>
+        {navBar}
+        <NutritionPage initialDate={route.date} meals={mealsRows} />
       </>
     );
   }
@@ -697,21 +818,24 @@ function App() {
   return (
     <>
       {navBar}
-      <WorkoutSelect
-        workouts={workouts}
-        missingLiftIds={missingLiftIds}
-        schedule={schedule}
-        logRows={logRows}
-        onSelect={handleSelectWorkout}
-        onViewSession={handleViewSession}
-        onEdit={handleEditWorkout}
-        onDuplicate={handleDuplicateWorkout}
-        onDelete={handleDeleteWorkoutFromList}
-        onNew={handleNewWorkout}
-        onToggleFavorite={handleToggleFavorite}
-        cardioActivities={cardioActivities}
-        onCardioSave={handleCardioSave}
-      />
+      <div style={voltStyle}>
+        <WorkoutSelect
+          workouts={workouts}
+          missingLiftIds={missingLiftIds}
+          schedule={schedule}
+          logRows={logRows}
+          onSelect={handleSelectWorkout}
+          onViewSession={handleViewSession}
+          onEdit={handleEditWorkout}
+          onDuplicate={handleDuplicateWorkout}
+          onDelete={handleDeleteWorkoutFromList}
+          onNew={handleNewWorkout}
+          onToggleFavorite={handleToggleFavorite}
+          cardioActivities={cardioActivities}
+          onCardioSave={handleCardioSave}
+          onCardioLogSave={handleCardioLogSave}
+        />
+      </div>
     </>
   );
 }
