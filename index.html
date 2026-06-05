@@ -11,9 +11,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik+Wet+Paint&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Lacquer&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital@1&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
     <title>STRONGER</title>
-    <script type="module" crossorigin src="/stronger/assets/index-CwSvcaMg.js"></script>
-    <link rel="stylesheet" crossorigin href="/stronger/assets/index-BZXqMtGV.css">
+    <script type="module" crossorigin src="/stronger/assets/index-6Lv3e5RM.js"></script>
+    <link rel="stylesheet" crossorigin href="/stronger/assets/index-BZJ51slE.css">
   </head>
   <body>
     <!-- Global SVG filter definitions for sketchy border effect -->
@@ -26,6 +27,14 @@
         <filter id="sketch-filter-pink" x="-5%" y="-5%" width="110%" height="110%">
           <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="5" result="noise"/>
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="sk" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="3" result="noise"/>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+        <filter id="sk2" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="3" seed="7" result="noise"/>
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/>
         </filter>
       </defs>
     </svg>
