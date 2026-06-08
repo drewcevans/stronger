@@ -664,7 +664,7 @@ export async function readSchedule(): Promise<ScheduleEntry[]> {
 			return SCHEDULE_HEADER.map((k) => normalized[k] ?? '');
 		})
 		.map(parseScheduleRow)
-		.filter((r): r is ScheduleEntry => r !== null && r.workoutId !== FLAG_SENTINEL)
+		.filter((r): r is ScheduleEntry => r !== null)
 }
 
 export async function writeSchedule(entries: ScheduleEntry[]): Promise<void> {

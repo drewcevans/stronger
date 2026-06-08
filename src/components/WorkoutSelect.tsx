@@ -1,12 +1,19 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
 import { FLAG_SENTINEL } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
 import type { LogSession } from './CalendarView.js';
 import { groupLogByDate } from './CalendarView.js';
 import { Banner } from './Banner.js';
-import { MotivationalQuote } from './MotivationalQuote.js';
-import { BicepsFlexed, ChevronDown, Pencil, Plus, Star, Bike, Trash2, Check, X, Copy, MoreVertical, HeartPulse, Loader } from 'lucide-react';
+import quotes from '../../lib/quotes.json';
+import {
+	BicepsFlexed, ChevronDown, Pencil, Plus, Star, Bike, Trash2, Check, X, Copy, MoreVertical, Loader,
+} from 'lucide-react';
+import { WorkoutChaosArt } from './WorkoutChaosArt.js';
+import chaosXDone from '../assets/chaos-x-done.png';
+import chaosRest from '../assets/chaos-rest.png';
+import { SketchyBorder } from './SketchyBorder.js';
 
 interface WorkoutSelectProps {
 	workouts: Workout[];
@@ -34,26 +41,49 @@ function CardioLogModal({ name, onSave, onClose }: {
 	onSave: (startTime: string, endTime: string) => Promise<void>;
 	onClose: () => void;
 }) {
-	const [startTime, setStartTime] = useState<string | null>(null);
-	const [endTime, setEndTime] = useState<string | null>(null);
+	const [startTime, setStartTime] = useState('');
+	const [endTime, setEndTime] = useState('');
 	const [saving, setSaving] = useState(false);
 
-	const fmtTime = (iso: string) =>
-		new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+	const nowHHMM = () => {
+		const now = new Date();
+		return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+	};
+
+	const toISO = (hhmm: string) => {
+		const [h, m] = hhmm.split(':').map(Number);
+		const d = new Date();
+		d.setHours(h, m, 0, 0);
+		return d.toISOString();
+	};
 
 	return (
 		<div className="cardio-modal-overlay" onClick={onClose}>
 			<div className="cardio-modal" onClick={(e) => e.stopPropagation()}>
 				<h3 className="cardio-modal-title">{name}</h3>
 				<div className="cardio-modal-times">
-					<button className="cardio-time-btn" onClick={() => setStartTime(new Date().toISOString())}>
-						<span>Start Time</span>
-						{startTime && <span className="cardio-time-val">{fmtTime(startTime)}</span>}
-					</button>
-					<button className="cardio-time-btn" onClick={() => setEndTime(new Date().toISOString())}>
-						<span>End Time</span>
-						{endTime && <span className="cardio-time-val">{fmtTime(endTime)}</span>}
-					</button>
+					<div className="cardio-time-row">
+						<button className="cardio-time-btn" onClick={() => setStartTime(nowHHMM())}>
+							Set Start Time
+						</button>
+						<input
+							className="cardio-time-input"
+							type="time"
+							value={startTime}
+							onChange={(e) => setStartTime(e.target.value)}
+						/>
+					</div>
+					<div className="cardio-time-row">
+						<button className="cardio-time-btn" onClick={() => setEndTime(nowHHMM())}>
+							Set End Time
+						</button>
+						<input
+							className="cardio-time-input"
+							type="time"
+							value={endTime}
+							onChange={(e) => setEndTime(e.target.value)}
+						/>
+					</div>
 				</div>
 				<div className="cardio-modal-actions">
 					<button
@@ -62,7 +92,7 @@ function CardioLogModal({ name, onSave, onClose }: {
 						onClick={async () => {
 							if (!startTime || !endTime) return;
 							setSaving(true);
-							try { await onSave(startTime, endTime); } finally { setSaving(false); }
+							try { await onSave(toISO(startTime), toISO(endTime)); } finally { setSaving(false); }
 						}}
 					>
 						{saving ? <Loader size={15} className="spin" /> : 'Complete'}
@@ -176,32 +206,16 @@ function todayDateString(): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/**
- * Normalize any date value from Google Sheets to YYYY-MM-DD.
- * Handles ISO strings, Date objects, and Sheets serial numbers.
- */
 function normalizeDate(d: unknown): string {
 	if (!d) return '';
 	if (d instanceof Date) return d.toISOString().split('T')[0];
 	const str = String(d);
-	// Google Sheets date serial (e.g. "46000")
 	if (/^\d+$/.test(str)) {
 		const date = new Date((Number(str) - 25569) * 86400 * 1000);
 		return date.toISOString().split('T')[0];
 	}
-	// ISO string with time component
 	if (str.includes('T')) return str.split('T')[0];
 	return str.trim().slice(0, 10);
-}
-
-function getWeekDates(anchor: Date = new Date()): string[] {
-	const day = anchor.getDay(); // 0=Sun
-	const offset = day === 0 ? -6 : 1 - day;
-	const mon = new Date(anchor.getFullYear(), anchor.getMonth(), anchor.getDate() + offset);
-	return Array.from({ length: 7 }, (_, i) => {
-		const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i);
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-	});
 }
 
 function formatDayLabel(dateStr: string): string {
@@ -210,6 +224,130 @@ function formatDayLabel(dateStr: string): string {
 	const dow = dt.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
 	const rest = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 	return `${dow}, ${rest}`;
+}
+
+function getEndOfWeekDate(todayStr: string): string {
+	const [y, m, d] = todayStr.split('-').map(Number);
+	const dt = new Date(y, m - 1, d);
+	const dow = dt.getDay(); // 0=Sun … 6=Sat
+	const daysUntilSunday = dow === 0 ? 0 : 7 - dow;
+	const sun = new Date(y, m - 1, d + daysUntilSunday);
+	return `${sun.getFullYear()}-${String(sun.getMonth() + 1).padStart(2, '0')}-${String(sun.getDate()).padStart(2, '0')}`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  TodayHeroCard — one card per workout item                          */
+/* ------------------------------------------------------------------ */
+
+function TodayHeroCard({ date, item, sessions, onSelect, onViewSession, onCardioLog }: {
+	date: string;
+	item: ScheduledItem | null;
+	sessions: Map<string, LogSession>;
+	onSelect: (w: Workout) => void;
+	onViewSession?: (s: LogSession) => void;
+	onCardioLog: (date: string, workoutId: string, name: string) => void;
+}) {
+	const cardQuote = useMemo(
+		() => (quotes as string[])[Math.floor(Math.random() * quotes.length)],
+		[],
+	);
+
+	const workoutId = item == null ? '' : item.kind === 'workout' ? item.workout.id : item.workoutId;
+	const name = item == null ? null : item.kind === 'workout' ? item.workout.name : item.name;
+	const isCompleted = item?.done ?? false;
+
+	const handleActivate = () => {
+		if (item == null) return;
+		if (item.kind === 'workout') {
+			if (item.done && onViewSession) {
+				const session = sessions.get(item.workout.id);
+				if (session) { onViewSession(session); return; }
+			}
+			onSelect(item.workout);
+		} else {
+			onCardioLog(date, item.workoutId, item.name);
+		}
+	};
+
+	return (
+		<div
+			className="punk-hero"
+			role="button"
+			tabIndex={0}
+			onClick={handleActivate}
+			onKeyDown={(e) => e.key === 'Enter' && handleActivate()}
+		>
+			<div className="punk-halftone" />
+			<div className="punk-scanline" />
+			<div className="punk-stamp">PUNK</div>
+
+			{item == null ? (
+				<img
+					src={chaosRest}
+					style={{
+						position: 'absolute',
+						right: '-25px',
+						top: '-10px',
+						bottom: '-10px',
+						width: '270px',
+						objectFit: 'contain',
+						objectPosition: 'right center',
+						opacity: 0.88,
+						pointerEvents: 'none',
+						zIndex: 3,
+					}}
+					alt=""
+				/>
+			) : (
+				<WorkoutChaosArt workoutId={workoutId} dimmed={isCompleted} />
+			)}
+
+			{isCompleted && (
+				<img
+					src={chaosXDone}
+					style={{
+						position: 'absolute',
+						inset: 0,
+						width: '100%',
+						height: '100%',
+						objectFit: 'cover',
+						objectPosition: 'center',
+						opacity: 1,
+						borderRadius: 16,
+						pointerEvents: 'none',
+						zIndex: 6,
+						mixBlendMode: 'normal',
+					}}
+					alt=""
+				/>
+			)}
+
+			<div className="punk-content">
+				{name == null ? (
+					<div className="punk-graffiti-wrap">
+						<span className="punk-graffiti-cyan">REST</span>
+						<span className="punk-graffiti-pink">REST</span>
+						<span className="punk-graffiti-main">REST</span>
+					</div>
+				) : (
+					<div className="punk-graffiti-wrap">
+						<span className="punk-graffiti-cyan">{name}</span>
+						<span className="punk-graffiti-pink">{name}</span>
+						<span
+							className="punk-graffiti-main"
+							style={isCompleted ? { textShadow: '0 0 20px rgba(255,20,147,0.5)' } : undefined}
+						>
+							{name}
+						</span>
+					</div>
+				)}
+
+				<div className="punk-bottom">
+					<p className="punk-quote">"{cardQuote}"</p>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 /* ------------------------------------------------------------------ */
@@ -233,62 +371,30 @@ export function WorkoutSelect({
 	onCardioLogSave,
 }: WorkoutSelectProps) {
 	const today = useMemo(() => todayDateString(), []);
-	const weekDates = useMemo(() => getWeekDates(), []);
-	const todayCardRef = useRef<HTMLDivElement>(null);
 	const [cardioModal, setCardioModal] = useState<{ date: string; workoutId: string; name: string } | null>(null);
 
-	// Log schedule entries on each render for debugging date format issues
-	useEffect(() => {
-		if (schedule && schedule.length > 0) {
-			console.log('[WeekView] schedule entries (from app state):', schedule.map((e) => ({ date: e.date, workoutId: e.workoutId })));
-		}
-	}, [schedule]);
-
-	// Scroll today's card into view on mount
-	useEffect(() => {
-		if (todayCardRef.current) {
-			todayCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-		}
-	}, []);
-
-	// Debug: log raw schedule dates so format mismatches are visible
-	useEffect(() => {
-		if (schedule && schedule.length > 0) {
-			console.log('[WorkoutSelect] raw schedule dates:', schedule.map((e) => e.date));
-		}
-	}, [schedule]);
-
-	// Per-day data for the week stack
-	const weekData = useMemo(() => {
+	const { todayItems, todaySessions, upcomingDays, recentDays } = useMemo(() => {
 		const workoutMap = new Map(workouts.map((w) => [w.id, w]));
 		const workoutNames = new Map(workouts.map((w) => [w.id, w.name]));
 		const cardioMap = new Map((cardioActivities ?? []).map((a) => [a.id, a.name]));
 
-		// Normalize all log rows by date
 		const completedByDate = new Map<string, Set<string>>();
-		const logDateSet = new Set<string>();
 		if (logRows) {
 			for (const row of logRows) {
 				const d = normalizeDate(row.date);
-				logDateSet.add(d);
 				const s = completedByDate.get(d) ?? new Set<string>();
 				s.add(row.workoutId);
 				completedByDate.set(d, s);
 			}
 		}
 
-		// All sessions grouped by date (for onViewSession)
 		const allSessionsByDate = logRows
 			? groupLogByDate(logRows, workoutNames)
 			: new Map<string, LogSession[]>();
 
-		return weekDates.map((date) => {
-			// Use schedule prop; normalizeDate handles any date format from the sheet
-			const dayEntries = (schedule ?? []).filter(
-				(e) => normalizeDate(e.date) === date && e.workoutId && e.workoutId !== FLAG_SENTINEL,
-			);
-
-			const scheduledItems: ScheduledItem[] = dayEntries
+		const buildItems = (date: string): ScheduledItem[] =>
+			(schedule ?? [])
+				.filter((e) => normalizeDate(e.date) === date && e.workoutId && e.workoutId !== FLAG_SENTINEL)
 				.map((e) => {
 					const done = completedByDate.get(date)?.has(e.workoutId) ?? false;
 					if (e.workoutId.startsWith('cardio:')) {
@@ -302,28 +408,40 @@ export function WorkoutSelect({
 				})
 				.filter((x): x is ScheduledItem => x !== null);
 
-			const hasLog = logDateSet.has(date);
+		// Today
+		const todayItems = buildItems(today);
+		const todaySessions = new Map<string, LogSession>();
+		for (const s of allSessionsByDate.get(today) ?? []) {
+			todaySessions.set(s.key.workoutId, s);
+		}
 
-			// Session map for this date
-			const sessions = new Map<string, LogSession>();
-			for (const s of allSessionsByDate.get(date) ?? []) {
-				sessions.set(s.key.workoutId, s);
+		// Upcoming: all future days in current week (tomorrow through Sunday)
+		const endOfWeek = getEndOfWeekDate(today);
+		const [ty, tm, td] = today.split('-').map(Number);
+		const upcomingDays: Array<{ date: string; items: ScheduledItem[] }> = [];
+		{
+			const [ey, em, ed] = endOfWeek.split('-').map(Number);
+			const endDt = new Date(ey, em - 1, ed);
+			let cur = new Date(ty, tm - 1, td + 1);
+			while (cur <= endDt) {
+				const d = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+				upcomingDays.push({ date: d, items: buildItems(d) });
+				cur.setDate(cur.getDate() + 1);
 			}
+		}
 
-			// Deduplicated completed workout names for the done-chip
-			const completedWorkoutNames = [...new Set(
-				[...sessions.values()].map((s) => {
-					// Strip 'cardio:' prefix for display
-					const n = s.workoutName;
-					return n.startsWith('cardio:') ? n.slice('cardio:'.length) : n;
-				}).filter(Boolean),
-			)];
-
-			return { date, scheduledItems, hasLog, sessions, completedWorkoutNames };
+		// Recent: all past days of current week (Mon through yesterday), most recent first
+		const dow = new Date(ty, tm - 1, td).getDay(); // 0=Sun,1=Mon,...,6=Sat
+		const daysToMonday = dow === 0 ? 6 : dow - 1;
+		const recentDays = Array.from({ length: daysToMonday }, (_, i) => {
+			const dt = new Date(ty, tm - 1, td - i - 1);
+			const date = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+			return { date, items: buildItems(date) };
 		});
-	}, [weekDates, workouts, cardioActivities, schedule, logRows]);
 
-	// Workout library list
+		return { todayItems, todaySessions, upcomingDays, recentDays };
+	}, [schedule, workouts, cardioActivities, logRows, today]);
+
 	const { favorites, others } = useMemo(() => {
 		const favorites: Workout[] = [];
 		const others: Workout[] = [];
@@ -335,93 +453,115 @@ export function WorkoutSelect({
 	}, [workouts]);
 
 	const [moreOpen, setMoreOpen] = useState(false);
+	const hasRecentItems = recentDays.length > 0;
 
 	return (
 		<div className="workout-select">
 			<Banner />
-			<MotivationalQuote />
 
-			{/* Week day cards */}
-			<div className="week-stack">
-				{weekData.map(({ date, scheduledItems, hasLog, sessions, completedWorkoutNames }) => {
-					const isToday = date === today;
-					const isPast = date < today;
+			{/* TODAY section — label + date match COMING UP / RECENT style */}
+			<div className="home-section">
+				<p className="home-section-label">TODAY &nbsp;·&nbsp; {formatDayLabel(today)}</p>
 
-						const isDone = completedWorkoutNames.length > 0;
-					return (
-						<div
-							key={date}
-							ref={isToday ? todayCardRef : undefined}
-							className={[
-								'week-stack-card',
-								isToday ? 'week-stack-card--today' : '',
-								isPast ? 'week-stack-card--past' : '',
-							].filter(Boolean).join(' ')}
-						>
-							<div className="week-stack-header">
-								<span className="week-stack-date">{formatDayLabel(date)}</span>
-								{!isPast && isDone && <span className="week-stack-check">✓</span>}
-							</div>
+				{/* One hero card per workout (or single rest-day card) */}
+				<div className="today-cards-stack">
+					{todayItems.length === 0 ? (
+						<TodayHeroCard
+							date={today}
+							item={null}
+							sessions={todaySessions}
+							onSelect={onSelect}
+							onViewSession={onViewSession}
+							onCardioLog={(date, workoutId, name) => setCardioModal({ date, workoutId, name })}
+						/>
+					) : (
+						todayItems.map((item) => {
+							const key = item.kind === 'cardio' ? item.workoutId : item.workout.id;
+							return (
+								<TodayHeroCard
+									key={key}
+									date={today}
+									item={item}
+									sessions={todaySessions}
+									onSelect={onSelect}
+									onViewSession={onViewSession}
+									onCardioLog={(date, workoutId, name) => setCardioModal({ date, workoutId, name })}
+								/>
+							);
+						})
+					)}
+				</div>
+			</div>
 
-							{isPast ? (
-								scheduledItems.length > 0 ? (
-									<div className="week-stack-past-items">
-										{scheduledItems.map((item) => {
-											const name = item.kind === 'cardio' ? item.name : item.workout.name;
+			<div className="home-section">
+				<p className="home-section-label">COMING UP</p>
+				{upcomingDays.length === 0 ? (
+					<p className="no-upcoming-text">No more workouts this week</p>
+				) : (
+					<div className="upcoming-list">
+						{upcomingDays.map(({ date, items }) => (
+							<div key={date} className="punk-coming-up-card">
+								<SketchyBorder cardHeight={Math.max(items.length, 1) * 32 + 45} />
+								<div style={{ position: 'relative', zIndex: 1 }}>
+									<span className="punk-coming-up-day">{formatDayLabel(date)}</span>
+									{items.length === 0 ? (
+										<span className="punk-coming-up-name">REST DAY</span>
+									) : (
+										items.map((item) => {
 											const key = item.kind === 'cardio' ? item.workoutId : item.workout.id;
+											const name = item.kind === 'cardio' ? item.name : item.workout.name;
 											return (
-												<div key={key} className={`week-stack-past-row${item.done ? ' week-stack-past-row--done' : ''}`}>
-													<span className="week-stack-past-name">{name}</span>
-													<span className="week-stack-past-check">✓</span>
-												</div>
-											);
-										})}
-									</div>
-								) : completedWorkoutNames.length > 0 ? (
-									<p className="week-stack-completed-names">
-										{completedWorkoutNames.slice(0, 2).join(', ')}
-									</p>
-								) : (
-									<p className="week-stack-rest">Rest day</p>
-								)
-							) : scheduledItems.length > 0 ? (
-								<div className="week-stack-workouts">
-									{scheduledItems.map((item) =>
-										item.kind === 'cardio' ? (
-											<div key={item.workoutId} className="workout-card-wrapper">
 												<button
-													className="workout-card week-cardio-card"
-													onClick={() => setCardioModal({ date, workoutId: item.workoutId, name: item.name })}
+													key={key}
+													className="punk-coming-up-name"
+													onClick={() => {
+														if (item.kind === 'cardio') {
+															setCardioModal({ date, workoutId: item.workoutId, name: item.name });
+														} else {
+															onSelect(item.workout);
+														}
+													}}
 												>
-													<span className="strength-badge week-cardio-badge">
-														<HeartPulse size={24} />
-													</span>
-													<span className="workout-name">{item.name}</span>
+													{name}
 												</button>
-											</div>
-										) : (
-											<WorkoutCard
-												key={item.workout.id}
-												w={item.workout}
-												done={item.done}
-												onSelect={() => {
-													if (item.done && onViewSession) {
-														const session = sessions.get(item.workout.id);
-														if (session) { onViewSession(session); return; }
-													}
-													onSelect(item.workout);
-												}}
-											/>
-										)
+											);
+										})
 									)}
 								</div>
-							) : (
-								<p className="week-stack-rest">Rest day</p>
-							)}
-						</div>
-					);
-				})}
+							</div>
+						))}
+					</div>
+				)}
 			</div>
+
+			{hasRecentItems && (
+				<div className="home-section">
+					<p className="home-section-label">RECENT</p>
+					<div className="recent-list">
+						{recentDays.map(({ date, items }) => (
+							<div key={date} className="recent-card punk-recent-card">
+								<span className="recent-card-date">{formatDayLabel(date)}</span>
+								{items.length === 0 ? (
+									<div className="recent-workout-row">
+										<span className="recent-workout-name">Rest Day</span>
+									</div>
+								) : (
+									items.map((item) => {
+										const key = item.kind === 'cardio' ? item.workoutId : item.workout.id;
+										const name = item.kind === 'cardio' ? item.name : item.workout.name;
+										return (
+											<div key={key} className="recent-workout-row">
+												<span className={item.done ? 'recent-workout-done' : 'recent-workout-name'}>{name}</span>
+												{item.done && <span className="recent-check">✓</span>}
+											</div>
+										);
+									})
+								)}
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 
 			{/* Full workout library */}
 			{workouts.length === 0 ? (

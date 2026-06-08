@@ -93,11 +93,11 @@ body {
 	opacity: 0.5;
 }
 
-/* Motivational quote – neon cursive nightclub sign */
+/* Motivational quote – neon cursive nightclub sign (used on other pages) */
 .motivational-quote {
 	text-align: center;
-	margin-top: 5rem;
-	margin-bottom: 5rem;
+	margin-top: 1.5rem;
+	margin-bottom: 1.5rem;
 }
 
 .quote-text {
@@ -1873,6 +1873,105 @@ body {
 .spin {
 	animation: spin 1s linear infinite;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Punk/chaos hero art animations                                      */
+/* ------------------------------------------------------------------ */
+
+@keyframes flicker {
+	0%, 95%, 100% { opacity: 0.4; }
+	96%  { opacity: 0.15; }
+	97%  { opacity: 0.5; }
+	98%  { opacity: 0.2; }
+}
+
+@keyframes crackle {
+	0%, 100% { transform: translateX(0) rotate(0deg); }
+	25%  { transform: translateX(1px) rotate(0.5deg); }
+	50%  { transform: translateX(-1px) rotate(-0.3deg); }
+	75%  { transform: translateX(0.5px) rotate(0.2deg); }
+}
+
+@keyframes pulse-glow {
+	0%, 100% { opacity: 0.3; }
+	50%       { opacity: 0.6; }
+}
+
+@keyframes drift {
+	0%, 100% { transform: translateY(0px) rotate(0deg); }
+	33%       { transform: translateY(-3px) rotate(1deg); }
+	66%       { transform: translateY(2px) rotate(-0.5deg); }
+}
+
+@keyframes punk-pulse-pink  { 0%, 100% { opacity: 0.6; }  50% { opacity: 1.0; } }
+@keyframes punk-pulse-cyan  { 0%, 100% { opacity: 0.55; } 50% { opacity: 1.0; } }
+@keyframes punk-pulse-green { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.8; } }
+
+@keyframes punk-scanline {
+	0%   { transform: translateY(-100%); }
+	100% { transform: translateY(400px); }
+}
+@keyframes punk-glitch {
+	0%, 90%, 100% { transform: translate(0,0) skew(0deg); opacity: 1; }
+	91% { transform: translate(-4px, 2px) skew(-1deg); opacity: 0.8; }
+	93% { transform: translate(4px, -2px) skew(1deg); opacity: 0.9; }
+	95% { transform: translate(-2px, 0) skew(0.5deg); opacity: 0.7; }
+	97% { transform: translate(0, 3px) skew(-0.5deg); opacity: 1; }
+}
+@keyframes punk-glitch-cyan {
+	0%, 90%, 100% { transform: translate(7px, 7px); opacity: 0.7; }
+	91% { transform: translate(11px, 4px); opacity: 1; }
+	93% { transform: translate(3px, 9px); opacity: 0.5; }
+	95% { transform: translate(8px, 2px); opacity: 0.9; }
+}
+@keyframes punk-glitch-pink {
+	0%, 90%, 100% { transform: translate(-5px, 5px); opacity: 0.7; }
+	91% { transform: translate(-9px, 2px); opacity: 1; }
+	93% { transform: translate(-2px, 8px); opacity: 0.5; }
+	95% { transform: translate(-6px, 1px); opacity: 0.9; }
+}
+@keyframes punk-arc-draw {
+	0%, 100%  { stroke-dashoffset: 400; opacity: 0; }
+	15%       { opacity: 1; }
+	45%       { stroke-dashoffset: 0; opacity: 1; }
+	65%       { stroke-dashoffset: 0; opacity: 0.7; }
+	85%       { stroke-dashoffset: -400; opacity: 0; }
+}
+@keyframes punk-arc-draw2 {
+	0%, 60%, 100% { stroke-dashoffset: 350; opacity: 0; }
+	68% { opacity: 0.9; }
+	82% { stroke-dashoffset: 0; opacity: 1; }
+	95% { stroke-dashoffset: -350; opacity: 0; }
+}
+@keyframes punk-spark {
+	0%, 100%  { opacity: 0; transform: scale(0); }
+	40%, 60%  { opacity: 1; transform: scale(1); }
+}
+@keyframes punk-halftone {
+	0%, 100% { opacity: 0.06; }
+	50%       { opacity: 0.13; }
+}
+@keyframes punk-drip {
+	0%   { transform: scaleY(0); transform-origin: top; opacity: 1; }
+	60%  { transform: scaleY(1); transform-origin: top; opacity: 1; }
+	100% { transform: scaleY(1); transform-origin: top; opacity: 0; }
+}
+@keyframes punk-stamp {
+	0%, 100% { opacity: 0.06; transform: rotate(-8deg) scale(1); }
+	50%       { opacity: 0.14; transform: rotate(-8deg) scale(1.03); }
+}
+@keyframes punk-float1 {
+	0%, 100% { transform: translateY(0) rotate(-12deg); }
+	50%       { transform: translateY(-6px) rotate(-10deg); }
+}
+@keyframes punk-float2 {
+	0%, 100% { transform: translateY(0) rotate(8deg); }
+	50%       { transform: translateY(5px) rotate(10deg); }
+}
+/* kept for legacy reference — no longer used by WorkoutChaosArt */
+@keyframes punk-drift    { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes punk-flicker  { 0%, 94%, 100% { opacity: 0.5; } 95% { opacity: 0.15; } 97% { opacity: 0.6; } }
+@keyframes punk-crackle  { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(1px,0); } 75% { transform: translate(-1px,1px); } }
 
 /* -----------------------------------------------------------------------
    Workout editor
@@ -4832,6 +4931,397 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Hero cards stack                                                    */
+/* ------------------------------------------------------------------ */
+
+.today-cards-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 1.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Spider-Punk hero card                                               */
+/* ------------------------------------------------------------------ */
+
+.punk-hero {
+	background: linear-gradient(135deg, #E8FF00 0%, #FFA500 100%);
+	border-radius: 16px;
+	padding: 24px 28px 20px;
+	position: relative;
+	overflow: hidden;
+	min-height: 280px;
+	margin-bottom: 12px;
+	cursor: pointer;
+	transition: transform 0.1s ease;
+}
+
+.punk-hero:active {
+	transform: scale(0.99);
+}
+
+
+.punk-halftone {
+	position: absolute;
+	inset: 0;
+	background-image: radial-gradient(circle, rgba(0,0,0,0.8) 1px, transparent 1px);
+	background-size: 8px 8px;
+	opacity: 0.07;
+	pointer-events: none;
+	z-index: 1;
+	animation: punk-halftone 3s ease-in-out infinite;
+	border-radius: 16px;
+}
+
+.punk-scanline {
+	position: absolute;
+	left: 0; right: 0;
+	height: 3px;
+	background: rgba(0,0,0,0.07);
+	animation: punk-scanline 5s linear infinite;
+	pointer-events: none;
+	z-index: 2;
+}
+
+.punk-stamp {
+	position: absolute;
+	bottom: 28px;
+	left: 16px;
+	font-family: monospace;
+	font-size: 44px;
+	font-weight: 900;
+	color: black;
+	letter-spacing: 8px;
+	transform: rotate(-8deg);
+	z-index: 0;
+	pointer-events: none;
+	animation: punk-stamp 4s ease-in-out infinite;
+}
+
+.punk-content {
+	position: relative;
+	z-index: 5;
+	max-width: 70%;
+	padding-top: 4px;
+	display: flex;
+	flex-direction: column;
+	min-height: 232px;
+}
+
+.punk-graffiti-wrap {
+	position: relative;
+	display: block;
+	width: 100%;
+	margin-bottom: 10px;
+	user-select: none;
+}
+
+.punk-graffiti-main {
+	font-family: 'Lacquer', cursive;
+	font-size: 44px;
+	line-height: 1.1;
+	color: black;
+	text-transform: uppercase;
+	word-break: break-word;
+	white-space: normal;
+	position: relative;
+	z-index: 3;
+	animation: punk-glitch 6s ease-in-out infinite;
+}
+
+.punk-graffiti-cyan {
+	font-family: 'Lacquer', cursive;
+	font-size: 44px;
+	line-height: 1.1;
+	text-transform: uppercase;
+	word-break: break-word;
+	white-space: normal;
+	position: absolute;
+	top: 0; left: 0;
+	width: 100%;
+	color: transparent;
+	-webkit-text-stroke: 4px #00ffff;
+	z-index: 1;
+	animation: punk-glitch-cyan 6s ease-in-out infinite;
+}
+
+.punk-graffiti-pink {
+	font-family: 'Lacquer', cursive;
+	font-size: 44px;
+	line-height: 1.1;
+	text-transform: uppercase;
+	word-break: break-word;
+	white-space: normal;
+	position: absolute;
+	top: 0; left: 0;
+	width: 100%;
+	color: transparent;
+	-webkit-text-stroke: 3px #ff1493;
+	z-index: 2;
+	animation: punk-glitch-pink 6s ease-in-out infinite;
+}
+
+.punk-btn {
+	display: inline-block;
+	background: black;
+	color: #E8FF00;
+	font-family: monospace;
+	font-size: 11px;
+	font-weight: 900;
+	letter-spacing: 3px;
+	padding: 10px 24px;
+	border-radius: 999px;
+	margin-bottom: 14px;
+	border: 2px solid #E8FF00;
+	cursor: pointer;
+	position: relative;
+	z-index: 5;
+	text-transform: uppercase;
+}
+
+.punk-btn:active { opacity: 0.85; }
+
+.punk-bottom {
+	margin-top: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.punk-quote {
+	font-family: monospace;
+	font-size: 10px;
+	font-weight: 900;
+	color: white;
+	opacity: 1;
+	font-style: italic;
+	letter-spacing: 0.5px;
+	position: relative;
+	z-index: 5;
+	text-transform: uppercase;
+	line-height: 1.4;
+	white-space: normal;
+	word-break: break-word;
+	overflow: visible;
+	max-width: 100%;
+	padding-right: 8px;
+	text-shadow: 1px 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.6);
+}
+
+.punk-art-wrap {
+	position: absolute;
+	right: -25px;
+	top: -10px;
+	bottom: -10px;
+	width: 270px;
+	pointer-events: none;
+	z-index: 3;
+}
+
+/* Rest day text */
+.punk-rest {
+	font-family: 'Lacquer', cursive;
+	font-size: 3rem;
+	font-weight: 400;
+	color: #000;
+	text-transform: uppercase;
+	line-height: 1;
+	margin-bottom: 0.75rem;
+}
+
+.btn-start-workout:active {
+	opacity: 0.85;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Home page sections: Coming Up + Recent                             */
+/* ------------------------------------------------------------------ */
+
+.home-section {
+	margin-bottom: 1.5rem;
+	text-align: left;
+}
+
+.home-section-label {
+	display: block;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted);
+	margin-bottom: 0.5rem;
+}
+
+.no-upcoming-text {
+	font-size: 0.8125rem;
+	color: var(--color-text-muted);
+	font-style: italic;
+	padding: 0.25rem 0.25rem;
+	margin: 0;
+}
+
+.upcoming-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+@keyframes sketch-wobble-yellow {
+	0%, 100% { filter: url(#sk) drop-shadow(0 0 2px rgba(232,255,0,0.4)); }
+	50%       { filter: url(#sk) drop-shadow(0 0 6px rgba(232,255,0,0.7)); }
+}
+@keyframes sketch-wobble-pink {
+	0%, 100% { filter: url(#sketch-filter-pink) drop-shadow(0 0 1px rgba(255,20,147,0.3)); }
+	50%       { filter: url(#sketch-filter-pink) drop-shadow(0 0 3px rgba(255,20,147,0.5)); }
+}
+@keyframes scratch-drift1 {
+	0%, 100% { transform: translate(0,0) rotate(0deg); opacity: 0.5; }
+	33%       { transform: translate(2px,-3px) rotate(1deg); opacity: 0.8; }
+	66%       { transform: translate(-1px,2px) rotate(-0.5deg); opacity: 0.4; }
+}
+@keyframes scratch-drift2 {
+	0%, 100% { transform: translate(0,0) rotate(0deg); opacity: 0.4; }
+	50%       { transform: translate(-3px,2px) rotate(-1.5deg); opacity: 0.7; }
+}
+@keyframes corner-spark {
+	0%, 100% { opacity: 0; transform: scale(0); }
+	40%, 60%  { opacity: 1; transform: scale(1); }
+}
+
+/* Upcoming card — SVG-bordered punk card */
+.punk-coming-up-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	background: rgba(255,255,255,0.04);
+	border-radius: 8px;
+	padding: 14px 16px;
+	background-image: radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
+	background-size: 7px 7px;
+	overflow: visible !important;
+	cursor: pointer;
+}
+
+.punk-coming-up-day {
+	font-family: 'Bangers', cursive;
+	font-size: 13px;
+	letter-spacing: 2px;
+	color: rgba(255,255,255,0.45);
+	margin-bottom: 4px;
+}
+
+.punk-coming-up-name {
+	display: block;
+	font-family: 'Bangers', cursive;
+	font-size: 22px;
+	letter-spacing: 2px;
+	color: #E8FF00;
+	line-height: 1.2;
+	background: none;
+	border: none;
+	padding: 0;
+	cursor: pointer;
+	text-align: left;
+	width: 100%;
+}
+
+.punk-coming-up-name:active {
+	opacity: 0.8;
+}
+
+.upcoming-card-date {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted);
+	margin-bottom: 0.1rem;
+}
+
+.upcoming-card-workouts {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.upcoming-workout-btn {
+	display: block;
+	background: none;
+	border: none;
+	color: #E8FF00;
+	font-size: 0.875rem;
+	font-weight: 700;
+	cursor: pointer;
+	padding: 0;
+	text-align: left;
+}
+
+.upcoming-workout-btn:active {
+	opacity: 0.8;
+}
+
+/* Recent cards — column layout, dimmed */
+.recent-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	opacity: 0.7;
+}
+
+/* Recent card — layout base */
+.recent-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	padding: 0.75rem;
+	background: var(--color-surface);
+	border-radius: var(--radius);
+	background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+	background-size: 6px 6px;
+}
+
+/* Sketchy pink border overlay */
+.punk-recent-card {
+	overflow: visible !important;
+	outline: 2px solid rgba(255, 20, 147, 0.6);
+	outline-offset: 1px;
+	filter: url(#sketch-filter-pink);
+	animation: sketch-wobble-pink 4s ease-in-out infinite;
+}
+
+.recent-card-date {
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: var(--color-text-muted);
+	margin-bottom: 0.1rem;
+}
+
+.recent-workout-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.recent-workout-name {
+	font-size: 0.875rem;
+	color: var(--color-text-muted);
+}
+
+.recent-workout-done {
+	font-size: 0.875rem;
+	color: #ff1493;
+}
+
+.recent-check {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #ff1493;
+	flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Monthly Calendar (progress page)                                   */
 /* ------------------------------------------------------------------ */
 
@@ -5238,19 +5728,24 @@ body {
 	margin-bottom: 1.25rem;
 }
 
+.cardio-time-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
 .cardio-time-btn {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
 	background: rgba(255, 255, 255, 0.06);
 	border: 1px solid rgba(255, 255, 255, 0.12);
 	border-radius: var(--radius);
-	padding: 0.75rem 1rem;
+	padding: 0.625rem 0.875rem;
 	color: var(--color-text);
-	font-size: 0.9375rem;
+	font-size: 0.875rem;
 	cursor: pointer;
-	width: 100%;
-	text-align: left;
+	white-space: nowrap;
+	flex-shrink: 0;
 	transition: background 0.15s;
 }
 
@@ -5258,10 +5753,22 @@ body {
 	background: rgba(255, 255, 255, 0.1);
 }
 
-.cardio-time-val {
-	color: #e8ff00;
-	font-weight: 700;
-	font-size: 0.875rem;
+.cardio-time-input {
+	flex: 1;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: var(--radius);
+	padding: 0.625rem 0.75rem;
+	color: var(--color-text);
+	font-size: 0.9375rem;
+	font-family: inherit;
+	color-scheme: dark;
+	min-width: 0;
+}
+
+.cardio-time-input:focus {
+	outline: none;
+	border-color: #ff1493;
 }
 
 .cardio-modal-actions {
