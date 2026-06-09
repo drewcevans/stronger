@@ -160,6 +160,10 @@ function addDaysStr(dateStr: string, n: number): string {
   return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 
+function daysBetween(dateA: string, dateB: string): number {
+  return Math.round((new Date(dateB).getTime() - new Date(dateA).getTime()) / 86400000);
+}
+
 function calcBMR(weightLbs: number, heightFt: number, heightIn: number, age: number, sex: 'male' | 'female'): number {
   const kg = weightLbs / 2.205;
   const cm = (heightFt * 12 + heightIn) * 2.54;
@@ -202,6 +206,8 @@ function BodyCompChart({
   const [showDebug, setShowDebug] = useState(false);
   const tapCountRef = useRef(0);
   const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(350);
 
   const handleTitleTap = () => {
     tapCountRef.current += 1;
@@ -223,6 +229,25 @@ function BodyCompChart({
     () => [...bodyStatRows].sort((a, b) => a.date.localeCompare(b.date)),
     [bodyStatRows],
   );
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.offsetWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (containerRef.current && sortedStats.length > 0) {
+      const firstEntryDate = sortedStats[0].date;
+      const lastEntryDate = sortedStats[sortedStats.length - 1].date;
+      const todayPlus4Weeks = addDaysStr(todayStr, PROJ_DAYS);
+      const totalDays = Math.max(1, daysBetween(firstEntryDate, todayPlus4Weeks));
+      const daysToLatestEntry = daysBetween(firstEntryDate, lastEntryDate);
+      const scrollPosition = (daysToLatestEntry / totalDays) *
+        (containerRef.current.scrollWidth - containerRef.current.offsetWidth);
+      containerRef.current.scrollLeft = Math.max(0, scrollPosition - 50);
+    }
+  }, [sortedStats, containerWidth, todayStr]);
 
   const { chartData, lastEntry, projLast, weeklyChange, hasAvgData, projDots, debugMeta } = useMemo(() => {
     const empty = { chartData: [], lastEntry: null, projLast: 0, weeklyChange: 0, hasAvgData: false, projDots: [] as { date: string; val: number }[], debugMeta: null };
@@ -310,11 +335,24 @@ function BodyCompChart({
       trendMap.set(date, snap());
     }
 
-    // Projection: today → today + 28 days (using avgNet each day)
+    // Blended projection rate: average of actual weight-change rate and calorie-based rate
+    const calRate = hasAvgData ? avgNet / 3500 : 0;
+    let projCalBal = avgNet;
+    if (sortedStats.length >= 2) {
+      const prev = sortedStats[sortedStats.length - 2];
+      const daysBetweenEntries = daysBetween(prev.date, last.date);
+      if (daysBetweenEntries > 0) {
+        const actualRate = (last.bodyWeight - prev.bodyWeight) / daysBetweenEntries;
+        const projectedRate = (actualRate + calRate) / 2;
+        projCalBal = projectedRate * 3500;
+      }
+    }
+
+    // Projection: today → today + 28 days
     const projMap = new Map<string, Record<BodyMetric, number>>();
     projMap.set(todayStr, snap());
     for (let i = 1; i <= PROJ_DAYS; i++) {
-      applyCalBal(avgNet);
+      applyCalBal(projCalBal);
       projMap.set(addDaysStr(todayStr, i), snap());
     }
 
@@ -379,7 +417,12 @@ function BodyCompChart({
         </select>
       </div>
       {(() => {
-        // Evenly-spaced ticks every 4 days across the full date range
+        const firstEntryDate = sortedStats[0].date;
+        const todayPlus4Weeks = addDaysStr(todayStr, PROJ_DAYS);
+        const totalDays = Math.max(1, daysBetween(firstEntryDate, todayPlus4Weeks));
+        const chartWidth = Math.max(containerWidth, totalDays * 12);
+
+        // Ticks every 7 days across the full date range
         const xTicks: number[] = [];
         if (chartData.length > 0) {
           const start = new Date(chartData[0].date);
@@ -387,9 +430,8 @@ function BodyCompChart({
           const cur = new Date(start);
           while (cur <= end) {
             xTicks.push(cur.getTime());
-            cur.setDate(cur.getDate() + 4);
+            cur.setDate(cur.getDate() + 7);
           }
-          // Always include the last date
           const endTs = end.getTime();
           if (xTicks[xTicks.length - 1] !== endTs) xTicks.push(endTs);
         }
@@ -399,8 +441,8 @@ function BodyCompChart({
           return `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}`;
         };
         return (
-          <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={chartData} margin={{ top: 40, right: 20, bottom: 10, left: 10 }}>
+          <div className="chart-scroll" ref={containerRef}>
+            <ComposedChart width={chartWidth} height={220} data={chartData} margin={{ top: 40, right: 20, bottom: 10, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis
                 dataKey="ts"
@@ -439,7 +481,7 @@ function BodyCompChart({
                 }}
               />
             </ComposedChart>
-          </ResponsiveContainer>
+          </div>
         );
       })()}
       {!hasAvgData && (

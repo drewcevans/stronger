@@ -1,25 +1,34 @@
 import sharp from 'sharp'
 import { existsSync, mkdirSync } from 'fs'
-import { Buffer } from 'buffer'
 
 if (!existsSync('public/icons')) {
   mkdirSync('public/icons', { recursive: true })
 }
 
-const iconSvg = `
-<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" fill="#000000" rx="80"/>
-  <text x="256" y="320" font-family="monospace" font-size="280"
-    font-weight="900" fill="#E8FF00" text-anchor="middle">S</text>
-</svg>`
+async function generateIcon(size, outputPath) {
+  const padding = Math.round(size * 0.1)
+  const imgSize = size - padding * 2
 
-sharp(Buffer.from(iconSvg))
-  .resize(512, 512)
-  .png()
-  .toFile('public/icons/icon-512.png')
-  .then(() => sharp(Buffer.from(iconSvg))
-    .resize(192, 192)
+  const boltBuffer = await sharp('src/assets/stronger-bolt.png')
+    .resize(imgSize, imgSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .toBuffer()
+
+  await sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 255 },
+    },
+  })
+    .composite([{ input: boltBuffer, top: padding, left: padding }])
     .png()
-    .toFile('public/icons/icon-192.png'))
-  .then(() => console.log('Icons generated'))
+    .toFile(outputPath)
+
+  console.log(`Generated ${outputPath} (${size}x${size})`)
+}
+
+generateIcon(512, 'public/icons/icon-512.png')
+  .then(() => generateIcon(192, 'public/icons/icon-192.png'))
+  .then(() => console.log('Done'))
   .catch(console.error)

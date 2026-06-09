@@ -5832,6 +5832,23 @@ body {
 	flex-shrink: 0;
 }
 
+.chart-scroll {
+	overflow-x: auto;
+	overflow-y: hidden;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	cursor: grab;
+}
+
+.chart-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.chart-scroll:active {
+	cursor: grabbing;
+}
+
 .body-debug-panel {
 	margin-top: 0.75rem;
 	background: rgba(232, 255, 0, 0.05);
