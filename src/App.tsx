@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import type { Workout, LiftConfig, SetResult, ComputedSet, PreviousSetData, ProgressionProposal, ScheduleEntry, DayFlags, CardioActivity, AppSettings } from './model/index.js';
 import { computeProgression, FLAG_SENTINEL } from './model/index.js';
 import {
@@ -7,7 +7,7 @@ import {
   writeWorkoutDefs, readWorkoutDefs, updateLogRows, deleteLogSession,
   writeCardioActivities, readCardioActivities, readConfigZone,
   syncScheduleWithCalendar, generateStrongerId, withAuthRetry,
-  upsertRow, deleteRows, readSheet, appendRow, findAndDeleteRows,
+  upsertRow, deleteRows, readSheet, appendRow, findAndDeleteRows, clearCache,
 } from './google/index.js';
 import type { LiftGoal } from './google/index.js';
 import type { CalendarSyncResult } from './google/index.js';
@@ -22,9 +22,9 @@ import { ExerciseEditor } from './components/ExerciseEditor.js';
 import { ProgressionReview } from './components/ProgressionReview.js';
 import { CalendarView, SessionDetail } from './components/CalendarView.js';
 import type { LogSession } from './components/CalendarView.js';
-import { ProgressView } from './components/ProgressView.js';
-import { SettingsView } from './components/SettingsView.js';
-import { NutritionPage } from './components/NutritionPage.js';
+const ProgressView = lazy(() => import('./components/ProgressView.js').then(m => ({ default: m.ProgressView })));
+const SettingsView = lazy(() => import('./components/SettingsView.js').then(m => ({ default: m.SettingsView })));
+const NutritionPage = lazy(() => import('./components/NutritionPage.js').then(m => ({ default: m.NutritionPage })));
 import { GoogleAuth } from './components/GoogleAuth.js';
 import { useHashRouter } from './hooks/useHashRouter.js';
 import { loadDraft, saveDraft, clearDraft } from './hooks/useWorkoutDraft.js';

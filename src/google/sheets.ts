@@ -5,7 +5,7 @@
  */
 
 import { TARGET_TAB_NAME, WORKOUT_DEFS_TAB_NAME, LOG_TAB_NAME, SCHEDULE_TAB_NAME, CARDIO_TAB_NAME } from './config.ts'
-import { readSheet, appendRow, updateRow, writeSheet, upsertRow } from './api.ts'
+import { readSheet, appendRow, appendRows, updateRow, writeSheet, upsertRow } from './api.ts'
 import type { LiftConfig, ComputedSet, SetResult, SetTemplate, ExerciseTemplate, ExerciseRole, WeightBasis, PreviousSetData, ScheduleEntry, DayFlags, CardioActivity } from '../model/types.ts'
 import { FLAG_SENTINEL } from '../model/types.ts'
 import type { WorkoutDefinition } from '../data/sample-workouts.ts'
@@ -324,13 +324,13 @@ export async function readLogZone(): Promise<ParsedLogRow[]> {
 }
 
 export async function appendLogRows(rows: (string | number | boolean)[][]): Promise<void> {
-	for (const row of rows) {
+	if (rows.length === 0) return
+	const rowObjects = rows.map((row) => {
 		const obj: Record<string, unknown> = {}
-		for (let i = 0; i < LOG_HEADER.length; i++) {
-			obj[LOG_HEADER[i]] = row[i]
-		}
-		await appendRow(LOG_TAB_NAME, obj)
-	}
+		LOG_HEADER.forEach((key, i) => { obj[key] = row[i] ?? '' })
+		return obj
+	})
+	await appendRows(LOG_TAB_NAME, rowObjects)
 }
 
 export async function updateLogRows(

@@ -5,15 +5,28 @@
 
 import { API_URL } from './config.ts'
 
-/** Fetch all rows from a sheet tab as an array of objects. */
+const _cache = new Map<string, { data: unknown; ts: number }>()
+const CACHE_TTL = 30_000
+
+/** Fetch all rows from a sheet tab as an array of objects (cached for 30s). */
 export async function readSheet<T = Record<string, string>>(
   sheetName: string
 ): Promise<T[]> {
+  const cached = _cache.get(sheetName)
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return cached.data as T[]
+  }
   const url = `${API_URL}?sheet=${encodeURIComponent(sheetName)}`
   const response = await fetch(url)
   const json = await response.json()
   if (json.error) throw new Error(json.error)
+  _cache.set(sheetName, { data: json.data, ts: Date.now() })
   return json.data as T[]
+}
+
+export function clearCache(sheetName?: string): void {
+  if (sheetName) _cache.delete(sheetName)
+  else _cache.clear()
 }
 
 /** Append a new row to a sheet tab. */
@@ -23,6 +36,19 @@ export async function appendRow(
 ): Promise<void> {
   const payload = encodeURIComponent(JSON.stringify({ sheet: sheetName, row }))
   const url = `${API_URL}?action=append&data=${payload}`
+  const response = await fetch(url)
+  const json = await response.json()
+  if (json.error) throw new Error(json.error)
+}
+
+/** Append multiple rows to a sheet tab in a single API call. */
+export async function appendRows(
+  sheetName: string,
+  rows: Record<string, unknown>[]
+): Promise<void> {
+  if (rows.length === 0) return
+  const payload = encodeURIComponent(JSON.stringify({ sheet: sheetName, rows }))
+  const url = `${API_URL}?action=appendMany&data=${payload}`
   const response = await fetch(url)
   const json = await response.json()
   if (json.error) throw new Error(json.error)
