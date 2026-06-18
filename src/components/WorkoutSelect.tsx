@@ -1,5 +1,4 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
-import type { CSSProperties } from 'react';
 import type { Workout, ScheduleEntry, CardioActivity } from '../model/index.js';
 import { FLAG_SENTINEL } from '../model/index.js';
 import type { ParsedLogRow } from '../google/index.js';
@@ -617,6 +616,10 @@ export function WorkoutSelect({
 					onClose={() => setCardioModal(null)}
 				/>
 			)}
+
+			<div style={{ textAlign: 'center', fontFamily: 'monospace', fontSize: '10px', color: 'rgba(255,255,255,0.2)', padding: '8px', marginTop: '16px' }}>
+				v0.0.2
+			</div>
 		</div>
 	);
 }
