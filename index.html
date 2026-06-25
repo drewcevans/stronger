@@ -19,7 +19,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital@1&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
     <title>STRONGER</title>
-    <script type="module" crossorigin src="/stronger/assets/index-084O5Url.js"></script>
+    <script type="module" crossorigin src="/stronger/assets/index-D1AodgF7.js"></script>
     <link rel="stylesheet" crossorigin href="/stronger/assets/index-CW7w5Zl5.css">
   </head>
   <body>
@@ -45,5 +45,31 @@
       </defs>
     </svg>
     <div id="root"></div>
+    <script>
+      let startY = 0
+      let pulling = false
+
+      document.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0) {
+          startY = e.touches[0].clientY
+          pulling = true
+        }
+      }, { passive: true })
+
+      document.addEventListener('touchmove', (e) => {
+        if (!pulling) return
+        const dist = e.touches[0].clientY - startY
+        if (dist > 100) {
+          pulling = false
+          startY = 0
+          window.dispatchEvent(new CustomEvent('pull-to-refresh'))
+        }
+      }, { passive: true })
+
+      document.addEventListener('touchend', () => {
+        pulling = false
+        startY = 0
+      }, { passive: true })
+    </script>
   </body>
 </html>
