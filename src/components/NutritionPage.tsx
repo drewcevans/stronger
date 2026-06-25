@@ -91,6 +91,7 @@ interface NutritionEntry {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
   calories: number;
   co2ekg: number;
 }
@@ -103,6 +104,7 @@ export interface MealRow {
   protein: number;
   carbs: number;
   fat: number;
+  fiber: number;
   co2ekg: number;
 }
 
@@ -113,6 +115,7 @@ interface Props { initialDate?: string; meals?: MealRow[]; }
 /* ------------------------------------------------------------------ */
 
 const DAILY_CO2_TARGET = 900 / 365; // ~2.47 kg/day (midpoint of 0.75-1.0t annual goal)
+const FIBER_TARGET = 50;
 
 const MEAL_SLOTS = [
   { id: 'morning-snack', label: 'Morning Snack' },
@@ -142,9 +145,10 @@ function MealPreviewModal({ slot, items, phase, onAdd, onClose, submitting }: {
       protein:  acc.protein  + i.protein,
       carbs:    acc.carbs    + i.carbs,
       fat:      acc.fat      + i.fat,
+      fiber:    acc.fiber    + i.fiber,
       co2ekg:   acc.co2ekg   + i.co2ekg,
     }),
-    { calories: 0, protein: 0, carbs: 0, fat: 0, co2ekg: 0 },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, co2ekg: 0 },
   );
 
   return (
@@ -160,13 +164,13 @@ function MealPreviewModal({ slot, items, phase, onAdd, onClose, submitting }: {
             <div className="meal-modal-items">
               {items.map((item, i) => (
                 <div key={i} className="meal-modal-item">
-                  • {item.item} — {Math.round(item.calories)} cal | {Math.round(item.protein)}g P | {Math.round(item.carbs)}g C | {Math.round(item.fat)}g F
+                  • {item.item} — {Math.round(item.calories)} cal | {Math.round(item.protein)}g P | {Math.round(item.carbs)}g C | {Math.round(item.fat)}g F | {Math.round(item.fiber)}g Fbr
                 </div>
               ))}
             </div>
             <div className="meal-modal-divider" />
             <div className="meal-modal-total">
-              Total: {Math.round(total.calories)} cal | {Math.round(total.protein)}g P | {Math.round(total.carbs)}g C | {Math.round(total.fat)}g F | {total.co2ekg.toFixed(2)} kg CO₂e
+              Total: {Math.round(total.calories)} cal | {Math.round(total.protein)}g P | {Math.round(total.carbs)}g C | {Math.round(total.fat)}g F | {Math.round(total.fiber)}g Fbr | {total.co2ekg.toFixed(2)} kg CO₂e
             </div>
           </>
         )}
@@ -185,8 +189,8 @@ function MealPreviewModal({ slot, items, phase, onAdd, onClose, submitting }: {
   );
 }
 
-const BEER_MACROS    = { type: 'beer',     description: '', protein: 2, carbs: 20, fat: 0, calories: 250, co2ekg: 0.5 };
-const COCKTAIL_MACROS = { type: 'cocktail', description: '', protein: 0, carbs: 15, fat: 0, calories: 175, co2ekg: 0.3 };
+const BEER_MACROS    = { type: 'beer',     description: '', protein: 2, carbs: 20, fat: 0, fiber: 0, calories: 250, co2ekg: 0.5 };
+const COCKTAIL_MACROS = { type: 'cocktail', description: '', protein: 0, carbs: 15, fat: 0, fiber: 0, calories: 175, co2ekg: 0.3 };
 const NORMAL_PROTEIN  = 220;
 const FASTING_PROTEIN = 150;
 
@@ -202,6 +206,7 @@ function parseNutritionRow(r: Record<string, string>): NutritionEntry {
     protein: Number(r['protein'] ?? 0),
     carbs: Number(r['carbs'] ?? 0),
     fat: Number(r['fat'] ?? 0),
+    fiber: Number(r['fiber'] ?? 0),
     calories: Number(r['calories'] ?? 0),
     co2ekg: Number(r['co2ekg'] ?? 0),
   };
@@ -283,6 +288,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
   const [miscProtein, setMiscProtein] = useState('');
   const [miscCarbs, setMiscCarbs] = useState('');
   const [miscFat, setMiscFat] = useState('');
+  const [miscFiber, setMiscFiber] = useState('');
   const [miscCo2, setMiscCo2] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -395,6 +401,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
   const loggedProtein  = entries.reduce((s, e) => s + e.protein, 0);
   const loggedCarbs    = entries.reduce((s, e) => s + e.carbs, 0);
   const loggedFat      = entries.reduce((s, e) => s + e.fat, 0);
+  const loggedFiber    = entries.reduce((s, e) => s + e.fiber, 0);
   const loggedCo2      = entries.reduce((s, e) => s + e.co2ekg, 0);
 
   const calsBurnedNum = Number(calsBurned) || 0;
@@ -427,7 +434,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
     setAllEntries((prev) => [...prev, newEntry]);
     await appendRow('Nutrition', {
       date: entry.date, type: entry.type, description: entry.description,
-      protein: entry.protein, carbs: entry.carbs, fat: entry.fat,
+      protein: entry.protein, carbs: entry.carbs, fat: entry.fat, fiber: entry.fiber,
       calories: entry.calories, co2ekg: entry.co2ekg,
     });
   }
@@ -454,7 +461,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
     if (!staple || cal === null || fat === null || carbs === null) return;
     setSubmitting(true);
     try {
-      await persistEntry({ date: selectedDate, type: 'staple', description: '', protein: prot, carbs, fat, calories: cal, co2ekg: staple.co2ekg });
+      await persistEntry({ date: selectedDate, type: 'staple', description: '', protein: prot, carbs, fat, fiber: 0, calories: cal, co2ekg: staple.co2ekg });
       setShowStapleConfirm(false);
     } finally { setSubmitting(false); }
   }, [isFasting, fastingStaple, matchedStaple, fastingCalories, fastingFat, fastingCarbs, targetCalories, targetFat, targetCarbs, selectedDate]);
@@ -468,12 +475,13 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
       await persistEntry({
         date: selectedDate, type: miscFormType, description: miscDesc,
         protein: Number(miscProtein) || 0, carbs: Number(miscCarbs) || 0,
-        fat: Number(miscFat) || 0, calories: cal, co2ekg: Number(miscCo2) || 0,
+        fat: Number(miscFat) || 0, fiber: Number(miscFiber) || 0,
+        calories: cal, co2ekg: Number(miscCo2) || 0,
       });
       setShowMiscForm(false);
-      setMiscDesc(''); setMiscCalories(''); setMiscProtein(''); setMiscCarbs(''); setMiscFat(''); setMiscCo2('');
+      setMiscDesc(''); setMiscCalories(''); setMiscProtein(''); setMiscCarbs(''); setMiscFat(''); setMiscFiber(''); setMiscCo2('');
     } finally { setSubmitting(false); }
-  }, [selectedDate, miscFormType, miscDesc, miscCalories, miscProtein, miscCarbs, miscFat, miscCo2]);
+  }, [selectedDate, miscFormType, miscDesc, miscCalories, miscProtein, miscCarbs, miscFat, miscFiber, miscCo2]);
 
   const handleAddMeal = useCallback(async () => {
     if (!mealModal || mealModal.items.length === 0) return;
@@ -481,9 +489,9 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
     const total = mealModal.items.reduce(
       (acc, i) => ({
         calories: acc.calories + i.calories, protein: acc.protein + i.protein,
-        carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat, co2ekg: acc.co2ekg + i.co2ekg,
+        carbs: acc.carbs + i.carbs, fat: acc.fat + i.fat, fiber: acc.fiber + i.fiber, co2ekg: acc.co2ekg + i.co2ekg,
       }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0, co2ekg: 0 },
+      { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, co2ekg: 0 },
     );
     console.log('[meal] logging', { date: selectedDate, type: mealSlot, total });
     setMealSubmitting(true);
@@ -513,7 +521,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
     setAllEntries(updated);
     const rows = updated.map((e) => ({
       date: e.date, type: e.type, description: e.description,
-      protein: e.protein, carbs: e.carbs, fat: e.fat,
+      protein: e.protein, carbs: e.carbs, fat: e.fat, fiber: e.fiber,
       calories: e.calories, co2ekg: e.co2ekg,
     }));
     await writeSheet('Nutrition', rows);
@@ -575,6 +583,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
         <MacroBar label="Protein"  logged={loggedProtein}  target={activeProtein}  unit="g"    fasting={isFasting} phase={phase} isProtein />
         <MacroBar label="Carbs"    logged={loggedCarbs}    target={activeCarbs}    unit="g"    fasting={isFasting} phase={phase} />
         <MacroBar label="Fat"      logged={loggedFat}      target={activeFat}      unit="g"    fasting={isFasting} phase={phase} />
+        <MacroBar label="Fiber"    logged={loggedFiber}    target={FIBER_TARGET}   unit="g"    fasting={isFasting} phase={phase} isProtein />
         {activeStaple && (
           <div className="nutr-co2-target">
             CO₂e today: {loggedCo2.toFixed(2)} / {activeStaple.co2ekg} kg target
@@ -672,6 +681,7 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
                 <span>P: {Math.round(entry.protein)}g</span>
                 <span>C: {Math.round(entry.carbs)}g</span>
                 <span>F: {Math.round(entry.fat)}g</span>
+                <span>Fbr: {Math.round(entry.fiber)}g</span>
                 <span>{Math.round(entry.calories)} kcal</span>
                 <span>CO₂: {entry.co2ekg.toFixed(2)}kg</span>
               </div>
@@ -754,6 +764,10 @@ export function NutritionPage({ initialDate, meals = [] }: Props) {
             <div className="nutr-form-field">
               <label className="nutr-form-label">Fat (g)</label>
               <input type="number" step="any" className="nutr-input" value={miscFat} onChange={(e) => setMiscFat(e.target.value)} placeholder="0" />
+            </div>
+            <div className="nutr-form-field">
+              <label className="nutr-form-label">Fiber (g)</label>
+              <input type="number" step="any" className="nutr-input" value={miscFiber} onChange={(e) => setMiscFiber(e.target.value)} placeholder="0" />
             </div>
             <div className="nutr-form-field">
               <label className="nutr-form-label">CO₂e (kg)</label>

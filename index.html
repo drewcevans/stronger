@@ -44,5 +44,31 @@
     </svg>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      let startY = 0
+      let pulling = false
+
+      document.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0) {
+          startY = e.touches[0].clientY
+          pulling = true
+        }
+      }, { passive: true })
+
+      document.addEventListener('touchmove', (e) => {
+        if (!pulling) return
+        const dist = e.touches[0].clientY - startY
+        if (dist > 100) {
+          pulling = false
+          startY = 0
+          window.dispatchEvent(new CustomEvent('pull-to-refresh'))
+        }
+      }, { passive: true })
+
+      document.addEventListener('touchend', () => {
+        pulling = false
+        startY = 0
+      }, { passive: true })
+    </script>
   </body>
 </html>

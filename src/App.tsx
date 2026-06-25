@@ -67,7 +67,8 @@ function App() {
   const [liftGoals, setLiftGoals] = useState<LiftGoal[]>([]);
   const [nutritionRows, setNutritionRows] = useState<{ date: string; co2ekg: number; calories: number }[]>([]);
   const [bodyStatRows, setBodyStatRows] = useState<{ date: string; bodyWeight: number; bodyFat: number; subcutaneousFat: number; fatFreeMass: number }[]>([]);
-  const [mealsRows, setMealsRows] = useState<{ phase: string; meal: string; item: string; calories: number; protein: number; carbs: number; fat: number; co2ekg: number }[]>([]);
+  const [mealsRows, setMealsRows] = useState<{ phase: string; meal: string; item: string; calories: number; protein: number; carbs: number; fat: number; fiber: number; co2ekg: number }[]>([]);
+  const [showRefreshToast, setShowRefreshToast] = useState(false);
   const [draftResults, setDraftResults] = useState<SetResult[][] | null>(null);
   const [pendingFinish, setPendingFinish] = useState<{
     workout: Workout;
@@ -147,6 +148,7 @@ function App() {
             protein: Number(r['protein'] ?? 0),
             carbs: Number(r['carbs'] ?? 0),
             fat: Number(r['fat'] ?? 0),
+            fiber: Number(r['fiber'] ?? 0),
             co2ekg: Number(r['co2ekg'] ?? 0),
           }))
           .filter((r) => r.phase && r.meal && r.item),
@@ -163,9 +165,18 @@ function App() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    clearCache();
     await loadAllData();
     setRefreshing(false);
+    setShowRefreshToast(true);
+    setTimeout(() => setShowRefreshToast(false), 1500);
   }, [loadAllData]);
+
+  useEffect(() => {
+    const handler = () => { void handleRefresh(); };
+    window.addEventListener('pull-to-refresh', handler);
+    return () => window.removeEventListener('pull-to-refresh', handler);
+  }, [handleRefresh]);
 
   const handleDisconnected = useCallback(() => {
     setActiveWorkout(null);
@@ -683,17 +694,38 @@ function App() {
   }
 
   const navBar = (
-    <GoogleAuth
-      onDisconnected={handleDisconnected}
-      onGoToList={handleGoToList}
-      onOpenCalendar={handleOpenCalendar}
-      onOpenNutrition={handleOpenNutrition}
-      onOpenExercises={handleOpenExercises}
-      onOpenProgress={handleOpenProgress}
-      onOpenSettings={handleOpenSettings}
-      onRefresh={handleRefresh}
-      refreshing={refreshing}
-    />
+    <>
+      <GoogleAuth
+        onDisconnected={handleDisconnected}
+        onGoToList={handleGoToList}
+        onOpenCalendar={handleOpenCalendar}
+        onOpenNutrition={handleOpenNutrition}
+        onOpenExercises={handleOpenExercises}
+        onOpenProgress={handleOpenProgress}
+        onOpenSettings={handleOpenSettings}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
+      />
+      {showRefreshToast && (
+        <div style={{
+          position: 'fixed',
+          top: '60px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.9)',
+          color: '#39ff14',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          padding: '8px 16px',
+          borderRadius: '20px',
+          zIndex: 9999,
+          border: '1px solid #39ff14',
+          whiteSpace: 'nowrap',
+        }}>
+          Refreshed ✓
+        </div>
+      )}
+    </>
   );
 
   if (route.view === 'exerciseEditor') {
